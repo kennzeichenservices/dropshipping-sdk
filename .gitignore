@@ -1,6 +1,11 @@
 # Ignore documentation files
 /docs
 
+# Ignore environment configuration files
+.env
+.env.local
+.env.*.local
+
 # Ignore Composer files
 composer.lock
 
@@ -10,3 +15,6 @@ composer.lock
 
 # Ignore dependencies managed by Composer
 vendor/
+
+# PHPUnit cache
+.phpunit.cache
