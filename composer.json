@@ -1,0 +1,25 @@
+{
+    "name": "kennzeichenservices/dropshipping-sdk",
+    "description": "Production-ready PHP SDK for the Dropshipping API",
+    "type": "library",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Kennzeichen Services",
+            "email": "sebastian@kennzeichenservices.de"
+        }
+    ],
+    "require": {
+        "php": ">=8.2",
+        "psr/http-client": "^1.0",
+        "psr/http-message": "^2.0",
+        "psr/http-factory": "^1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Dropshipping\\": "src/"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -1,0 +1,4 @@
+/docs
+composer.lock
+.history
+vendor/
