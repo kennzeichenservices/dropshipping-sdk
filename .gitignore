@@ -1,4 +1,12 @@
+# Ignore documentation files
 /docs
+
+# Ignore Composer files
 composer.lock
+
+# Ignore history and Claude settings
 .history
+.claude/
+
+# Ignore dependencies managed by Composer
 vendor/
