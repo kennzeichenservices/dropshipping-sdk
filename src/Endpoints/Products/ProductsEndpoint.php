@@ -10,8 +10,17 @@ use Dropshipping\DTO\Responses\AvailabilityCheckResponse;
 use Dropshipping\Http\RequestFactory;
 use Dropshipping\Http\ResponseMapper;
 
+/**
+ * API endpoint for product-related operations.
+ */
 final class ProductsEndpoint
 {
+    /**
+     * @param Psr18HttpClient $httpClient   HTTP client for sending requests
+     * @param RequestFactory  $requestFactory Factory for creating HTTP request objects
+     * @param ResponseMapper  $responseMapper Mapper for processing HTTP responses
+     * @param string          $baseUrl        Base URL of the dropshipping API
+     */
     public function __construct(
         private readonly Psr18HttpClient $httpClient,
         private readonly RequestFactory $requestFactory,
@@ -20,6 +29,13 @@ final class ProductsEndpoint
     ) {
     }
 
+    /**
+     * Check whether specific license plate number combinations are available at a registration office.
+     *
+     * @param AvailabilityCheckRequest $request The availability check request containing the license plate details
+     *
+     * @return AvailabilityCheckResponse The availability check result
+     */
     public function checkLicensePlateAvailability(AvailabilityCheckRequest $request): AvailabilityCheckResponse
     {
         $httpRequest = $this->requestFactory->createJsonRequest(

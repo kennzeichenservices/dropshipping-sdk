@@ -4,8 +4,14 @@ declare(strict_types=1);
 
 namespace Dropshipping\DTO;
 
+/**
+ * Data transfer object representing a single item in a dropshipping order.
+ */
 final readonly class OrderItem
 {
+    /**
+     * Create a new OrderItem instance.
+     */
     public function __construct(
         public int $productVariantId,
         public string $name,
@@ -15,7 +21,11 @@ final readonly class OrderItem
     ) {
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Convert the order item to an associative array.
+     *
+     * @return array<string, mixed>
+     */
     public function toArray(): array
     {
         return [

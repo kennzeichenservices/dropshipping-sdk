@@ -15,8 +15,19 @@ use Dropshipping\Http\RequestFactory;
 use Dropshipping\Http\ResponseMapper;
 use Psr\Http\Message\StreamFactoryInterface;
 
+/**
+ * API endpoint for order-related operations.
+ */
 final class OrdersEndpoint
 {
+    /**
+     * @param Psr18HttpClient        $httpClient     HTTP client for sending requests
+     * @param RequestFactory         $requestFactory  Factory for creating HTTP request objects
+     * @param ResponseMapper         $responseMapper  Mapper for processing HTTP responses
+     * @param SerializerInterface    $serializer      Serializer for encoding request payloads
+     * @param string                 $baseUrl         Base URL of the dropshipping API
+     * @param StreamFactoryInterface $streamFactory   Factory for creating PSR-7 stream instances
+     */
     public function __construct(
         private readonly Psr18HttpClient $httpClient,
         private readonly RequestFactory $requestFactory,
@@ -27,6 +38,13 @@ final class OrdersEndpoint
     ) {
     }
 
+    /**
+     * Create a new dropshipping order.
+     *
+     * @param OrderCreationRequest $request The order creation request payload
+     *
+     * @return OrderCreationResponse The created order response
+     */
     public function create(OrderCreationRequest $request): OrderCreationResponse
     {
         $httpRequest = $this->requestFactory->createJsonRequest(
@@ -41,6 +59,13 @@ final class OrdersEndpoint
         return OrderCreationResponse::fromArray($data);
     }
 
+    /**
+     * Create an emission sticker order with file uploads via multipart request.
+     *
+     * @param EmissionStickerOrderRequest $request The emission sticker order request including file paths
+     *
+     * @return EmissionStickerOrderResponse The created emission sticker order response
+     */
     public function createEmissionStickerOrder(EmissionStickerOrderRequest $request): EmissionStickerOrderResponse
     {
         $boundary = bin2hex(random_bytes(16));
@@ -63,6 +88,13 @@ final class OrdersEndpoint
         return EmissionStickerOrderResponse::fromArray($data);
     }
 
+    /**
+     * Create a reshipped order for a previously returned delivery.
+     *
+     * @param ReshippedOrderRequest $request The reshipped order request payload
+     *
+     * @return OrderCreationResponse The created order response
+     */
     public function createReshippedOrder(ReshippedOrderRequest $request): OrderCreationResponse
     {
         $httpRequest = $this->requestFactory->createJsonRequest(

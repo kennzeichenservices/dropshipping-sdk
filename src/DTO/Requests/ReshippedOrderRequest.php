@@ -6,8 +6,20 @@ namespace Dropshipping\DTO\Requests;
 
 use Dropshipping\DTO\Address;
 
+/**
+ * Request DTO for creating a reshipped order for a returned delivery.
+ *
+ * Contains the external ID, the returned delivery ID, and the
+ * delivery and invoice addresses for the new shipment.
+ */
 final readonly class ReshippedOrderRequest
 {
+    /**
+     * @param string  $externalId        External order identifier.
+     * @param int     $returnedDeliveryId ID of the returned delivery.
+     * @param Address $deliveryAddress    Delivery address for the reshipped order.
+     * @param Address $invoiceAddress     Invoice address for the reshipped order.
+     */
     public function __construct(
         public string $externalId,
         public int $returnedDeliveryId,
@@ -16,7 +28,11 @@ final readonly class ReshippedOrderRequest
     ) {
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Convert the reshipped order request to an associative array.
+     *
+     * @return array<string, mixed>
+     */
     public function toArray(): array
     {
         return [

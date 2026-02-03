@@ -13,7 +13,7 @@ final class DropshippingConfigTest extends TestCase
     {
         $config = new DropshippingConfig('api.example.com', 42, 'user', 'pass');
 
-        self::assertSame('https://api.example.com/dropshippingClients/42', $config->getBaseUrl());
+        self::assertSame('https://api.example.com/dropshipping-api/42/2.1.0', $config->getBaseUrl());
     }
 
     public function test_getUsername_returns_value(): void

@@ -4,10 +4,18 @@ declare(strict_types=1);
 
 namespace Dropshipping\DTO\Responses;
 
+/**
+ * Response DTO for order creation.
+ *
+ * Contains the order ID and the list of deliveries associated with the order.
+ */
 final readonly class OrderCreationResponse
 {
     /**
-     * @param list<Delivery> $deliveries
+     * Create a new order creation response instance.
+     *
+     * @param int            $id         The order ID.
+     * @param list<Delivery> $deliveries The deliveries belonging to this order.
      */
     public function __construct(
         public int $id,
@@ -15,7 +23,11 @@ final readonly class OrderCreationResponse
     ) {
     }
 
-    /** @param array<string, mixed> $data */
+    /**
+     * Create an instance from a raw API response array.
+     *
+     * @param array<string, mixed> $data
+     */
     public static function fromArray(array $data): self
     {
         return new self(

@@ -7,9 +7,24 @@ namespace Dropshipping\DTO\Webhooks;
 use Dropshipping\Enums\WebhookEventType;
 use Dropshipping\Exceptions\WebhookException;
 
+/**
+ * Factory that creates the appropriate WebhookEventInterface implementation
+ * from a raw webhook payload array.
+ *
+ * Determines the event type from the payload and delegates instantiation
+ * to the corresponding event class.
+ */
 final class WebhookEventFactory
 {
-    /** @param array<string, mixed> $data */
+    /**
+     * Create a webhook event instance from a raw payload array.
+     *
+     * @param array<string, mixed> $data The raw webhook payload.
+     *
+     * @return WebhookEventInterface
+     *
+     * @throws \Dropshipping\Exceptions\WebhookException If the event type is missing or unknown.
+     */
     public static function fromArray(array $data): WebhookEventInterface
     {
         if (!isset($data['eventType'])) {

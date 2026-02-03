@@ -18,6 +18,13 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 
+/**
+ * Main entry point for the dropshipping SDK.
+ *
+ * Orchestrates the HTTP client, authentication, request building and response
+ * mapping. Exposes endpoint objects for orders, shipments, products and webhooks
+ * as public readonly properties.
+ */
 final class ApiClient
 {
     private readonly Psr18HttpClient $httpClient;

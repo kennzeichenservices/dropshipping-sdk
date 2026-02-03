@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Dropshipping\Enums;
 
+/**
+ * Represents the type of webhook event, including delivery notifications
+ * and license plate reservation status changes.
+ */
 enum WebhookEventType: string
 {
     case Ping = 'PING';

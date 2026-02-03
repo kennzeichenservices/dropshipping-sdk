@@ -6,8 +6,14 @@ namespace Dropshipping\DTO;
 
 use Dropshipping\Enums\Gender;
 
+/**
+ * Data transfer object representing a postal address.
+ */
 final readonly class Address
 {
+    /**
+     * Create a new Address instance.
+     */
     public function __construct(
         public string $firstName,
         public string $lastName,
@@ -24,7 +30,11 @@ final readonly class Address
     ) {
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Convert the address to an associative array, excluding null values.
+     *
+     * @return array<string, mixed>
+     */
     public function toArray(): array
     {
         return array_filter([
@@ -43,7 +53,11 @@ final readonly class Address
         ], static fn (mixed $value): bool => $value !== null);
     }
 
-    /** @param array<string, mixed> $data */
+    /**
+     * Create an Address instance from an associative array.
+     *
+     * @param array<string, mixed> $data
+     */
     public static function fromArray(array $data): self
     {
         return new self(

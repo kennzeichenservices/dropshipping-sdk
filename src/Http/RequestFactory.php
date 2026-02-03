@@ -10,6 +10,12 @@ use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 
+/**
+ * Creates authenticated PSR-7 HTTP requests for the dropshipping API.
+ *
+ * Supports both JSON and multipart form-data requests with automatic
+ * authentication header injection.
+ */
 final class RequestFactory
 {
     public function __construct(
@@ -20,7 +26,14 @@ final class RequestFactory
     ) {
     }
 
-    /** @param array<string, mixed> $body */
+    /**
+     * Create a JSON API request with authentication headers.
+     *
+     * Builds an authenticated PSR-7 request with JSON content type. When a body
+     * is provided, it is serialized and attached as the request body.
+     *
+     * @param array<string, mixed> $body
+     */
     public function createJsonRequest(string $method, string $url, array $body = []): RequestInterface
     {
         $request = $this->requestFactory->createRequest($method, $url);
@@ -36,6 +49,12 @@ final class RequestFactory
         return $request;
     }
 
+    /**
+     * Create a multipart form-data request for file uploads.
+     *
+     * Returns an authenticated PSR-7 request with a multipart content-type
+     * header using the given boundary string.
+     */
     public function createMultipartRequest(
         string $method,
         string $url,
@@ -51,7 +70,14 @@ final class RequestFactory
     }
 
     /**
+     * Assemble the multipart body with order JSON and file attachments.
+     *
+     * Builds a RFC 2046 multipart body containing the order payload as a JSON
+     * part followed by each file attachment with its detected MIME type.
+     *
      * @param list<string> $filePaths
+     *
+     * @throws \Dropshipping\Exceptions\DropshippingException When a file cannot be read.
      */
     public function buildMultipartBody(string $orderJson, array $filePaths, string $boundary): string
     {
@@ -84,6 +110,12 @@ final class RequestFactory
         return $body;
     }
 
+    /**
+     * Determine the MIME type of a file based on its extension.
+     *
+     * Supports JPEG, PNG and PDF. Falls back to application/octet-stream
+     * for unknown extensions.
+     */
     private function detectMimeType(string $filePath): string
     {
         $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));

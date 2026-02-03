@@ -8,10 +8,19 @@ use Dropshipping\DTO\EuroLicensePlateNumberComponents;
 use Dropshipping\DTO\Requests\LicensePlateReservationCustomization;
 use Dropshipping\Enums\WebhookEventType;
 
+/**
+ * Webhook event fired when a license plate reservation is rejected.
+ *
+ * Contains the order reference, customization details, and a list
+ * of proposed alternative license plate number components.
+ */
 final readonly class LicensePlateReservationRejectionEvent implements WebhookEventInterface
 {
     /**
-     * @param list<EuroLicensePlateNumberComponents> $proposedAlternativeLicensePlateNumberComponents
+     * @param string                                 $eventTime                                      The ISO 8601 timestamp when the rejection occurred.
+     * @param WebhookOrder                           $order                                          The associated order reference.
+     * @param LicensePlateReservationCustomization   $customization                                  The license plate customization details.
+     * @param list<EuroLicensePlateNumberComponents> $proposedAlternativeLicensePlateNumberComponents Proposed alternative license plate components.
      */
     public function __construct(
         public string $eventTime,
@@ -21,17 +30,29 @@ final readonly class LicensePlateReservationRejectionEvent implements WebhookEve
     ) {
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function getEventType(): WebhookEventType
     {
         return WebhookEventType::LicensePlateReservationRejection;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function getEventTime(): string
     {
         return $this->eventTime;
     }
 
-    /** @param array<string, mixed> $data */
+    /**
+     * Create an instance from a raw data array.
+     *
+     * @param array<string, mixed> $data
+     *
+     * @return self
+     */
     public static function fromArray(array $data): self
     {
         return new self(
