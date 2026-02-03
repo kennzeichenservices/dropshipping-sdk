@@ -44,8 +44,14 @@ final class AvailabilityCheckRequestTest extends TestCase
     public function test_toArray_includes_season_months_when_set(): void
     {
         $request = new AvailabilityCheckRequest(
-            1, 'B', 'AB', '1', LicensePlateType::RegularSeason, VehicleType::Car,
-            seasonStartMonth: 4, seasonEndMonth: 10,
+            1,
+            'B',
+            'AB',
+            '1',
+            LicensePlateType::RegularSeason,
+            VehicleType::Car,
+            seasonStartMonth: 4,
+            seasonEndMonth: 10,
         );
         $array = $request->toArray();
 
