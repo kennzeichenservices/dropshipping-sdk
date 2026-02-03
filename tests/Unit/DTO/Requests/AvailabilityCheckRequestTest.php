@@ -24,7 +24,7 @@ final class AvailabilityCheckRequestTest extends TestCase
 
         $array = $request->toArray();
 
-        self::assertSame(100, $array['registrationOfficeServiceId']);
+        self::assertSame(602, $array['registrationOfficeServiceId']);
         self::assertSame('B', $array['licensePlateNumberPatternComponents']['city']);
         self::assertSame('AB', $array['licensePlateNumberPatternComponents']['middle']);
         self::assertSame('1234', $array['licensePlateNumberPatternComponents']['end']);

@@ -45,7 +45,7 @@ final class LicensePlateReservationRequestTest extends TestCase
         self::assertSame('ext-1', $array['externalOrderId']);
         self::assertArrayHasKey('customization', $array);
         self::assertArrayHasKey('vehicleHolder', $array);
-        self::assertSame(100, $array['customization']['registrationOfficeServiceId']);
+        self::assertSame(602, $array['customization']['registrationOfficeServiceId']);
         self::assertSame('1990-01-01', $array['vehicleHolder']['birthDate']);
     }
 
@@ -53,7 +53,7 @@ final class LicensePlateReservationRequestTest extends TestCase
     {
         $address = new Address('Max', 'Mustermann', Gender::Male, 'Str', '1', '12345', 'Berlin', 'DE');
         $components = new EuroLicensePlateNumberComponents('B', 'AB', '123');
-        $customization = new LicensePlateReservationCustomization(1, LicensePlateType::Regular, VehicleType::Car, $components);
+        $customization = new LicensePlateReservationCustomization(602, LicensePlateType::Regular, VehicleType::Car, $components);
         $vehicleHolder = new LicensePlateReservationVehicleHolder($address);
 
         $request = new LicensePlateReservationRequest('test@example.com', $customization, $vehicleHolder);
@@ -73,7 +73,7 @@ final class LicensePlateReservationRequestTest extends TestCase
 
         $customization = LicensePlateReservationCustomization::fromArray($data);
 
-        self::assertSame(50, $customization->registrationOfficeServiceId);
+        self::assertSame(248, $customization->registrationOfficeServiceId);
         self::assertSame(LicensePlateType::Electric, $customization->licensePlateType);
         self::assertSame('M', $customization->licensePlateNumberComponents->city);
     }
