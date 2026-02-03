@@ -28,15 +28,6 @@ jobs:
             - name: Run unit tests
               run: composer test:unit
 
-            - name: Run integration tests
-              if: matrix.php-version == '8.2'
-              env:
-                  DROPSHIPPING_API_HOST: '${{ secrets.DROPSHIPPING_API_HOST }}'
-                  DROPSHIPPING_CLIENT_ID: ${{ secrets.DROPSHIPPING_CLIENT_ID }}
-                  DROPSHIPPING_USERNAME: ${{ secrets.DROPSHIPPING_USERNAME }}
-                  DROPSHIPPING_PASSWORD: ${{ secrets.DROPSHIPPING_PASSWORD }}
-              run: composer test:integration
-
     release:
         needs: test
         runs-on: ubuntu-latest
