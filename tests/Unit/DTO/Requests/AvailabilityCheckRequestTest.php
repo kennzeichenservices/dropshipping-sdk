@@ -14,7 +14,7 @@ final class AvailabilityCheckRequestTest extends TestCase
     public function test_toArray_includes_all_required_fields(): void
     {
         $request = new AvailabilityCheckRequest(
-            registrationOfficeServiceId: 100,
+            registrationOfficeServiceId: 602,
             city: 'B',
             middle: 'AB',
             end: '1234',

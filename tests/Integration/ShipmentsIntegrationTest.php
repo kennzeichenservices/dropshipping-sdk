@@ -55,7 +55,7 @@ final class ShipmentsIntegrationTest extends TestCase
 
         $components = new EuroLicensePlateNumberComponents('B', 'AB', '123');
         $customization = new LicensePlateReservationCustomization(
-            registrationOfficeServiceId: 1,
+            registrationOfficeServiceId: 602,
             licensePlateType: LicensePlateType::Regular,
             vehicleType: VehicleType::Car,
             licensePlateNumberComponents: $components,

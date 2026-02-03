@@ -38,7 +38,7 @@ final class ProductsIntegrationTest extends TestCase
     public function test_check_license_plate_availability(): void
     {
         $request = new AvailabilityCheckRequest(
-            registrationOfficeServiceId: 1,
+            registrationOfficeServiceId: 602,
             city: 'B',
             middle: 'AB',
             end: '123',

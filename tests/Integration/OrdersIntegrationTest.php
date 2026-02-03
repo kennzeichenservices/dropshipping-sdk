@@ -16,6 +16,7 @@ use Dropshipping\DTO\Requests\ReshippedOrderRequest;
 use Dropshipping\DTO\Responses\EmissionStickerOrderResponse;
 use Dropshipping\DTO\Responses\OrderCreationResponse;
 use Dropshipping\Enums\Gender;
+use Dropshipping\Exceptions\ApiException;
 use GuzzleHttp\Client;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
@@ -117,9 +118,11 @@ final class OrdersIntegrationTest extends TestCase
         }
     }
 
-    public function test_create_reshipped_order(): void
+    public function test_create_reshipped_order_rejects_non_returned_delivery(): void
     {
-        // First create an order to get a delivery ID
+        // A reshipped order requires a delivery that has been returned.
+        // Since we cannot trigger a return via the API, we verify that
+        // the API correctly rejects a reshipment for a non-returned delivery.
         $address = new Address(
             firstName: 'Test',
             lastName: 'User',
@@ -157,9 +160,8 @@ final class OrdersIntegrationTest extends TestCase
             invoiceAddress: $address,
         );
 
-        $response = self::$client->orders->createReshippedOrder($request);
+        $this->expectException(ApiException::class);
 
-        self::assertInstanceOf(OrderCreationResponse::class, $response);
-        self::assertGreaterThan(0, $response->id);
+        self::$client->orders->createReshippedOrder($request);
     }
 }

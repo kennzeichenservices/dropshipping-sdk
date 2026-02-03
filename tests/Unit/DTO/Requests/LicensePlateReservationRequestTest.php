@@ -21,7 +21,7 @@ final class LicensePlateReservationRequestTest extends TestCase
         $address = new Address('Max', 'Mustermann', Gender::Male, 'Str', '1', '12345', 'Berlin', 'DE');
         $components = new EuroLicensePlateNumberComponents('B', 'AB', '123');
         $customization = new LicensePlateReservationCustomization(
-            registrationOfficeServiceId: 100,
+            registrationOfficeServiceId: 602,
             licensePlateType: LicensePlateType::Regular,
             vehicleType: VehicleType::Car,
             licensePlateNumberComponents: $components,
@@ -65,7 +65,7 @@ final class LicensePlateReservationRequestTest extends TestCase
     public function test_customization_fromArray(): void
     {
         $data = [
-            'registrationOfficeServiceId' => 50,
+            'registrationOfficeServiceId' => 248,
             'licensePlateType' => 'ELECTRIC',
             'vehicleType' => 'CAR',
             'licensePlateNumberComponents' => ['city' => 'M', 'middle' => 'XY', 'end' => '1'],

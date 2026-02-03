@@ -83,7 +83,7 @@ final class WebhookEventFactoryTest extends TestCase
             'order' => ['id' => 10],
             'reservationPin' => '1234',
             'customization' => [
-                'registrationOfficeServiceId' => 1,
+                'registrationOfficeServiceId' => 602,
                 'licensePlateType' => 'REGULAR',
                 'vehicleType' => 'CAR',
                 'licensePlateNumberComponents' => ['city' => 'B', 'middle' => 'AB', 'end' => '1'],
@@ -103,7 +103,7 @@ final class WebhookEventFactoryTest extends TestCase
             'eventTime' => '2024-01-01T00:00:00Z',
             'order' => ['id' => 10],
             'customization' => [
-                'registrationOfficeServiceId' => 1,
+                'registrationOfficeServiceId' => 602,
                 'licensePlateType' => 'REGULAR',
                 'vehicleType' => 'CAR',
                 'licensePlateNumberComponents' => ['city' => 'B', 'middle' => 'AB', 'end' => '1'],
@@ -124,7 +124,7 @@ final class WebhookEventFactoryTest extends TestCase
             'eventTime' => '2024-01-01T00:00:00Z',
             'order' => ['id' => 10],
             'customization' => [
-                'registrationOfficeServiceId' => 1,
+                'registrationOfficeServiceId' => 602,
                 'licensePlateType' => 'REGULAR',
                 'vehicleType' => 'CAR',
                 'licensePlateNumberComponents' => ['city' => 'B', 'middle' => 'AB', 'end' => '1'],
