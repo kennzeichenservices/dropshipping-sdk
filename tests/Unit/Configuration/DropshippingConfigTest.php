@@ -30,6 +30,27 @@ final class DropshippingConfigTest extends TestCase
         self::assertSame('mypass', $config->getPassword());
     }
 
+    public function test_getBaseUrl_strips_https_scheme_from_host(): void
+    {
+        $config = new DropshippingConfig('https://api.example.com', 42, 'user', 'pass');
+
+        self::assertSame('https://api.example.com/dropshipping-api/42/2.1.0', $config->getBaseUrl());
+    }
+
+    public function test_getBaseUrl_strips_http_scheme_from_host(): void
+    {
+        $config = new DropshippingConfig('http://api.example.com', 42, 'user', 'pass');
+
+        self::assertSame('https://api.example.com/dropshipping-api/42/2.1.0', $config->getBaseUrl());
+    }
+
+    public function test_getBaseUrl_strips_trailing_slash_from_host(): void
+    {
+        $config = new DropshippingConfig('api.example.com/', 42, 'user', 'pass');
+
+        self::assertSame('https://api.example.com/dropshipping-api/42/2.1.0', $config->getBaseUrl());
+    }
+
     public function test_getWebhookSignatureSecret_returns_null_when_not_set(): void
     {
         $config = new DropshippingConfig('host', 1, 'user', 'pass');

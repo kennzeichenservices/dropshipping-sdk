@@ -36,9 +36,11 @@ final readonly class DropshippingConfig
      */
     public function getBaseUrl(): string
     {
+        $host = preg_replace('#^https?://#', '', $this->host);
+
         return sprintf(
             'https://%s/dropshipping-api/%d/%s',
-            $this->host,
+            rtrim($host, '/'),
             $this->dropshippingClientId,
             self::API_VERSION,
         );
