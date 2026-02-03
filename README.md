@@ -11,6 +11,7 @@ A PHP SDK for the Kennzeichen Services Dropshipping API. It provides typed reque
 - HMAC-SHA256 webhook signature verification
 - Multipart file upload support for emission sticker orders
 - PSR-18 HTTP client / PSR-17 HTTP factory compatible (bring your own HTTP client)
+- Built-in request/response debug logging via `KS_DROPSHIPPING_DEBUG` constant
 
 ## Requirements
 
@@ -358,6 +359,53 @@ The SDK follows these patterns:
 - API authentication uses HTTP Basic Auth. Credentials are added to every request by `ApiKeyAuthenticator`.
 - Webhook payloads are verified using HMAC-SHA256 signatures via the `X-Signature` header. The `SignatureValidationMiddleware` rejects requests with invalid signatures.
 - Store API credentials and webhook secrets outside of version control.
+
+## Debugging
+
+The SDK supports request/response logging via PHP constants. Define `KS_DROPSHIPPING_DEBUG` before making API calls to write detailed logs:
+
+```php
+define('KS_DROPSHIPPING_DEBUG', true);
+```
+
+By default, logs are written to `dropshipping-debug.log` in the current working directory. To use a custom log file path:
+
+```php
+define('KS_DROPSHIPPING_DEBUG', true);
+define('KS_DROPSHIPPING_DEBUG_FILE', '/var/log/dropshipping.log');
+```
+
+The debug log includes:
+
+- Timestamp, HTTP method and URL
+- Request headers (Authorization is masked)
+- Request body
+- Response status code and headers
+- Response body
+- Exception details on transport failures
+
+Example log output:
+
+```
+--------------------------------------------------------------------------------
+[2026-02-03 14:30:00] POST https://api.example.com/dropshipping-api/123/2.1.0/orders
+
+>>> REQUEST HEADERS
+  Authorization: ***
+  Content-Type: application/json
+  Accept: application/json
+
+>>> REQUEST BODY
+{"externalId":"order-001","email":"max@example.com",...}
+
+<<< RESPONSE 201 Created
+  Content-Type: application/json
+  X-Trace-Id: abc-123
+
+<<< RESPONSE BODY
+{"id":42,"status":"created"}
+--------------------------------------------------------------------------------
+```
 
 ## Error Handling
 
