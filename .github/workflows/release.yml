@@ -77,7 +77,7 @@ jobs:
                     CHANGELOG_ENTRY="Release v$VERSION"
                   fi
 
-                  gh release create "v$VERSION" --notes "$CHANGELOG_ENTRY" --title "Version $VERSION"
+                  gh release create "v$VERSION" --target "${{ github.sha }}" --notes "$CHANGELOG_ENTRY" --title "Version $VERSION"
 
                   echo "Release v$VERSION created successfully."
 
