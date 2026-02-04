@@ -59,56 +59,25 @@ final class Psr18HttpClient
             ? KS_DROPSHIPPING_DEBUG_FILE
             : 'dropshipping-debug.log';
 
-        $timestamp = date('Y-m-d H:i:s');
-        $separator = str_repeat('-', 80);
-
         $requestBody = (string) $request->getBody();
         $request->getBody()->rewind();
 
-        $lines = [];
-        $lines[] = $separator;
-        $lines[] = "[{$timestamp}] {$request->getMethod()} {$request->getUri()}";
-        $lines[] = '';
-        $lines[] = '>>> REQUEST HEADERS';
+        $timestamp = date('Y-m-d H:i:s');
+        $url = (string) $request->getUri();
 
-        foreach ($request->getHeaders() as $name => $values) {
-            $value = $name === 'Authorization' ? '***' : implode(', ', $values);
-            $lines[] = "  {$name}: {$value}";
-        }
-
-        if ($requestBody !== '') {
-            $lines[] = '';
-            $lines[] = '>>> REQUEST BODY';
-            $lines[] = $requestBody;
-        }
+        $lines = "[{$timestamp}] {$url}\n";
+        $lines .= "[{$timestamp}] Request:  {$requestBody}\n";
 
         if ($response !== null) {
             $responseBody = (string) $response->getBody();
             $response->getBody()->rewind();
-
-            $lines[] = '';
-            $lines[] = "<<< RESPONSE {$response->getStatusCode()} {$response->getReasonPhrase()}";
-
-            foreach ($response->getHeaders() as $name => $values) {
-                $lines[] = "  {$name}: " . implode(', ', $values);
-            }
-
-            if ($responseBody !== '') {
-                $lines[] = '';
-                $lines[] = '<<< RESPONSE BODY';
-                $lines[] = $responseBody;
-            }
+            $lines .= "[{$timestamp}] Response: {$responseBody}\n";
         }
 
         if ($exception !== null) {
-            $lines[] = '';
-            $lines[] = '!!! EXCEPTION';
-            $lines[] = "  {$exception->getMessage()}";
+            $lines .= "[{$timestamp}] Error:    {$exception->getMessage()}\n";
         }
 
-        $lines[] = $separator;
-        $lines[] = '';
-
-        file_put_contents($logFile, implode("\n", $lines), FILE_APPEND | LOCK_EX);
+        file_put_contents($logFile, $lines, FILE_APPEND | LOCK_EX);
     }
 }
