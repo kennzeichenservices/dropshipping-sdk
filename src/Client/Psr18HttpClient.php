@@ -9,6 +9,8 @@ use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * Thin wrapper around a PSR-18 HTTP client.
@@ -18,9 +20,13 @@ use Psr\Http\Message\ResponseInterface;
  */
 final class Psr18HttpClient
 {
+    private readonly LoggerInterface $logger;
+
     public function __construct(
         private readonly ClientInterface $httpClient,
+        ?LoggerInterface $logger = null,
     ) {
+        $this->logger = $logger ?? new NullLogger();
     }
 
     /**
@@ -33,7 +39,11 @@ final class Psr18HttpClient
         try {
             $response = $this->httpClient->sendRequest($request);
         } catch (ClientExceptionInterface $exception) {
-            $this->debugLog($request, null, $exception);
+            $this->logger->error('HTTP request failed', [
+                'url' => (string) $request->getUri(),
+                'method' => $request->getMethod(),
+                'exception' => $exception->getMessage(),
+            ]);
 
             throw new HttpClientException(
                 sprintf('HTTP request failed: %s', $exception->getMessage()),
@@ -41,43 +51,13 @@ final class Psr18HttpClient
             );
         }
 
-        $this->debugLog($request, $response);
+        $this->logger->info('HTTP request successful', [
+            'url' => (string) $request->getUri(),
+            'method' => $request->getMethod(),
+            'status' => $response->getStatusCode(),
+        ]);
 
         return $response;
     }
 
-    private function debugLog(
-        RequestInterface $request,
-        ?ResponseInterface $response,
-        ?ClientExceptionInterface $exception = null,
-    ): void {
-        if (!defined('KS_DROPSHIPPING_DEBUG') || !KS_DROPSHIPPING_DEBUG) {
-            return;
-        }
-
-        $logFile = defined('KS_DROPSHIPPING_DEBUG_FILE')
-            ? KS_DROPSHIPPING_DEBUG_FILE
-            : 'dropshipping-debug.log';
-
-        $requestBody = (string) $request->getBody();
-        $request->getBody()->rewind();
-
-        $timestamp = date('Y-m-d H:i:s');
-        $url = (string) $request->getUri();
-
-        $lines = "[{$timestamp}] {$url}\n";
-        $lines .= "[{$timestamp}] Request:  {$requestBody}\n";
-
-        if ($response !== null) {
-            $responseBody = (string) $response->getBody();
-            $response->getBody()->rewind();
-            $lines .= "[{$timestamp}] Response: {$responseBody}\n";
-        }
-
-        if ($exception !== null) {
-            $lines .= "[{$timestamp}] Error:    {$exception->getMessage()}\n";
-        }
-
-        file_put_contents($logFile, $lines, FILE_APPEND | LOCK_EX);
-    }
 }
