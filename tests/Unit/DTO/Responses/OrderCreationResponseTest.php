@@ -26,6 +26,7 @@ final class OrderCreationResponseTest extends TestCase
                     ],
                 ],
             ],
+            'costNetValue' => '1.23',
         ];
 
         $response = OrderCreationResponse::fromArray($data);
@@ -35,14 +36,16 @@ final class OrderCreationResponseTest extends TestCase
         self::assertSame(1, $response->deliveries[0]->id);
         self::assertCount(2, $response->deliveries[0]->items);
         self::assertSame(0, $response->deliveries[0]->items[0]->orderItemIndex);
+        self::assertSame('1.23', $response->costNetValue);
     }
 
     public function test_fromArray_handles_empty_deliveries(): void
     {
-        $response = OrderCreationResponse::fromArray(['id' => 1]);
+        $response = OrderCreationResponse::fromArray(['id' => 1, 'costNetValue' => '0.00']);
 
         self::assertSame(1, $response->id);
         self::assertCount(0, $response->deliveries);
+        self::assertSame('0.00', $response->costNetValue);
     }
 
     public function test_delivery_fromArray(): void
@@ -65,18 +68,21 @@ final class OrderCreationResponseTest extends TestCase
         $response = EmissionStickerOrderResponse::fromArray([
             'id' => 10,
             'delivery' => ['id' => 20],
+            'costNetValue' => '1.23',
         ]);
 
         self::assertSame(10, $response->id);
         self::assertSame(20, $response->deliveryId);
+        self::assertSame('1.23', $response->costNetValue);
     }
 
     public function test_license_plate_reservation_response_fromArray(): void
     {
         $response = LicensePlateReservationResponse::fromArray([
-            'order' => ['id' => 55],
+            'order' => ['id' => 55, 'costNetValue' => '1.23'],
         ]);
 
         self::assertSame(55, $response->orderId);
+        self::assertSame('1.23', $response->costNetValue);
     }
 }

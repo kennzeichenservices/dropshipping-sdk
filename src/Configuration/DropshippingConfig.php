@@ -12,7 +12,7 @@ namespace Dropshipping\Configuration;
  */
 final readonly class DropshippingConfig
 {
-    private const API_VERSION = '2.1.0';
+    private const API_VERSION = '2.2.0';
 
     /**
      * @param string      $host                   API host (without scheme).

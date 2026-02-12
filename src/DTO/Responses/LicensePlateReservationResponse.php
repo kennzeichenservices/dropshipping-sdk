@@ -14,10 +14,12 @@ final readonly class LicensePlateReservationResponse
     /**
      * Create a new license plate reservation response instance.
      *
-     * @param int $orderId The ID of the created order.
+     * @param int    $orderId      The ID of the created order.
+     * @param string $costNetValue Order net cost value. Decimal separator: .
      */
     public function __construct(
         public int $orderId,
+        public string $costNetValue,
     ) {
     }
 
@@ -30,6 +32,7 @@ final readonly class LicensePlateReservationResponse
     {
         return new self(
             orderId: $data['order']['id'],
+            costNetValue: $data['order']['costNetValue'],
         );
     }
 }

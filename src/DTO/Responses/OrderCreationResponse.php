@@ -14,12 +14,14 @@ final readonly class OrderCreationResponse
     /**
      * Create a new order creation response instance.
      *
-     * @param int            $id         The order ID.
-     * @param list<Delivery> $deliveries The deliveries belonging to this order.
+     * @param int            $id           The order ID.
+     * @param list<Delivery> $deliveries   The deliveries belonging to this order.
+     * @param string         $costNetValue Order net cost value. Decimal separator: .
      */
     public function __construct(
         public int $id,
         public array $deliveries,
+        public string $costNetValue,
     ) {
     }
 
@@ -36,6 +38,7 @@ final readonly class OrderCreationResponse
                 static fn (array $delivery): Delivery => Delivery::fromArray($delivery),
                 $data['deliveries'] ?? [],
             ),
+            costNetValue: $data['costNetValue'],
         );
     }
 }

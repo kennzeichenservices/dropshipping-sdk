@@ -28,7 +28,7 @@ final class ShipmentsEndpointTest extends TestCase
 {
     public function test_createLicensePlateReservation_sends_post_and_returns_response(): void
     {
-        $responseBody = json_encode(['order' => ['id' => 99]]);
+        $responseBody = json_encode(['order' => ['id' => 99, 'costNetValue' => '4.56']]);
 
         $mockClient = $this->createMock(ClientInterface::class);
         $mockClient

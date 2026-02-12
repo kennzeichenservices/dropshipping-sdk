@@ -14,12 +14,14 @@ final readonly class EmissionStickerOrderResponse
     /**
      * Create a new emission sticker order response instance.
      *
-     * @param int $id         The order ID.
-     * @param int $deliveryId The delivery ID.
+     * @param int    $id           The order ID.
+     * @param int    $deliveryId   The delivery ID.
+     * @param string $costNetValue Order net cost value. Decimal separator: .
      */
     public function __construct(
         public int $id,
         public int $deliveryId,
+        public string $costNetValue,
     ) {
     }
 
@@ -33,6 +35,7 @@ final readonly class EmissionStickerOrderResponse
         return new self(
             id: $data['id'],
             deliveryId: $data['delivery']['id'],
+            costNetValue: $data['costNetValue'],
         );
     }
 }

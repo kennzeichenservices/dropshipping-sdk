@@ -55,6 +55,7 @@ final class OrdersEndpointTest extends TestCase
         $responseBody = json_encode([
             'id' => 42,
             'deliveries' => [['id' => 1, 'items' => [['orderItemIndex' => 0]]]],
+            'costNetValue' => '1.23',
         ]);
 
         $this->mockClient
@@ -79,7 +80,7 @@ final class OrdersEndpointTest extends TestCase
 
     public function test_createReshippedOrder_sends_post_to_correct_url(): void
     {
-        $responseBody = json_encode(['id' => 10, 'deliveries' => []]);
+        $responseBody = json_encode(['id' => 10, 'deliveries' => [], 'costNetValue' => '2.34']);
 
         $this->mockClient
             ->expects($this->once())
@@ -97,7 +98,7 @@ final class OrdersEndpointTest extends TestCase
 
     public function test_createEmissionStickerOrder_sends_multipart_post(): void
     {
-        $responseBody = json_encode(['id' => 20, 'delivery' => ['id' => 30]]);
+        $responseBody = json_encode(['id' => 20, 'delivery' => ['id' => 30], 'costNetValue' => '3.45']);
 
         $tmpFile = tempnam(sys_get_temp_dir(), 'test') . '.pdf';
         file_put_contents($tmpFile, 'fake-pdf');
