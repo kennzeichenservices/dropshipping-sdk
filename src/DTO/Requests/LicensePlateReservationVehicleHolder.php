@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dropshipping\DTO\Requests;
 
 use Dropshipping\DTO\Address;
+use Dropshipping\Support\Validator;
 
 /**
  * DTO representing the vehicle holder in a license plate reservation request.
@@ -23,6 +24,7 @@ final readonly class LicensePlateReservationVehicleHolder
         public ?string $birthDate = null,
         public ?string $placeOfBirth = null,
     ) {
+        Validator::requireNullableStringLength($placeOfBirth, 'placeOfBirth', 1, 150);
     }
 
     /**

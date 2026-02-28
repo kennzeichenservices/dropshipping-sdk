@@ -413,9 +413,23 @@ All exceptions extend `DropshippingException`:
 
 | Exception | When |
 |-----------|------|
+| `DropshippingException` | Request DTO field validation failure (e.g. string too long, invalid email, empty required field). Thrown before any HTTP request is made. |
 | `ApiException` | Non-expected HTTP status code from the API. Provides `getStatusCode()` and `getTraceId()` for debugging. |
 | `HttpClientException` | PSR-18 client-level transport failure. Wraps the original `ClientExceptionInterface`. |
 | `WebhookException` | Webhook signature verification or payload validation failure. |
+
+All request DTOs validate their fields against the API spec constraints when constructed. Invalid values throw a `DropshippingException` with a descriptive message including the field name and the provided value:
+
+```php
+// Throws: Field "firstName" must be between 1 and 100 characters, got 110
+new Address(firstName: str_repeat('x', 110), ...);
+
+// Throws: Field "email" must be a valid email address
+new OrderCreationRequest(email: 'not-an-email', ...);
+
+// Throws: Field "seasonStartMonth" must be between 1 and 12, got 0
+new LicensePlateReservationCustomization(seasonStartMonth: 0, ...);
+```
 
 ## License
 

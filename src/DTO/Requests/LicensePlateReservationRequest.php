@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dropshipping\DTO\Requests;
 
+use Dropshipping\Support\Validator;
+
 /**
  * Request DTO for creating a license plate reservation.
  *
@@ -24,6 +26,9 @@ final readonly class LicensePlateReservationRequest
         public LicensePlateReservationVehicleHolder $vehicleHolder,
         public ?string $externalOrderId = null,
     ) {
+        Validator::requireStringLength($email, 'email', 3, 255);
+        Validator::requireEmail($email, 'email');
+        Validator::requireNullableStringLength($externalOrderId, 'externalOrderId', 1, 100);
     }
 
     /**

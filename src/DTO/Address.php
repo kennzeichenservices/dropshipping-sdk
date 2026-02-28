@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dropshipping\DTO;
 
 use Dropshipping\Enums\Gender;
+use Dropshipping\Support\Validator;
 
 /**
  * Data transfer object representing a postal address.
@@ -28,6 +29,17 @@ final readonly class Address
         public ?string $additionalField = null,
         public ?string $phoneNumber = null,
     ) {
+        Validator::requireStringLength($firstName, 'firstName', 1, 100);
+        Validator::requireStringLength($lastName, 'lastName', 1, 100);
+        Validator::requireStringLength($streetName, 'streetName', 1, 100);
+        Validator::requireStringLength($houseNumber, 'houseNumber', 1, 10);
+        Validator::requireStringLength($zipCode, 'zipCode', 1, 12);
+        Validator::requireStringLength($cityName, 'cityName', 1, 100);
+        Validator::requireStringLength($countryCode, 'countryCode', 1, 2);
+        Validator::requireNullableStringLength($taxNumber, 'taxNumber', 1, 20);
+        Validator::requireNullableStringLength($companyName, 'companyName', 1, 100);
+        Validator::requireNullableStringLength($additionalField, 'additionalField', 1, 100);
+        Validator::requireNullableStringLength($phoneNumber, 'phoneNumber', 1, 20);
     }
 
     /**

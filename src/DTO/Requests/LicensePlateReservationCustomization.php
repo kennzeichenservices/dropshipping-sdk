@@ -7,6 +7,7 @@ namespace Dropshipping\DTO\Requests;
 use Dropshipping\DTO\EuroLicensePlateNumberComponents;
 use Dropshipping\Enums\LicensePlateType;
 use Dropshipping\Enums\VehicleType;
+use Dropshipping\Support\Validator;
 
 /**
  * DTO for license plate reservation customization details.
@@ -32,6 +33,8 @@ final readonly class LicensePlateReservationCustomization
         public ?int $seasonStartMonth = null,
         public ?int $seasonEndMonth = null,
     ) {
+        Validator::requireNullableIntRange($seasonStartMonth, 'seasonStartMonth', 1, 12);
+        Validator::requireNullableIntRange($seasonEndMonth, 'seasonEndMonth', 1, 12);
     }
 
     /**

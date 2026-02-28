@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dropshipping\DTO;
 
+use Dropshipping\Support\Validator;
+
 /**
  * Data transfer object representing a single item in a dropshipping order.
  */
@@ -19,6 +21,9 @@ final readonly class OrderItem
         public int $quantity,
         public ItemCustomizationInterface $customization,
     ) {
+        Validator::requireStringLength($name, 'name', 1, 100);
+        Validator::requireStringLength($sku, 'sku', 1, 20);
+        Validator::requireIntRange($quantity, 'quantity', 1, PHP_INT_MAX);
     }
 
     /**

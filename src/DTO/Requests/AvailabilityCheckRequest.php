@@ -6,6 +6,7 @@ namespace Dropshipping\DTO\Requests;
 
 use Dropshipping\Enums\LicensePlateType;
 use Dropshipping\Enums\VehicleType;
+use Dropshipping\Support\Validator;
 
 /**
  * Request DTO for checking license plate availability at a registration office.
@@ -35,6 +36,11 @@ final readonly class AvailabilityCheckRequest
         public ?int $seasonStartMonth = null,
         public ?int $seasonEndMonth = null,
     ) {
+        Validator::requireStringLength($city, 'city', 1, 3);
+        Validator::requireStringLength($middle, 'middle', 1, 2);
+        Validator::requireStringLength($end, 'end', 1, 4);
+        Validator::requireNullableIntRange($seasonStartMonth, 'seasonStartMonth', 1, 12);
+        Validator::requireNullableIntRange($seasonEndMonth, 'seasonEndMonth', 1, 12);
     }
 
     /**

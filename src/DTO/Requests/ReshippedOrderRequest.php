@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dropshipping\DTO\Requests;
 
 use Dropshipping\DTO\Address;
+use Dropshipping\Support\Validator;
 
 /**
  * Request DTO for creating a reshipped order for a returned delivery.
@@ -26,6 +27,7 @@ final readonly class ReshippedOrderRequest
         public Address $deliveryAddress,
         public Address $invoiceAddress,
     ) {
+        Validator::requireStringLength($externalId, 'externalId', 1, 100);
     }
 
     /**

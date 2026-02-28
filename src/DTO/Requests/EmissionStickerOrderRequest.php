@@ -6,6 +6,7 @@ namespace Dropshipping\DTO\Requests;
 
 use Dropshipping\DTO\Address;
 use Dropshipping\DTO\EuroLicensePlateNumberComponents;
+use Dropshipping\Support\Validator;
 
 /**
  * Request DTO for creating an emission sticker order with file uploads.
@@ -37,6 +38,11 @@ final readonly class EmissionStickerOrderRequest
         public array $filePaths,
         public ?string $shipperName = null,
     ) {
+        Validator::requireStringLength($externalId, 'externalId', 1, 100);
+        Validator::requireStringLength($email, 'email', 3, 255);
+        Validator::requireEmail($email, 'email');
+        Validator::requireStringLength($emissionKeyNumber, 'emissionKeyNumber', 1, 4);
+        Validator::requireNullableStringLength($shipperName, 'shipperName', 1, 255);
     }
 
     /**

@@ -91,4 +91,52 @@ final class ValidatorTest extends TestCase
 
         Validator::requireNonEmptyArray([], 'items');
     }
+
+    public function test_requireNullableStringLength_passes_for_null(): void
+    {
+        Validator::requireNullableStringLength(null, 'field', 1, 5);
+        $this->addToAssertionCount(1);
+    }
+
+    public function test_requireNullableStringLength_passes_within_range(): void
+    {
+        Validator::requireNullableStringLength('abc', 'field', 1, 5);
+        $this->addToAssertionCount(1);
+    }
+
+    public function test_requireNullableStringLength_throws_above_max(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage('"field" must be between 1 and 3 characters, got 7');
+
+        Validator::requireNullableStringLength('toolong', 'field', 1, 3);
+    }
+
+    public function test_requireNullableIntRange_passes_for_null(): void
+    {
+        Validator::requireNullableIntRange(null, 'field', 1, 12);
+        $this->addToAssertionCount(1);
+    }
+
+    public function test_requireNullableIntRange_passes_within_range(): void
+    {
+        Validator::requireNullableIntRange(6, 'field', 1, 12);
+        $this->addToAssertionCount(1);
+    }
+
+    public function test_requireNullableIntRange_throws_below_min(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage('"field" must be between 1 and 12, got 0');
+
+        Validator::requireNullableIntRange(0, 'field', 1, 12);
+    }
+
+    public function test_requireNullableIntRange_throws_above_max(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage('"field" must be between 1 and 12, got 13');
+
+        Validator::requireNullableIntRange(13, 'field', 1, 12);
+    }
 }

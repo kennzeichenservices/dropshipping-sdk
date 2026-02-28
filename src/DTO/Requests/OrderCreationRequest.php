@@ -6,6 +6,7 @@ namespace Dropshipping\DTO\Requests;
 
 use Dropshipping\DTO\Address;
 use Dropshipping\DTO\OrderItem;
+use Dropshipping\Support\Validator;
 
 /**
  * Request DTO for creating a new dropshipping order.
@@ -31,6 +32,11 @@ final readonly class OrderCreationRequest
         public array $items,
         public ?string $shipperName = null,
     ) {
+        Validator::requireStringLength($externalId, 'externalId', 1, 100);
+        Validator::requireStringLength($email, 'email', 3, 255);
+        Validator::requireEmail($email, 'email');
+        Validator::requireNonEmptyArray($items, 'items');
+        Validator::requireNullableStringLength($shipperName, 'shipperName', 1, 255);
     }
 
     /**

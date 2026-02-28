@@ -95,4 +95,52 @@ final class Validator
             throw new DropshippingException(sprintf('Field "%s" must contain at least one item', $field));
         }
     }
+
+    /**
+     * Validate a nullable string length. Skips validation if the value is null.
+     *
+     * @param string|null $value The value to validate.
+     * @param string      $field The field name used in the exception message.
+     * @param int         $min   Minimum allowed length (inclusive).
+     * @param int         $max   Maximum allowed length (inclusive).
+     *
+     * @throws DropshippingException If the string length is outside the allowed range.
+     */
+    public static function requireNullableStringLength(?string $value, string $field, int $min, int $max): void
+    {
+        if ($value === null) {
+            return;
+        }
+
+        $length = mb_strlen($value);
+
+        if ($length < $min || $length > $max) {
+            throw new DropshippingException(
+                sprintf('Field "%s" must be between %d and %d characters, got %d', $field, $min, $max, $length),
+            );
+        }
+    }
+
+    /**
+     * Validate a nullable integer range. Skips validation if the value is null.
+     *
+     * @param int|null $value The value to validate.
+     * @param string   $field The field name used in the exception message.
+     * @param int      $min   Minimum allowed value (inclusive).
+     * @param int      $max   Maximum allowed value (inclusive).
+     *
+     * @throws DropshippingException If the value is outside the allowed range.
+     */
+    public static function requireNullableIntRange(?int $value, string $field, int $min, int $max): void
+    {
+        if ($value === null) {
+            return;
+        }
+
+        if ($value < $min || $value > $max) {
+            throw new DropshippingException(
+                sprintf('Field "%s" must be between %d and %d, got %d', $field, $min, $max, $value),
+            );
+        }
+    }
 }
