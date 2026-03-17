@@ -21,7 +21,7 @@ final readonly class OrderCreationResponse
     public function __construct(
         public int $id,
         public array $deliveries,
-        public string $costNetValue,
+        public ?string $costNetValue,
     ) {
     }
 
@@ -38,7 +38,7 @@ final readonly class OrderCreationResponse
                 static fn (array $delivery): Delivery => Delivery::fromArray($delivery),
                 $data['deliveries'] ?? [],
             ),
-            costNetValue: $data['costNetValue'],
+            costNetValue: $data['costNetValue'] ?? null,
         );
     }
 }
