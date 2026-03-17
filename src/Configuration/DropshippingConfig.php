@@ -12,7 +12,9 @@ namespace Dropshipping\Configuration;
  */
 final readonly class DropshippingConfig
 {
-    private const API_VERSION = '2.2.0';
+    private const DEFAULT_API_VERSION = '2.2.0';
+
+    private string $apiVersion;
 
     /**
      * @param string      $host                   API host (without scheme).
@@ -20,6 +22,7 @@ final readonly class DropshippingConfig
      * @param string      $username                API username for authentication.
      * @param string      $password                API password for authentication.
      * @param string|null $webhookSignatureSecret   Secret used to verify webhook signatures.
+     * @param string|null $apiVersion              API version override. Falls back to DROPSHIPPING_API_VERSION env var, then '2.2.0'.
      */
     public function __construct(
         private string $host,
@@ -27,7 +30,10 @@ final readonly class DropshippingConfig
         private string $username,
         private string $password,
         private ?string $webhookSignatureSecret = null,
-    ) {}
+        ?string $apiVersion = null,
+    ) {
+        $this->apiVersion = $apiVersion ?? (getenv('DROPSHIPPING_API_VERSION') ?: self::DEFAULT_API_VERSION);
+    }
 
     /**
      * Build the versioned API base URL from host, client ID and API version.
@@ -42,7 +48,7 @@ final readonly class DropshippingConfig
             'https://%s/dropshipping-api/%d/%s',
             rtrim($host, '/'),
             $this->dropshippingClientId,
-            self::API_VERSION,
+            $this->apiVersion,
         );
     }
 
