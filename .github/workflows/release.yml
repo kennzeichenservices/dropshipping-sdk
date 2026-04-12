@@ -35,7 +35,9 @@ jobs:
                   DROPSHIPPING_CLIENT_ID: ${{ secrets.DROPSHIPPING_CLIENT_ID }}
                   DROPSHIPPING_USERNAME: ${{ secrets.DROPSHIPPING_USERNAME }}
                   DROPSHIPPING_PASSWORD: ${{ secrets.DROPSHIPPING_PASSWORD }}
-              run: composer test:integration
+              run: |
+                  export DROPSHIPPING_API_VERSION=$(jq -r '."api-version"' composer.json)
+                  composer test:integration
 
     release:
         needs: test
