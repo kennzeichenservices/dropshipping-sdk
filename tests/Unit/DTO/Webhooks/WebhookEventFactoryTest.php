@@ -11,6 +11,7 @@ use Dropshipping\DTO\Webhooks\LicensePlateReservationApprovalEvent;
 use Dropshipping\DTO\Webhooks\LicensePlateReservationRejectionEvent;
 use Dropshipping\DTO\Webhooks\LicensePlateReservationTimeoutEvent;
 use Dropshipping\DTO\Webhooks\PingEvent;
+use Dropshipping\DTO\Webhooks\VehicleDeregistrationXkfzEvent;
 use Dropshipping\DTO\Webhooks\WebhookDelivery;
 use Dropshipping\DTO\Webhooks\WebhookEventFactory;
 use Dropshipping\DTO\Webhooks\WebhookOrder;
@@ -132,6 +133,47 @@ final class WebhookEventFactoryTest extends TestCase
         ]);
 
         self::assertInstanceOf(LicensePlateReservationTimeoutEvent::class, $event);
+    }
+
+    public function test_fromArray_creates_vehicle_deregistration_xkfz_event(): void
+    {
+        $event = WebhookEventFactory::fromArray([
+            'eventType' => 'VEHICLE_DEREGISTRATION_XKFZ_EVENT',
+            'eventTime' => '2024-06-15T10:30:00Z',
+            'order' => ['id' => 42, 'externalId' => 'ext-42'],
+            'costBreakdown' => [
+                'kbaCost' => 350,
+                'registrationOfficeCosts' => [
+                    'items' => [
+                        ['number' => 1, 'code' => 'FEE', 'name' => 'Service fee', 'amount' => 200, 'note' => null],
+                    ],
+                    'total' => ['number' => 0, 'code' => null, 'name' => 'Total', 'amount' => 200, 'note' => null],
+                    'note' => 'Test note',
+                ],
+            ],
+        ]);
+
+        self::assertInstanceOf(VehicleDeregistrationXkfzEvent::class, $event);
+        self::assertSame(WebhookEventType::VehicleDeregistrationXkfzEvent, $event->getEventType());
+        self::assertSame('2024-06-15T10:30:00Z', $event->getEventTime());
+        self::assertSame(42, $event->order->id);
+        self::assertNotNull($event->costBreakdown);
+        self::assertSame(350, $event->costBreakdown->kbaCost);
+        self::assertNotNull($event->costBreakdown->registrationOfficeCosts);
+        self::assertCount(1, $event->costBreakdown->registrationOfficeCosts->items);
+        self::assertSame(200, $event->costBreakdown->registrationOfficeCosts->total->amount);
+    }
+
+    public function test_fromArray_creates_vehicle_deregistration_xkfz_event_without_cost_breakdown(): void
+    {
+        $event = WebhookEventFactory::fromArray([
+            'eventType' => 'VEHICLE_DEREGISTRATION_XKFZ_EVENT',
+            'eventTime' => '2024-06-15T10:30:00Z',
+            'order' => ['id' => 42],
+        ]);
+
+        self::assertInstanceOf(VehicleDeregistrationXkfzEvent::class, $event);
+        self::assertNull($event->costBreakdown);
     }
 
     public function test_fromArray_throws_on_missing_eventType(): void

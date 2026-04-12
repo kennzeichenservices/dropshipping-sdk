@@ -10,5 +10,6 @@ namespace Dropshipping\Enums;
 enum ProductType: string
 {
     case LicensePlate = 'LICENSE_PLATE';
+    case VehicleDeregistration = 'VEHICLE_DEREGISTRATION';
     case Other = 'OTHER';
 }

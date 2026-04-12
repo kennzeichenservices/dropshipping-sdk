@@ -17,4 +17,5 @@ enum WebhookEventType: string
     case LicensePlateReservationApproval = 'LICENSE_PLATE_RESERVATION_APPROVAL';
     case LicensePlateReservationRejection = 'LICENSE_PLATE_RESERVATION_REJECTION';
     case LicensePlateReservationTimeout = 'LICENSE_PLATE_RESERVATION_TIMEOUT';
+    case VehicleDeregistrationXkfzEvent = 'VEHICLE_DEREGISTRATION_XKFZ_EVENT';
 }

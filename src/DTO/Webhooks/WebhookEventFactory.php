@@ -45,6 +45,7 @@ final class WebhookEventFactory
             WebhookEventType::LicensePlateReservationApproval => LicensePlateReservationApprovalEvent::fromArray($data),
             WebhookEventType::LicensePlateReservationRejection => LicensePlateReservationRejectionEvent::fromArray($data),
             WebhookEventType::LicensePlateReservationTimeout => LicensePlateReservationTimeoutEvent::fromArray($data),
+            WebhookEventType::VehicleDeregistrationXkfzEvent => VehicleDeregistrationXkfzEvent::fromArray($data),
         };
     }
 }

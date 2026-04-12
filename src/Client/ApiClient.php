@@ -7,9 +7,11 @@ namespace Dropshipping\Client;
 use Dropshipping\Client\Authentication\ApiKeyAuthenticator;
 use Dropshipping\Configuration\DropshippingConfig;
 use Dropshipping\Contracts\SerializerInterface;
+use Dropshipping\Endpoints\GksConfigurations\GksConfigurationsEndpoint;
 use Dropshipping\Endpoints\Orders\OrdersEndpoint;
-use Dropshipping\Endpoints\Shipments\ShipmentsEndpoint;
 use Dropshipping\Endpoints\Products\ProductsEndpoint;
+use Dropshipping\Endpoints\Shipments\ShipmentsEndpoint;
+use Dropshipping\Endpoints\VehicleDeregistrations\VehicleDeregistrationsEndpoint;
 use Dropshipping\Endpoints\Webhooks\WebhooksEndpoint;
 use Dropshipping\Http\RequestFactory;
 use Dropshipping\Http\ResponseMapper;
@@ -22,8 +24,8 @@ use Psr\Http\Message\StreamFactoryInterface;
  * Main entry point for the dropshipping SDK.
  *
  * Orchestrates the HTTP client, authentication, request building and response
- * mapping. Exposes endpoint objects for orders, shipments, products and webhooks
- * as public readonly properties.
+ * mapping. Exposes endpoint objects for orders, shipments, products, webhooks,
+ * GKS configurations and vehicle deregistrations as public readonly properties.
  */
 final class ApiClient
 {
@@ -36,6 +38,8 @@ final class ApiClient
     public readonly ShipmentsEndpoint $shipments;
     public readonly ProductsEndpoint $products;
     public readonly WebhooksEndpoint $webhooks;
+    public readonly GksConfigurationsEndpoint $gksConfigurations;
+    public readonly VehicleDeregistrationsEndpoint $vehicleDeregistrations;
 
     public function __construct(
         DropshippingConfig $config,
@@ -86,6 +90,20 @@ final class ApiClient
         );
 
         $this->webhooks = new WebhooksEndpoint(
+            $this->httpClient,
+            $this->requestFactory,
+            $this->responseMapper,
+            $this->baseUrl,
+        );
+
+        $this->gksConfigurations = new GksConfigurationsEndpoint(
+            $this->httpClient,
+            $this->requestFactory,
+            $this->responseMapper,
+            $this->baseUrl,
+        );
+
+        $this->vehicleDeregistrations = new VehicleDeregistrationsEndpoint(
             $this->httpClient,
             $this->requestFactory,
             $this->responseMapper,
