@@ -4,7 +4,7 @@ A PHP SDK for the Kennzeichen Services Dropshipping API. It provides typed reque
 
 ## Features
 
-- Typed endpoints for orders, shipments, products, and webhooks
+- Typed endpoints for orders, shipments, products, webhooks, GKS configurations, and vehicle deregistrations
 - Immutable DTOs for all requests and responses
 - Webhook processing with configurable middleware pipeline (signature validation, payload validation, deserialization)
 - Async webhook processing via queue abstraction
@@ -61,12 +61,14 @@ $client = new ApiClient(
 );
 ```
 
-The client exposes four endpoint groups as public readonly properties:
+The client exposes six endpoint groups as public readonly properties:
 
 - `$client->orders` -- Order operations
 - `$client->shipments` -- Shipment operations (license plate reservations)
 - `$client->products` -- Product operations (availability checks)
 - `$client->webhooks` -- Webhook operations
+- `$client->gksConfigurations` -- GKS configuration management (KBA interface)
+- `$client->vehicleDeregistrations` -- Vehicle deregistration operations
 
 ### Creating an Order
 
@@ -295,7 +297,7 @@ src/
 │   ├── Requests/       Request objects with toArray() serialization
 │   ├── Responses/      Response objects with fromArray() factories
 │   └── Webhooks/       Webhook event types and factories
-├── Endpoints/          API endpoint classes (Orders, Shipments, Products, Webhooks)
+├── Endpoints/          API endpoint classes (Orders, Shipments, Products, Webhooks, GksConfigurations, VehicleDeregistrations)
 ├── Enums/              Backed string enums for type safety
 ├── Exceptions/         Exception hierarchy
 ├── Http/               PSR-7 request building and response mapping
@@ -323,6 +325,11 @@ The SDK follows these patterns:
 | `$client->orders->createReshippedOrder()` | POST /orders/reshippedOrders | Create reshipped order |
 | `$client->shipments->createLicensePlateReservation()` | POST /licensePlateReservations/reservations | Reserve a license plate |
 | `$client->products->checkLicensePlateAvailability()` | POST /licensePlateReservations/availabilityChecks | Check license plate availability |
+| `$client->gksConfigurations->create()` | POST /gksConfigurations | Create a GKS configuration |
+| `$client->gksConfigurations->update()` | PUT /gksConfigurations/{id} | Update a GKS configuration |
+| `$client->gksConfigurations->getOverviews()` | GET /gksConfigurations/overviews | List all GKS configurations |
+| `$client->gksConfigurations->getOverview()` | GET /gksConfigurations/overviews/{id} | Get a single GKS configuration |
+| `$client->vehicleDeregistrations->createDeregistration()` | POST /vehicleDeregistrations/deregistrations | Submit a vehicle deregistration |
 
 ### Webhook Event Types
 
@@ -335,6 +342,7 @@ The SDK follows these patterns:
 | `LICENSE_PLATE_RESERVATION_APPROVAL` | `LicensePlateReservationApprovalEvent` | Reservation approved with PIN and price |
 | `LICENSE_PLATE_RESERVATION_REJECTION` | `LicensePlateReservationRejectionEvent` | Reservation rejected with alternatives |
 | `LICENSE_PLATE_RESERVATION_TIMEOUT` | `LicensePlateReservationTimeoutEvent` | Reservation timed out |
+| `VEHICLE_DEREGISTRATION_XKFZ_EVENT` | `VehicleDeregistrationXkfzEvent` | Vehicle deregistration XKFZ status update with cost breakdown |
 
 ### Enums
 
@@ -344,7 +352,9 @@ The SDK follows these patterns:
 | `VehicleType` | `CAR`, `MOTORCYCLE` |
 | `LicensePlateType` | `REGULAR`, `REGULAR_SEASON`, `ELECTRIC`, `ELECTRIC_SEASON`, `HISTORICAL`, `HISTORICAL_SEASON` |
 | `LicensePlateUsageType` | `EURO`, `PARKING` |
-| `ProductType` | `LICENSE_PLATE`, `OTHER` |
+| `ProductType` | `LICENSE_PLATE`, `VEHICLE_DEREGISTRATION`, `OTHER` |
+| `VehicleDeregistrationVehicleType` | `CAR`, `LIGHT_MOTORCYCLE`, `MOTORCYCLE`, `OTHER`, `TRACTOR`, `TRAILER`, `TRUCK` |
+| `VehicleDeregistrationLicensePlateType` | `REGULAR`, `REGULAR_SEASON`, `ELECTRIC`, `ELECTRIC_SEASON`, `HISTORICAL`, `HISTORICAL_SEASON` |
 
 ## Extensibility
 
