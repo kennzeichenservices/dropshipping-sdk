@@ -10,6 +10,7 @@ use Dropshipping\DTO\Requests\AvailabilityCheckRequest;
 use Dropshipping\DTO\Responses\AvailabilityCheckResponse;
 use Dropshipping\Enums\LicensePlateType;
 use Dropshipping\Enums\VehicleType;
+use Dropshipping\Exceptions\ApiException;
 use GuzzleHttp\Client;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
@@ -46,7 +47,15 @@ final class ProductsIntegrationTest extends TestCase
             vehicleType: VehicleType::Car,
         );
 
-        $response = self::$client->products->checkLicensePlateAvailability($request);
+        try {
+            $response = self::$client->products->checkLicensePlateAvailability($request);
+        } catch (ApiException $e) {
+            if (str_contains($e->getMessage(), 'unavailable at the moment')) {
+                self::markTestSkipped('Registration office service temporarily unavailable: ' . $e->getMessage());
+            }
+
+            throw $e;
+        }
 
         self::assertInstanceOf(AvailabilityCheckResponse::class, $response);
     }

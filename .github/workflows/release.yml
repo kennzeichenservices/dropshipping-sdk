@@ -10,7 +10,7 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                php-version: ['8.2', '8.3', '8.4']
+                php-version: ["8.2", "8.3", "8.4"]
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -29,9 +29,9 @@ jobs:
               run: composer test:unit
 
             - name: Run integration tests
-              if: matrix.php-version == '8.2'
+              if: matrix.php-version == '8.3'
               env:
-                  DROPSHIPPING_API_HOST: '${{ secrets.DROPSHIPPING_API_HOST }}'
+                  DROPSHIPPING_API_HOST: "${{ secrets.DROPSHIPPING_API_HOST }}"
                   DROPSHIPPING_CLIENT_ID: ${{ secrets.DROPSHIPPING_CLIENT_ID }}
                   DROPSHIPPING_USERNAME: ${{ secrets.DROPSHIPPING_USERNAME }}
                   DROPSHIPPING_PASSWORD: ${{ secrets.DROPSHIPPING_PASSWORD }}
