@@ -13,7 +13,7 @@ final class DropshippingConfigTest extends TestCase
     {
         $config = new DropshippingConfig('api.example.com', 42, 'user', 'pass');
 
-        self::assertSame('https://api.example.com/dropshipping-api/42/2.3.0', $config->getBaseUrl());
+        self::assertSame('https://api.example.com/dropshipping-api/42/2.2.0', $config->getBaseUrl());
     }
 
     public function test_getUsername_returns_value(): void
@@ -34,21 +34,21 @@ final class DropshippingConfigTest extends TestCase
     {
         $config = new DropshippingConfig('https://api.example.com', 42, 'user', 'pass');
 
-        self::assertSame('https://api.example.com/dropshipping-api/42/2.3.0', $config->getBaseUrl());
+        self::assertSame('https://api.example.com/dropshipping-api/42/2.2.0', $config->getBaseUrl());
     }
 
     public function test_getBaseUrl_strips_http_scheme_from_host(): void
     {
         $config = new DropshippingConfig('http://api.example.com', 42, 'user', 'pass');
 
-        self::assertSame('https://api.example.com/dropshipping-api/42/2.3.0', $config->getBaseUrl());
+        self::assertSame('https://api.example.com/dropshipping-api/42/2.2.0', $config->getBaseUrl());
     }
 
     public function test_getBaseUrl_strips_trailing_slash_from_host(): void
     {
         $config = new DropshippingConfig('api.example.com/', 42, 'user', 'pass');
 
-        self::assertSame('https://api.example.com/dropshipping-api/42/2.3.0', $config->getBaseUrl());
+        self::assertSame('https://api.example.com/dropshipping-api/42/2.2.0', $config->getBaseUrl());
     }
 
     public function test_getBaseUrl_uses_explicit_api_version(): void
