@@ -139,8 +139,12 @@ final class WebhookEventFactoryTest extends TestCase
     {
         $event = WebhookEventFactory::fromArray([
             'eventType' => 'VEHICLE_DEREGISTRATION_XKFZ_EVENT',
-            'eventTime' => '2024-06-15T10:30:00Z',
-            'order' => ['id' => 42, 'externalId' => 'ext-42'],
+            'eventTime' => '2026-04-12T20:35:07',
+            'order' => ['id' => 7, 'externalId' => 'dropshipping-client-external-id'],
+            'status' => 'APPROVED_WITH_DOCUMENTS',
+            'files' => [
+                ['purposeType' => 'CERTIFICATE', 'mediaType' => 'application/pdf', 'fileAccessKey' => '7_4d61a48b-7209-4e4c-959b-fedfbda248e2_4'],
+            ],
             'costBreakdown' => [
                 'kbaCost' => 350,
                 'registrationOfficeCosts' => [
@@ -155,8 +159,10 @@ final class WebhookEventFactoryTest extends TestCase
 
         self::assertInstanceOf(VehicleDeregistrationXkfzEvent::class, $event);
         self::assertSame(WebhookEventType::VehicleDeregistrationXkfzEvent, $event->getEventType());
-        self::assertSame('2024-06-15T10:30:00Z', $event->getEventTime());
-        self::assertSame(42, $event->order->id);
+        self::assertSame('2026-04-12T20:35:07', $event->getEventTime());
+        self::assertSame(7, $event->order->id);
+        self::assertNotNull($event->files);
+        self::assertCount(1, $event->files);
         self::assertNotNull($event->costBreakdown);
         self::assertSame(350, $event->costBreakdown->kbaCost);
         self::assertNotNull($event->costBreakdown->registrationOfficeCosts);
@@ -164,15 +170,17 @@ final class WebhookEventFactoryTest extends TestCase
         self::assertSame(200, $event->costBreakdown->registrationOfficeCosts->total->amount);
     }
 
-    public function test_fromArray_creates_vehicle_deregistration_xkfz_event_without_cost_breakdown(): void
+    public function test_fromArray_creates_vehicle_deregistration_xkfz_event_without_optional_fields(): void
     {
         $event = WebhookEventFactory::fromArray([
             'eventType' => 'VEHICLE_DEREGISTRATION_XKFZ_EVENT',
             'eventTime' => '2024-06-15T10:30:00Z',
             'order' => ['id' => 42],
+            'status' => 'PROCESSED',
         ]);
 
         self::assertInstanceOf(VehicleDeregistrationXkfzEvent::class, $event);
+        self::assertNull($event->files);
         self::assertNull($event->costBreakdown);
     }
 

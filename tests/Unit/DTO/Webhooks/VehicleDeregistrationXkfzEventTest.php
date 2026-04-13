@@ -8,59 +8,81 @@ use Dropshipping\DTO\Webhooks\VehicleDeregistrationCostBreakdown;
 use Dropshipping\DTO\Webhooks\VehicleDeregistrationCostBreakdownItem;
 use Dropshipping\DTO\Webhooks\VehicleDeregistrationRegistrationOfficeCosts;
 use Dropshipping\DTO\Webhooks\VehicleDeregistrationXkfzEvent;
+use Dropshipping\DTO\Webhooks\VehicleDeregistrationXkfzEventFile;
+use Dropshipping\Enums\VehicleDeregistrationXkfzEventFilePurposeType;
+use Dropshipping\Enums\VehicleDeregistrationXkfzEventStatus;
 use Dropshipping\Enums\WebhookEventType;
 use PHPUnit\Framework\TestCase;
 
 final class VehicleDeregistrationXkfzEventTest extends TestCase
 {
-    public function test_fromArray_with_full_cost_breakdown(): void
+    public function test_fromArray_with_full_payload(): void
     {
         $event = VehicleDeregistrationXkfzEvent::fromArray([
-            'eventTime' => '2024-06-15T10:30:00Z',
-            'order' => ['id' => 42, 'externalId' => 'ext-42'],
+            'eventTime' => '2026-04-12T20:35:07',
+            'order' => ['id' => 7, 'externalId' => 'dropshipping-client-external-id'],
+            'status' => 'APPROVED_WITH_DOCUMENTS',
+            'files' => [
+                ['purposeType' => 'CERTIFICATE', 'mediaType' => 'application/pdf', 'fileAccessKey' => '7_4d61a48b-7209-4e4c-959b-fedfbda248e2_4'],
+                ['purposeType' => 'RECEIPT', 'mediaType' => 'image/jpeg', 'fileAccessKey' => '7_4d61a48b-7209-4e4c-959b-fedfbda248e2_5'],
+            ],
             'costBreakdown' => [
-                'kbaCost' => 350,
+                'kbaCost' => 123,
                 'registrationOfficeCosts' => [
                     'items' => [
-                        ['number' => 1, 'code' => 'FEE', 'name' => 'Service fee', 'amount' => 200, 'note' => 'Some note'],
-                        ['number' => 2, 'code' => null, 'name' => 'Admin', 'amount' => 150, 'note' => null],
+                        ['number' => 1, 'code' => 'Code1', 'name' => 'Name1', 'amount' => 100, 'note' => 'Note1'],
+                        ['number' => 2, 'code' => 'Code2', 'name' => 'Name2', 'amount' => 200, 'note' => 'Note2'],
                     ],
-                    'total' => ['number' => 0, 'code' => null, 'name' => 'Total', 'amount' => 350, 'note' => null],
-                    'note' => 'Office note',
+                    'total' => ['number' => 3, 'code' => 'Code3', 'name' => 'Name3', 'amount' => 300, 'note' => 'Note3'],
+                    'note' => 'NoteCharges',
                 ],
             ],
         ]);
 
         self::assertSame(WebhookEventType::VehicleDeregistrationXkfzEvent, $event->getEventType());
-        self::assertSame('2024-06-15T10:30:00Z', $event->getEventTime());
-        self::assertSame(42, $event->order->id);
-        self::assertSame('ext-42', $event->order->externalId);
+        self::assertSame('2026-04-12T20:35:07', $event->getEventTime());
+        self::assertSame(7, $event->order->id);
+        self::assertSame('dropshipping-client-external-id', $event->order->externalId);
+
+        self::assertSame(VehicleDeregistrationXkfzEventStatus::ApprovedWithDocuments, $event->status);
+
+        self::assertNotNull($event->files);
+        self::assertCount(2, $event->files);
+        self::assertInstanceOf(VehicleDeregistrationXkfzEventFile::class, $event->files[0]);
+        self::assertSame(VehicleDeregistrationXkfzEventFilePurposeType::Certificate, $event->files[0]->purposeType);
+        self::assertSame('application/pdf', $event->files[0]->mediaType);
+        self::assertSame('7_4d61a48b-7209-4e4c-959b-fedfbda248e2_4', $event->files[0]->fileAccessKey);
+        self::assertSame(VehicleDeregistrationXkfzEventFilePurposeType::Receipt, $event->files[1]->purposeType);
+        self::assertSame('image/jpeg', $event->files[1]->mediaType);
 
         self::assertNotNull($event->costBreakdown);
-        self::assertSame(350, $event->costBreakdown->kbaCost);
+        self::assertSame(123, $event->costBreakdown->kbaCost);
 
         $officeCosts = $event->costBreakdown->registrationOfficeCosts;
         self::assertNotNull($officeCosts);
         self::assertCount(2, $officeCosts->items);
         self::assertSame(1, $officeCosts->items[0]->number);
-        self::assertSame('FEE', $officeCosts->items[0]->code);
-        self::assertSame('Service fee', $officeCosts->items[0]->name);
-        self::assertSame(200, $officeCosts->items[0]->amount);
-        self::assertSame('Some note', $officeCosts->items[0]->note);
-        self::assertSame(350, $officeCosts->total->amount);
-        self::assertSame('Office note', $officeCosts->note);
+        self::assertSame('Code1', $officeCosts->items[0]->code);
+        self::assertSame('Name1', $officeCosts->items[0]->name);
+        self::assertSame(100, $officeCosts->items[0]->amount);
+        self::assertSame('Note1', $officeCosts->items[0]->note);
+        self::assertSame(300, $officeCosts->total->amount);
+        self::assertSame('NoteCharges', $officeCosts->note);
     }
 
-    public function test_fromArray_without_cost_breakdown(): void
+    public function test_fromArray_without_optional_fields(): void
     {
         $event = VehicleDeregistrationXkfzEvent::fromArray([
             'eventTime' => '2024-06-15T10:30:00Z',
             'order' => ['id' => 42],
+            'status' => 'PROCESSED',
         ]);
 
         self::assertSame(WebhookEventType::VehicleDeregistrationXkfzEvent, $event->getEventType());
         self::assertSame(42, $event->order->id);
         self::assertNull($event->order->externalId);
+        self::assertSame(VehicleDeregistrationXkfzEventStatus::Processed, $event->status);
+        self::assertNull($event->files);
         self::assertNull($event->costBreakdown);
     }
 
@@ -69,11 +91,13 @@ final class VehicleDeregistrationXkfzEventTest extends TestCase
         $event = VehicleDeregistrationXkfzEvent::fromArray([
             'eventTime' => '2024-06-15T10:30:00Z',
             'order' => ['id' => 42],
+            'status' => 'FAILED',
             'costBreakdown' => [
                 'kbaCost' => 500,
             ],
         ]);
 
+        self::assertSame(VehicleDeregistrationXkfzEventStatus::Failed, $event->status);
         self::assertNotNull($event->costBreakdown);
         self::assertSame(500, $event->costBreakdown->kbaCost);
         self::assertNull($event->costBreakdown->registrationOfficeCosts);

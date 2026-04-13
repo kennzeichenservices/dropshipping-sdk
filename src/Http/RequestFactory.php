@@ -50,6 +50,18 @@ final class RequestFactory
     }
 
     /**
+     * Create an authenticated GET request for binary content downloads.
+     */
+    public function createBinaryGetRequest(string $url): RequestInterface
+    {
+        $request = $this->requestFactory->createRequest('GET', $url);
+        $request = $this->authenticator->authenticate($request);
+        $request = $request->withHeader('Accept', 'application/octet-stream');
+
+        return $request;
+    }
+
+    /**
      * Create a multipart form-data request for file uploads.
      *
      * Returns an authenticated PSR-7 request with a multipart content-type

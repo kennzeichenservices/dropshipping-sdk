@@ -330,6 +330,7 @@ The SDK follows these patterns:
 | `$client->gksConfigurations->getOverviews()` | GET /gksConfigurations/overviews | List all GKS configurations |
 | `$client->gksConfigurations->getOverview()` | GET /gksConfigurations/overviews/{id} | Get a single GKS configuration |
 | `$client->vehicleDeregistrations->createDeregistration()` | POST /vehicleDeregistrations/deregistrations | Submit a vehicle deregistration |
+| `$client->vehicleDeregistrations->downloadFileContent()` | GET /vehicleDeregistrations/files/content/{fileAccessKey} | Download a file from a `VEHICLE_DEREGISTRATION_XKFZ_EVENT` webhook |
 
 ### Webhook Event Types
 
@@ -342,7 +343,7 @@ The SDK follows these patterns:
 | `LICENSE_PLATE_RESERVATION_APPROVAL` | `LicensePlateReservationApprovalEvent` | Reservation approved with PIN and price |
 | `LICENSE_PLATE_RESERVATION_REJECTION` | `LicensePlateReservationRejectionEvent` | Reservation rejected with alternatives |
 | `LICENSE_PLATE_RESERVATION_TIMEOUT` | `LicensePlateReservationTimeoutEvent` | Reservation timed out |
-| `VEHICLE_DEREGISTRATION_XKFZ_EVENT` | `VehicleDeregistrationXkfzEvent` | Vehicle deregistration XKFZ status update with cost breakdown |
+| `VEHICLE_DEREGISTRATION_XKFZ_EVENT` | `VehicleDeregistrationXkfzEvent` | Vehicle deregistration XKFZ status update — includes `status`, optional `files` (with `fileAccessKey` for download) and optional `costBreakdown` |
 
 ### Enums
 
@@ -355,6 +356,8 @@ The SDK follows these patterns:
 | `ProductType` | `LICENSE_PLATE`, `VEHICLE_DEREGISTRATION`, `OTHER` |
 | `VehicleDeregistrationVehicleType` | `CAR`, `LIGHT_MOTORCYCLE`, `MOTORCYCLE`, `OTHER`, `TRACTOR`, `TRAILER`, `TRUCK` |
 | `VehicleDeregistrationLicensePlateType` | `REGULAR`, `REGULAR_SEASON`, `ELECTRIC`, `ELECTRIC_SEASON`, `HISTORICAL`, `HISTORICAL_SEASON` |
+| `VehicleDeregistrationXkfzEventStatus` | `ACCEPTED`, `APPROVED`, `APPROVED_WITH_DOCUMENTS`, `FAILED`, `FORWARDED`, `PROCESSED`, `REJECTED`, `REJECTED_WITH_DOCUMENTS`, `UNKNOWN` |
+| `VehicleDeregistrationXkfzEventFilePurposeType` | `CERTIFICATE`, `RECEIPT`, `APPLICATION`, `UNSPECIFIED` |
 
 ## Extensibility
 

@@ -4,24 +4,29 @@ declare(strict_types=1);
 
 namespace Dropshipping\DTO\Webhooks;
 
+use Dropshipping\Enums\VehicleDeregistrationXkfzEventStatus;
 use Dropshipping\Enums\WebhookEventType;
 
 /**
  * Webhook event fired when a vehicle deregistration XKFZ status update is received.
  *
- * Contains the order reference and an optional cost breakdown detailing
- * KBA and registration office charges.
+ * Contains the order reference, the current processing status, optional attached
+ * files and an optional cost breakdown detailing KBA and registration office charges.
  */
 final readonly class VehicleDeregistrationXkfzEvent implements WebhookEventInterface
 {
     /**
-     * @param string                                       $eventTime     The ISO 8601 timestamp when the event occurred.
-     * @param WebhookOrder                                 $order         The associated order reference.
-     * @param VehicleDeregistrationCostBreakdown|null       $costBreakdown The cost breakdown, if available.
+     * @param string                                        $eventTime     The ISO 8601 timestamp when the event occurred.
+     * @param WebhookOrder                                  $order         The associated order reference.
+     * @param VehicleDeregistrationXkfzEventStatus          $status        The current processing status of the deregistration.
+     * @param list<VehicleDeregistrationXkfzEventFile>|null $files         Files attached to this event, if any.
+     * @param VehicleDeregistrationCostBreakdown|null        $costBreakdown The cost breakdown, if available.
      */
     public function __construct(
         public string $eventTime,
         public WebhookOrder $order,
+        public VehicleDeregistrationXkfzEventStatus $status,
+        public ?array $files,
         public ?VehicleDeregistrationCostBreakdown $costBreakdown,
     ) {
     }
@@ -54,6 +59,13 @@ final readonly class VehicleDeregistrationXkfzEvent implements WebhookEventInter
         return new self(
             eventTime: $data['eventTime'],
             order: WebhookOrder::fromArray($data['order']),
+            status: VehicleDeregistrationXkfzEventStatus::from($data['status']),
+            files: isset($data['files'])
+                ? array_map(
+                    static fn (array $file): VehicleDeregistrationXkfzEventFile => VehicleDeregistrationXkfzEventFile::fromArray($file),
+                    $data['files'],
+                )
+                : null,
             costBreakdown: isset($data['costBreakdown'])
                 ? VehicleDeregistrationCostBreakdown::fromArray($data['costBreakdown'])
                 : null,

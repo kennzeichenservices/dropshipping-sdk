@@ -7,6 +7,7 @@ namespace Dropshipping\Endpoints\VehicleDeregistrations;
 use Dropshipping\Client\Psr18HttpClient;
 use Dropshipping\DTO\Requests\VehicleDeregistrationRequest;
 use Dropshipping\DTO\Responses\VehicleDeregistrationResponse;
+use Dropshipping\Exceptions\ApiException;
 use Dropshipping\Http\RequestFactory;
 use Dropshipping\Http\ResponseMapper;
 
@@ -52,5 +53,42 @@ final class VehicleDeregistrationsEndpoint
         $data = $this->responseMapper->mapResponse($response);
 
         return VehicleDeregistrationResponse::fromArray($data);
+    }
+
+    /**
+     * Download the binary content of a vehicle deregistration file.
+     *
+     * The {@see $fileAccessKey} is obtained from a {@see \Dropshipping\DTO\Webhooks\VehicleDeregistrationXkfzEventFile}
+     * attached to a VEHICLE_DEREGISTRATION_XKFZ_EVENT webhook event.
+     *
+     * @param string $fileAccessKey The file access key from the webhook event.
+     *
+     * @return string Raw binary file content.
+     *
+     * @throws ApiException When the API responds with an unexpected status code.
+     */
+    public function downloadFileContent(string $fileAccessKey): string
+    {
+        $httpRequest = $this->requestFactory->createBinaryGetRequest(
+            $this->baseUrl . '/vehicleDeregistrations/files/content/' . rawurlencode($fileAccessKey),
+        );
+
+        $response = $this->httpClient->sendRequest($httpRequest);
+        $statusCode = $response->getStatusCode();
+
+        if ($statusCode !== 200) {
+            $body = (string) $response->getBody();
+            $traceId = $response->getHeaderLine('X-Trace-Id') ?: null;
+            $errorMessage = 'API request failed';
+
+            if ($body !== '') {
+                $data = json_decode($body, true);
+                $errorMessage = $data['error'] ?? $errorMessage;
+            }
+
+            throw new ApiException($errorMessage, $statusCode, $traceId);
+        }
+
+        return (string) $response->getBody();
     }
 }
