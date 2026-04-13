@@ -1,0 +1,667 @@
+openapi: "3.0.3"
+info:
+    version: 3.1.0
+    title: Dropshipping Webhooks
+    description: Dropshipping Webhooks
+paths:
+    /subscribe-via-dropshipping-self-service-gui:
+        post:
+            operationId: SubscribeViaDropshippingSelfServiceGui
+            description: |
+                This is a non-existent, dummy endpoint necessary for modeling webhooks using callbacks in openapi 3.0.*.
+                The actual webhook configuration has to be done via the dropshipping self-service GUI.
+            parameters:
+                - name: webhookUrl
+                  in: query
+                  required: true
+                  description: Webhook URL to call
+                  schema:
+                      type: string
+                      format: uri
+            responses:
+                "201":
+                    description: subscription successfully created
+                    content:
+                        application/json:
+                            schema:
+                                description: subscription information
+                                required:
+                                    - webhookId
+                                    - signatureSecret
+                                properties:
+                                    webhookId:
+                                        $ref: "#/components/schemas/WebhookId"
+                                    signatureSecret:
+                                        $ref: "#/components/schemas/WebhookSignatureSecret"
+            callbacks:
+                WebhookEventCallback:
+                    "{$request.query.webhookUrl}":
+                        post:
+                            operationId: WebhookEventCallback
+                            parameters:
+                                - in: header
+                                  name: X-Signature
+                                  description: HMAC SHA-256 of the request body UTF-8 string with signatureSecret as the hash key
+                                  schema:
+                                      $ref: "#/components/schemas/WebhookSignature"
+                                  required: true
+                                - in: header
+                                  name: X-Webhook-Id
+                                  schema:
+                                      $ref: "#/components/schemas/WebhookId"
+                                  required: true
+                                - in: header
+                                  name: X-Webhook-Version
+                                  schema:
+                                      $ref: "#/components/schemas/WebhookVersion"
+                                  required: true
+                            requestBody:
+                                required: true
+                                content:
+                                    application/json:
+                                        schema:
+                                            $ref: "#/components/schemas/WebhookEvent"
+                            responses:
+                                "202":
+                                    description: To be returned when the webhook request was accepted
+
+components:
+    schemas:
+        WebhookId:
+            type: integer
+
+        WebhookSignatureSecret:
+            type: string
+
+        WebhookSignature:
+            type: string
+
+        WebhookVersion:
+            type: string
+
+        WebhookEventType:
+            type: string
+            enum:
+                - PING
+                - DELIVERY_SHIPMENT
+                - DELIVERY_RETURN
+                - DELIVERY_CANCELLATION
+                - LICENSE_PLATE_RESERVATION_APPROVAL
+                - LICENSE_PLATE_RESERVATION_REJECTION
+                - LICENSE_PLATE_RESERVATION_TIMEOUT
+                - VEHICLE_DEREGISTRATION_XKFZ_EVENT
+
+        WebhookEvent:
+            type: object
+            anyOf:
+                - $ref: "#/components/schemas/PingWebhookEvent"
+                - $ref: "#/components/schemas/DeliveryShipmentWebhookEvent"
+                - $ref: "#/components/schemas/DeliveryReturnWebhookEvent"
+                - $ref: "#/components/schemas/DeliveryCancellationWebhookEvent"
+                - $ref: "#/components/schemas/LicencePlateReservationApprovalWebhookEvent"
+                - $ref: "#/components/schemas/LicencePlateReservationRejectionWebhookEvent"
+                - $ref: "#/components/schemas/LicencePlateReservationTimeoutWebhookEvent"
+                - $ref: "#/components/schemas/VehicleDeregistrationXkfzEventWebhookEvent"
+            discriminator:
+                propertyName: eventType
+                mapping:
+                    PING: "#/components/schemas/PingWebhookEvent"
+                    DELIVERY_SHIPMENT: "#/components/schemas/DeliveryShipmentWebhookEvent"
+                    DELIVERY_RETURN: "#/components/schemas/DeliveryReturnWebhookEvent"
+                    DELIVERY_CANCELLATION: "#/components/schemas/DeliveryCancellationWebhookEvent"
+                    LICENSE_PLATE_RESERVATION_APPROVAL: "#/components/schemas/LicencePlateReservationApprovalWebhookEvent"
+                    LICENSE_PLATE_RESERVATION_REJECTION: "#/components/schemas/LicencePlateReservationRejectionWebhookEvent"
+                    LICENSE_PLATE_RESERVATION_TIMEOUT: "#/components/schemas/LicencePlateReservationTimeoutWebhookEvent"
+                    VEHICLE_DEREGISTRATION_XKFZ_EVENT: "#/components/schemas/VehicleDeregistrationXkfzEventWebhookEvent"
+            required:
+                - eventType
+                - eventTime
+            properties:
+                eventType:
+                    type: string
+                    enum:
+                        - PING
+                        - DELIVERY_SHIPMENT
+                        - DELIVERY_RETURN
+                        - DELIVERY_CANCELLATION
+                        - LICENSE_PLATE_RESERVATION_APPROVAL
+                        - LICENSE_PLATE_RESERVATION_REJECTION
+                        - VEHICLE_DEREGISTRATION_APPROVAL
+                        - VEHICLE_DEREGISTRATION_REJECTION
+                eventTime:
+                    $ref: "#/components/schemas/LocalDateTime"
+
+        PingWebhookEvent:
+            type: object
+            allOf:
+                - $ref: "#/components/schemas/WebhookEvent"
+            example: { "eventType": "PING", "eventTime": "2000-10-31T01:30:40" }
+
+        DeliveryShipmentWebhookEvent:
+            type: object
+            allOf:
+                - $ref: "#/components/schemas/WebhookEvent"
+            required:
+                - delivery
+                - order
+            properties:
+                delivery:
+                    $ref: "#/components/schemas/DeliveryShipmentWebhookEventDelivery"
+                order:
+                    $ref: "#/components/schemas/DeliveryShipmentWebhookEventOrder"
+            example:
+                {
+                    "eventType": "DELIVERY_SHIPMENT",
+                    "delivery":
+                        { "id": 2000, "trackingCode": "01234567890123456789" },
+                    "order": { "id": 1000, "externalId": "ext-1" },
+                    "eventTime": "2000-10-31T01:30:40",
+                }
+
+        DeliveryShipmentWebhookEventDelivery:
+            type: object
+            required:
+                - id
+            properties:
+                id:
+                    type: integer
+                    format: int64
+                    nullable: false
+                trackingCode:
+                    type: string
+                    nullable: true
+
+        DeliveryShipmentWebhookEventOrder:
+            type: object
+            required:
+                - id
+            properties:
+                id:
+                    type: integer
+                    format: int64
+                    nullable: false
+                externalId:
+                    $ref: "#/components/schemas/OrderExternalId"
+
+        DeliveryReturnWebhookEvent:
+            type: object
+            allOf:
+                - $ref: "#/components/schemas/WebhookEvent"
+            required:
+                - delivery
+                - order
+                - returnReason
+                - reshippingOfferExpirationDate
+            properties:
+                delivery:
+                    $ref: "#/components/schemas/DeliveryReturnWebhookEventDelivery"
+                order:
+                    $ref: "#/components/schemas/DeliveryReturnWebhookEventOrder"
+                returnReason:
+                    type: string
+                    nullable: false
+                reshippingOfferExpirationDate:
+                    $ref: "#/components/schemas/LocalDate"
+            example:
+                {
+                    "eventType": "DELIVERY_RETURN",
+                    "delivery": { "id": 2000 },
+                    "order": { "id": 1000, "externalId": "ext-1" },
+                    "returnReason": "Empfänger nicht zu ermitteln / Unbekannt verzogen",
+                    "reshippingOfferExpirationDate": "2000-11-06",
+                    "eventTime": "2000-10-31T01:30:40",
+                }
+
+        DeliveryReturnWebhookEventDelivery:
+            type: object
+            required:
+                - id
+            properties:
+                id:
+                    type: integer
+                    format: int64
+                    nullable: false
+
+        DeliveryReturnWebhookEventOrder:
+            type: object
+            required:
+                - id
+            properties:
+                id:
+                    type: integer
+                    format: int64
+                    nullable: false
+                externalId:
+                    $ref: "#/components/schemas/OrderExternalId"
+
+        DeliveryCancellationWebhookEvent:
+            type: object
+            allOf:
+                - $ref: "#/components/schemas/WebhookEvent"
+            required:
+                - delivery
+                - order
+            properties:
+                delivery:
+                    $ref: "#/components/schemas/DeliveryCancellationWebhookEventDelivery"
+                order:
+                    $ref: "#/components/schemas/DeliveryCancellationWebhookEventOrder"
+            example:
+                {
+                    "eventType": "DELIVERY_CANCELLATION",
+                    "delivery": { "id": 2000 },
+                    "order": { "id": 1000, "externalId": "ext-1" },
+                    "eventTime": "2000-10-31T01:30:40",
+                }
+
+        DeliveryCancellationWebhookEventDelivery:
+            type: object
+            required:
+                - id
+            properties:
+                id:
+                    type: integer
+                    format: int64
+                    nullable: false
+
+        DeliveryCancellationWebhookEventOrder:
+            type: object
+            required:
+                - id
+            properties:
+                id:
+                    type: integer
+                    format: int64
+                    nullable: false
+                externalId:
+                    $ref: "#/components/schemas/OrderExternalId"
+        EuroLicensePlateNumberComponents:
+            type: object
+            required:
+                - usageType
+                - city
+                - middle
+                - end
+            properties:
+                usageType:
+                    type: string
+                city:
+                    type: string
+                middle:
+                    type: string
+                end:
+                    type: string
+            example:
+                {
+                    "usageType": "EURO",
+                    "city": "AB",
+                    "middle": "CD",
+                    "end": "123",
+                }
+        LicencePlateReservationApprovalWebhookEvent:
+            type: object
+            allOf:
+                - $ref: "#/components/schemas/WebhookEvent"
+            required:
+                - order
+                - customization
+                - reservationPrice
+            properties:
+                order:
+                    $ref: "#/components/schemas/LicencePlateReservationApprovalWebhookEventOrder"
+                reservationPin:
+                    type: string
+                    nullable: true
+                customization:
+                    $ref: "#/components/schemas/LicensePlateReservationCustomization"
+                reservationPrice:
+                    description: "Currency: EUR. Decimal separator: . (period)"
+                    type: string
+                    example: "0.00"
+            example:
+                {
+                    "eventType": "LICENSE_PLATE_RESERVATION_APPROVAL",
+                    "order": { "id": 1000, "externalId": "ext-1" },
+                    "eventTime": "2000-10-31T01:30:40",
+                    "reservationPin": "PIN123",
+                    "customization":
+                        {
+                            "registrationOfficeServiceId": 1,
+                            "licensePlateNumberComponents":
+                                {
+                                    "usageType": "EURO",
+                                    "city": "AB",
+                                    "middle": "CD",
+                                    "end": "123",
+                                },
+                            "licensePlateType": "REGULAR_SEASON",
+                            "vehicleType": "CAR",
+                            "seasonStartMonth": 4,
+                            "seasonEndMonth": 10,
+                        },
+                    "reservationPrice": "0.00",
+                }
+
+        LicencePlateReservationApprovalWebhookEventOrder:
+            type: object
+            required:
+                - id
+            properties:
+                id:
+                    type: integer
+                    format: int64
+                    nullable: false
+                externalId:
+                    $ref: "#/components/schemas/OrderExternalId"
+
+        LicensePlateReservationCustomization:
+            type: object
+            required:
+                - registrationOfficeServiceId
+                - licensePlateType
+                - vehicleType
+                - licensePlateNumberComponents
+            properties:
+                registrationOfficeServiceId:
+                    type: integer
+                    format: int32
+                licensePlateType:
+                    type: string
+                vehicleType:
+                    type: string
+                licensePlateNumberComponents:
+                    $ref: "#/components/schemas/EuroLicensePlateNumberComponents"
+                seasonStartMonth:
+                    type: integer
+                    format: int32
+                    nullable: true
+                seasonEndMonth:
+                    type: integer
+                    format: int32
+                    nullable: true
+
+        LicencePlateReservationRejectionWebhookEvent:
+            type: object
+            allOf:
+                - $ref: "#/components/schemas/WebhookEvent"
+            required:
+                - order
+                - customization
+                - proposedAlternativeLicensePlateNumberComponents
+            properties:
+                order:
+                    $ref: "#/components/schemas/LicencePlateReservationRejectionWebhookEventOrder"
+                customization:
+                    $ref: "#/components/schemas/LicensePlateReservationCustomization"
+                proposedAlternativeLicensePlateNumberComponents:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/EuroLicensePlateNumberComponents"
+            example:
+                {
+                    "eventType": "LICENSE_PLATE_RESERVATION_REJECTION",
+                    "order": { "id": 1000, "externalId": "ext-1" },
+                    "eventTime": "2000-10-31T01:30:40",
+                    "customization":
+                        {
+                            "registrationOfficeServiceId": 1,
+                            "licensePlateNumberComponents":
+                                {
+                                    "usageType": "EURO",
+                                    "city": "AB",
+                                    "middle": "CD",
+                                    "end": "123",
+                                },
+                            "licensePlateType": "REGULAR_SEASON",
+                            "vehicleType": "CAR",
+                            "seasonStartMonth": 4,
+                            "seasonEndMonth": 10,
+                        },
+                    "proposedAlternativeLicensePlateNumberComponents":
+                        [
+                            {
+                                "usageType": "EURO",
+                                "city": "AB",
+                                "middle": "CD",
+                                "end": "124",
+                            },
+                            {
+                                "usageType": "EURO",
+                                "city": "AB",
+                                "middle": "CD",
+                                "end": "125",
+                            },
+                        ],
+                }
+
+        LicencePlateReservationRejectionWebhookEventOrder:
+            type: object
+            required:
+                - id
+            properties:
+                id:
+                    type: integer
+                    format: int64
+                    nullable: false
+                externalId:
+                    $ref: "#/components/schemas/OrderExternalId"
+
+        LicencePlateReservationTimeoutWebhookEvent:
+            type: object
+            allOf:
+                - $ref: "#/components/schemas/WebhookEvent"
+            required:
+                - order
+                - customization
+            properties:
+                order:
+                    $ref: "#/components/schemas/LicencePlateReservationTimeoutWebhookEventOrder"
+                customization:
+                    $ref: "#/components/schemas/LicensePlateReservationCustomization"
+            example:
+                {
+                    "eventType": "LICENSE_PLATE_RESERVATION_TIMEOUT",
+                    "order": { "id": 1000, "externalId": "ext-1" },
+                    "eventTime": "2000-10-31T01:30:40",
+                    "customization":
+                        {
+                            "registrationOfficeServiceId": 1,
+                            "licensePlateNumberComponents":
+                                {
+                                    "usageType": "EURO",
+                                    "city": "AB",
+                                    "middle": "CD",
+                                    "end": "123",
+                                },
+                            "licensePlateType": "REGULAR_SEASON",
+                            "vehicleType": "CAR",
+                            "seasonStartMonth": 4,
+                            "seasonEndMonth": 10,
+                        },
+                }
+
+        LicencePlateReservationTimeoutWebhookEventOrder:
+            type: object
+            required:
+                - id
+            properties:
+                id:
+                    type: integer
+                    format: int64
+                    nullable: false
+                externalId:
+                    $ref: "#/components/schemas/OrderExternalId"
+
+        LocalDate:
+            description: Date in ISO8601 format, local to the webhook caller
+            type: string
+            format: date
+            example: 2000-10-31
+
+        LocalDateTime:
+            description: Date-time in ISO8601 format, without timezone, up to second precision, local to the webhook caller
+            type: string
+            format: date-time
+            example: 2000-10-31T01:30:40
+
+        OrderExternalId:
+            description: Dropshipping client given reference to the order.
+            type: string
+            nullable: true
+
+        VehicleDeregistrationXkfzEventWebhookEventCostBreakdownRegistrationOfficeCostsItem:
+            type: object
+            required:
+                - number
+                - amount
+            properties:
+                number:
+                    type: integer
+                code:
+                    type: string
+                    nullable: true
+                name:
+                    type: string
+                    nullable: true
+                amount:
+                    description: In minor currency.
+                    type: integer
+                note:
+                    type: string
+                    nullable: true
+
+        VehicleDeregistrationXkfzEventWebhookEventCostBreakdownRegistrationOfficeCosts:
+            type: object
+            nullable: true
+            required:
+                - items
+                - total
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/VehicleDeregistrationXkfzEventWebhookEventCostBreakdownRegistrationOfficeCostsItem"
+                total:
+                    $ref: "#/components/schemas/VehicleDeregistrationXkfzEventWebhookEventCostBreakdownRegistrationOfficeCostsItem"
+                note:
+                    type: string
+                    nullable: true
+
+        VehicleDeregistrationXkfzEventWebhookEventCostBreakdown:
+            type: object
+            nullable: true
+            properties:
+                kbaCost:
+                    type: integer
+                    nullable: true
+                    description: "KBA (Kraftfahrt-Bundesamt) cost, in minor currency."
+                registrationOfficeCosts:
+                    $ref: "#/components/schemas/VehicleDeregistrationXkfzEventWebhookEventCostBreakdownRegistrationOfficeCosts"
+
+        VehicleDeregistrationXkfzEventWebhookEventStatus:
+            type: string
+            enum:
+                - ACCEPTED
+                - APPROVED
+                - APPROVED_WITH_DOCUMENTS
+                - FAILED
+                - FORWARDED
+                - PROCESSED
+                - REJECTED
+                - REJECTED_WITH_DOCUMENTS
+                - UNKNOWN
+
+        VehicleDeregistrationXkfzEventWebhookEventFilePurposeType:
+            type: string
+            enum:
+                - CERTIFICATE
+                - RECEIPT
+                - APPLICATION
+                - UNSPECIFIED
+
+        VehicleDeregistrationXkfzEventWebhookEventFile:
+            type: object
+            nullable: true
+            required:
+                - purposeType
+                - mediaType
+                - fileAccessKey
+            properties:
+                purposeType:
+                    $ref: "#/components/schemas/VehicleDeregistrationXkfzEventWebhookEventFilePurposeType"
+                mediaType:
+                    type: string
+                fileAccessKey:
+                    type: string
+                    format: password
+                    description: Necessary for downloading file content via Dropshipping-API (since 2.3.0) VehicleDeregistrationFileContentDownload operation.
+
+        VehicleDeregistrationXkfzEventWebhookEvent:
+            type: object
+            allOf:
+                - $ref: "#/components/schemas/WebhookEvent"
+            required:
+                - order
+                - status
+            properties:
+                order:
+                    $ref: "#/components/schemas/VehicleDeregistrationXkfzEventWebhookEventOrder"
+                status:
+                    $ref: "#/components/schemas/VehicleDeregistrationXkfzEventWebhookEventStatus"
+                files:
+                    type: array
+                    nullable: true
+                    items:
+                        $ref: "#/components/schemas/VehicleDeregistrationXkfzEventWebhookEventFile"
+                costBreakdown:
+                    $ref: "#/components/schemas/VehicleDeregistrationXkfzEventWebhookEventCostBreakdown"
+            example:
+                {
+                    "eventType": "VEHICLE_DEREGISTRATION_XKFZ_EVENT",
+                    "order": { "id": 1000, "externalId": "ext-1" },
+                    "costBreakdown":
+                        {
+                            "kbaCost": 123,
+                            "registrationOfficeCosts":
+                                {
+                                    "items":
+                                        [
+                                            {
+                                                "number": 1,
+                                                "code": "C1",
+                                                "name": "Name 1",
+                                                "amount": 100,
+                                                "note": "Note 1",
+                                            },
+                                            {
+                                                "number": 2,
+                                                "code": "C2",
+                                                "name": "Name 2",
+                                                "amount": 200,
+                                                "note": "Note 2",
+                                            },
+                                        ],
+                                    "total":
+                                        {
+                                            "number": 3,
+                                            "code": "C3",
+                                            "name": "Name 3",
+                                            "amount": 300,
+                                            "note": "Note 3",
+                                        },
+                                    "note": "Note",
+                                },
+                        },
+                }
+
+        VehicleDeregistrationXkfzEventWebhookEventOrder:
+            type: object
+            required:
+                - id
+            properties:
+                id:
+                    type: integer
+                    format: int64
+                    nullable: false
+                externalId:
+                    $ref: "#/components/schemas/OrderExternalId"

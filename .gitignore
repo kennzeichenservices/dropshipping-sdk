@@ -1,5 +1,4 @@
 # Ignore several files
-/docs
 *.log
 
 # Ignore environment configuration files
