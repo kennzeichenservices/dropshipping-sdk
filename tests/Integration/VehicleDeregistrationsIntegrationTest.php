@@ -16,11 +16,8 @@ use Dropshipping\Enums\Gender;
 use Dropshipping\Enums\VehicleDeregistrationLicensePlateType;
 use Dropshipping\Enums\VehicleDeregistrationVehicleType;
 use GuzzleHttp\Client;
-use GuzzleHttp\HandlerStack;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 
 final class VehicleDeregistrationsIntegrationTest extends TestCase
 {
@@ -40,32 +37,7 @@ final class VehicleDeregistrationsIntegrationTest extends TestCase
         $config = new DropshippingConfig($host, (int) $clientId, $username, $password);
         $psr17 = new Psr17Factory();
 
-        $stack = HandlerStack::create();
-        $stack->push(static function (callable $handler) {
-            return static function (RequestInterface $request, array $options) use ($handler) {
-                $body = (string) $request->getBody();
-                echo "\n--- HTTP Request ---\n";
-                echo $request->getMethod() . ' ' . $request->getUri() . "\n";
-                $decoded = json_decode($body, true);
-                echo json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
-                echo "--------------------\n";
-
-                return $handler($request, $options)->then(function (ResponseInterface $response) {
-                    $body = (string) $response->getBody();
-                    echo "\n--- HTTP Response (" . $response->getStatusCode() . ") ---\n";
-                    $decoded = json_decode($body, true);
-                    echo ($decoded !== null
-                        ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
-                        : $body) . "\n";
-                    echo "--------------------\n";
-                    $response->getBody()->rewind();
-
-                    return $response;
-                });
-            };
-        });
-
-        self::$client = new ApiClient($config, new Client(['handler' => $stack]), $psr17, $psr17);
+        self::$client = new ApiClient($config, new Client(), $psr17, $psr17);
     }
 
     public function test_create_deregistration(): void
