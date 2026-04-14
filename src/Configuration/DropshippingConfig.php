@@ -12,7 +12,7 @@ namespace Dropshipping\Configuration;
  */
 final readonly class DropshippingConfig
 {
-    private const DEFAULT_API_VERSION = '2.2.0';
+    private const DEFAULT_API_VERSION = '2.3.0';
 
     private string $apiVersion;
 
@@ -22,7 +22,7 @@ final readonly class DropshippingConfig
      * @param string      $username                API username for authentication.
      * @param string      $password                API password for authentication.
      * @param string|null $webhookSignatureSecret   Secret used to verify webhook signatures.
-     * @param string|null $apiVersion              API version override. Falls back to DROPSHIPPING_API_VERSION env var, then '2.2.0'.
+     * @param string|null $apiVersion              API version override. Falls back to DROPSHIPPING_API_VERSION env var, then the api-version from composer.json.
      */
     public function __construct(
         private string $host,
@@ -32,7 +32,22 @@ final readonly class DropshippingConfig
         private ?string $webhookSignatureSecret = null,
         ?string $apiVersion = null,
     ) {
-        $this->apiVersion = $apiVersion ?? (getenv('DROPSHIPPING_API_VERSION') ?: self::DEFAULT_API_VERSION);
+        $this->apiVersion = $apiVersion ?? (getenv('DROPSHIPPING_API_VERSION') ?: self::resolveDefaultApiVersion());
+    }
+
+    private static function resolveDefaultApiVersion(): string
+    {
+        $composerJson = dirname(__DIR__, 2) . '/composer.json';
+
+        if (is_file($composerJson)) {
+            $data = json_decode((string) file_get_contents($composerJson), true);
+
+            if (isset($data['api-version']) && is_string($data['api-version'])) {
+                return $data['api-version'];
+            }
+        }
+
+        return self::DEFAULT_API_VERSION;
     }
 
     /**
