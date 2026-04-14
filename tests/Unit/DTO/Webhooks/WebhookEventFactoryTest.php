@@ -143,7 +143,7 @@ final class WebhookEventFactoryTest extends TestCase
             'order' => ['id' => 7, 'externalId' => 'dropshipping-client-external-id'],
             'status' => 'APPROVED_WITH_DOCUMENTS',
             'files' => [
-                ['purposeType' => 'CERTIFICATE', 'mediaType' => 'application/pdf', 'fileAccessKey' => '7_4d61a48b-7209-4e4c-959b-fedfbda248e2_4'],
+                ['purposeType' => 'CERTIFICATE', 'mediaType' => 'application/pdf', 'fileAccessKey' => '7_4d61a48b-7209-4e4c-959b-fedfbda248e2_4', 'expirationTime' => '2026-04-12T21:35:07'],
             ],
             'costBreakdown' => [
                 'kbaCost' => 350,
