@@ -14,7 +14,7 @@ final readonly class VehicleDeregistrationRegistrationOfficeCosts
 {
     /**
      * @param list<VehicleDeregistrationCostBreakdownItem> $items Individual cost breakdown items.
-     * @param VehicleDeregistrationCostBreakdownItem|null  $total Optional total summary item.
+     * @param VehicleDeregistrationCostBreakdownItem|null  $total Total summary item.
      * @param string|null                                  $note  Optional note for the registration office costs.
      */
     public function __construct(
@@ -36,7 +36,7 @@ final readonly class VehicleDeregistrationRegistrationOfficeCosts
         return new self(
             items: array_map(
                 static fn (array $item): VehicleDeregistrationCostBreakdownItem => VehicleDeregistrationCostBreakdownItem::fromArray($item),
-                $data['items'] ?? [],
+                $data['items'],
             ),
             total: isset($data['total']) ? VehicleDeregistrationCostBreakdownItem::fromArray($data['total']) : null,
             note: $data['note'] ?? null,

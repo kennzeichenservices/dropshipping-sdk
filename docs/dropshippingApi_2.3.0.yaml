@@ -526,14 +526,9 @@ paths:
                                                 "middle": "CD",
                                                 "end": "123",
                                             },
-                                        "licensePlateType": "REGULAR_SEASON",
-                                        "vehicleType": "CAR",
-                                        "seasonStartMonth": 4,
-                                        "seasonEndMonth": 10,
                                         "frontLicensePlateSecurityCode": "FC1",
                                         "rearLicensePlateSecurityCode": "RC2",
                                         "vehicleIdentificationNumber": "W0L000051T2123456",
-                                        "vehicleRegistrationDate": "2024-03-21",
                                         "vehicleRegistrationCertificateSecurityCode": "VCSC123",
                                         "licensePlateReservationIncluded": false,
                                     },
@@ -1137,16 +1132,10 @@ components:
             enum:
                 - EURO
                 - PARKING
-        LocalDate:
+        NullableLocalDate:
             description: Date in ISO8601 format.
             type: string
             format: date
-            example: 2000-10-31
-        NullableLocalDate:
-            description: Date in ISO8601 format, nullable.
-            type: string
-            format: date
-            nullable: true
             example: 2000-10-31
         OrderCreationRequest:
             type: object
@@ -1287,36 +1276,17 @@ components:
             allOf:
                 - $ref: "#/components/schemas/ItemCustomization"
             required:
-                - vehicleType
-                - licensePlateType
                 - licensePlateNumberComponents
                 - licensePlateReservationIncluded
                 - vehicleIdentificationNumber
                 - vehicleRegistrationCertificateSecurityCode
-                - vehicleRegistrationDate
                 - rearLicensePlateSecurityCode
             properties:
-                vehicleType:
-                    $ref: "#/components/schemas/VehicleDeregistrationVehicleType"
-                licensePlateType:
-                    $ref: "#/components/schemas/VehicleDeregistrationLicensePlateType"
                 licensePlateNumberComponents:
                     $ref: "#/components/schemas/EuroLicensePlateNumberComponents"
                 licensePlateReservationIncluded:
                     description: True if the deregistered license plate number should get reserved again, false otherwise.
                     type: boolean
-                seasonStartMonth:
-                    type: integer
-                    format: int32
-                    nullable: true
-                    minimum: 1
-                    maximum: 12
-                seasonEndMonth:
-                    type: integer
-                    format: int32
-                    nullable: true
-                    minimum: 1
-                    maximum: 12
                 vehicleIdentificationNumber:
                     type: string
                     minLength: 1
@@ -1325,8 +1295,6 @@ components:
                     type: string
                     minLength: 1
                     description: Security code from Fahrzeugschein / Zulassungsbescheinigung Teil I.
-                vehicleRegistrationDate:
-                    $ref: "#/components/schemas/LocalDate"
                 frontLicensePlateSecurityCode:
                     type: string
                     nullable: true
@@ -1336,25 +1304,6 @@ components:
                     type: string
                     minLength: 1
 
-        VehicleDeregistrationVehicleType:
-            type: string
-            enum:
-                - CAR
-                - LIGHT_MOTORCYCLE
-                - MOTORCYCLE
-                - OTHER
-                - TRACTOR
-                - TRAILER
-                - TRUCK
-        VehicleDeregistrationLicensePlateType:
-            type: string
-            enum:
-                - REGULAR
-                - REGULAR_SEASON
-                - ELECTRIC
-                - ELECTRIC_SEASON
-                - HISTORICAL
-                - HISTORICAL_SEASON
         VehicleDeregistrationRequest:
             type: object
             required:

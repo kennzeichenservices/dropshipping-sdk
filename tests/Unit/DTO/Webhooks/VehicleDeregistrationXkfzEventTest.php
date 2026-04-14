@@ -23,8 +23,8 @@ final class VehicleDeregistrationXkfzEventTest extends TestCase
             'order' => ['id' => 7, 'externalId' => 'dropshipping-client-external-id'],
             'status' => 'APPROVED_WITH_DOCUMENTS',
             'files' => [
-                ['purposeType' => 'CERTIFICATE', 'mediaType' => 'application/pdf', 'fileAccessKey' => '7_4d61a48b-7209-4e4c-959b-fedfbda248e2_4'],
-                ['purposeType' => 'RECEIPT', 'mediaType' => 'image/jpeg', 'fileAccessKey' => '7_4d61a48b-7209-4e4c-959b-fedfbda248e2_5'],
+                ['purposeType' => 'CERTIFICATE', 'mediaType' => 'application/pdf', 'fileAccessKey' => '7_4d61a48b-7209-4e4c-959b-fedfbda248e2_4', 'expirationTime' => '2026-04-12T21:35:07'],
+                ['purposeType' => 'RECEIPT', 'mediaType' => 'image/jpeg', 'fileAccessKey' => '7_4d61a48b-7209-4e4c-959b-fedfbda248e2_5', 'expirationTime' => '2026-04-12T22:35:07'],
             ],
             'costBreakdown' => [
                 'kbaCost' => 123,
@@ -52,8 +52,10 @@ final class VehicleDeregistrationXkfzEventTest extends TestCase
         self::assertSame(VehicleDeregistrationXkfzEventFilePurposeType::Certificate, $event->files[0]->purposeType);
         self::assertSame('application/pdf', $event->files[0]->mediaType);
         self::assertSame('7_4d61a48b-7209-4e4c-959b-fedfbda248e2_4', $event->files[0]->fileAccessKey);
+        self::assertSame('2026-04-12T21:35:07', $event->files[0]->expirationTime);
         self::assertSame(VehicleDeregistrationXkfzEventFilePurposeType::Receipt, $event->files[1]->purposeType);
         self::assertSame('image/jpeg', $event->files[1]->mediaType);
+        self::assertSame('2026-04-12T22:35:07', $event->files[1]->expirationTime);
 
         self::assertNotNull($event->costBreakdown);
         self::assertSame(123, $event->costBreakdown->kbaCost);
@@ -132,16 +134,17 @@ final class VehicleDeregistrationXkfzEventTest extends TestCase
         self::assertNull($item->note);
     }
 
-    public function test_registration_office_costs_fromArray_without_total(): void
+    public function test_registration_office_costs_fromArray_without_optional_fields(): void
     {
         $costs = VehicleDeregistrationRegistrationOfficeCosts::fromArray([
             'items' => [
                 ['number' => 1, 'amount' => 100],
             ],
+            'total' => ['number' => 1, 'amount' => 100],
         ]);
 
         self::assertCount(1, $costs->items);
-        self::assertNull($costs->total);
+        self::assertNotNull($costs->total);
         self::assertNull($costs->note);
     }
 

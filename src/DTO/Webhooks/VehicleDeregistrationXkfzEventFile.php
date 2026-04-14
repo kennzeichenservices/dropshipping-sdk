@@ -15,14 +15,16 @@ use Dropshipping\Enums\VehicleDeregistrationXkfzEventFilePurposeType;
 final readonly class VehicleDeregistrationXkfzEventFile
 {
     /**
-     * @param VehicleDeregistrationXkfzEventFilePurposeType $purposeType   The purpose of the file.
-     * @param string                                         $mediaType     MIME type of the file.
-     * @param string                                         $fileAccessKey Key for downloading the file content.
+     * @param VehicleDeregistrationXkfzEventFilePurposeType $purposeType    The purpose of the file.
+     * @param string                                         $mediaType      MIME type of the file.
+     * @param string                                         $fileAccessKey  Key for downloading the file content.
+     * @param string                                         $expirationTime ISO 8601 datetime until which the file access key is valid.
      */
     public function __construct(
         public VehicleDeregistrationXkfzEventFilePurposeType $purposeType,
         public string $mediaType,
         public string $fileAccessKey,
+        public string $expirationTime,
     ) {
     }
 
@@ -39,6 +41,7 @@ final readonly class VehicleDeregistrationXkfzEventFile
             purposeType: VehicleDeregistrationXkfzEventFilePurposeType::from($data['purposeType']),
             mediaType: $data['mediaType'],
             fileAccessKey: $data['fileAccessKey'],
+            expirationTime: $data['expirationTime'],
         );
     }
 }
