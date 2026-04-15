@@ -16,6 +16,8 @@ final readonly class DropshippingConfig
 
     private string $apiVersion;
 
+    private const DEFAULT_TIMEOUT = 55;
+
     /**
      * @param string      $host                   API host (without scheme).
      * @param int         $dropshippingClientId    Unique client identifier.
@@ -23,6 +25,7 @@ final readonly class DropshippingConfig
      * @param string      $password                API password for authentication.
      * @param string|null $webhookSignatureSecret   Secret used to verify webhook signatures.
      * @param string|null $apiVersion              API version override. Falls back to DROPSHIPPING_API_VERSION env var, then the api-version from composer.json.
+     * @param int         $timeout                 HTTP request timeout in seconds.
      */
     public function __construct(
         private string $host,
@@ -31,6 +34,7 @@ final readonly class DropshippingConfig
         private string $password,
         private ?string $webhookSignatureSecret = null,
         ?string $apiVersion = null,
+        private int $timeout = self::DEFAULT_TIMEOUT,
     ) {
         $this->apiVersion = $apiVersion ?? (getenv('DROPSHIPPING_API_VERSION') ?: self::resolveDefaultApiVersion());
     }
@@ -89,11 +93,21 @@ final readonly class DropshippingConfig
 
     /**
      * Get the webhook signature secret, if configured.
-     * 
+     *
      * @return string|null The webhook signature secret or null if not set.
      */
     public function getWebhookSignatureSecret(): ?string
     {
         return $this->webhookSignatureSecret;
+    }
+
+    /**
+     * Get the HTTP request timeout in seconds.
+     *
+     * @return int The timeout in seconds.
+     */
+    public function getTimeout(): int
+    {
+        return $this->timeout;
     }
 }

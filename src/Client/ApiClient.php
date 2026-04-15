@@ -16,6 +16,7 @@ use Dropshipping\Endpoints\Webhooks\WebhooksEndpoint;
 use Dropshipping\Http\RequestFactory;
 use Dropshipping\Http\ResponseMapper;
 use Dropshipping\Serialization\ArrayMapper;
+use GuzzleHttp\Client as GuzzleClient;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
@@ -43,14 +44,16 @@ final class ApiClient
 
     public function __construct(
         DropshippingConfig $config,
-        ClientInterface $httpClient,
+        ?ClientInterface $httpClient,
         RequestFactoryInterface $psrRequestFactory,
         StreamFactoryInterface $streamFactory,
         ?SerializerInterface $serializer = null,
     ) {
         $serializer ??= new ArrayMapper();
         $this->baseUrl = $config->getBaseUrl();
-        $this->httpClient = new Psr18HttpClient($httpClient);
+        $this->httpClient = new Psr18HttpClient(
+            $httpClient ?? new GuzzleClient(['timeout' => $config->getTimeout()]),
+        );
 
         $authenticator = new ApiKeyAuthenticator(
             $config->getUsername(),

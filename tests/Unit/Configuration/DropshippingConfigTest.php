@@ -82,4 +82,18 @@ final class DropshippingConfigTest extends TestCase
 
         self::assertSame('secret123', $config->getWebhookSignatureSecret());
     }
+
+    public function test_getTimeout_returns_default_55(): void
+    {
+        $config = new DropshippingConfig('host', 1, 'user', 'pass');
+
+        self::assertSame(55, $config->getTimeout());
+    }
+
+    public function test_getTimeout_returns_custom_value(): void
+    {
+        $config = new DropshippingConfig('host', 1, 'user', 'pass', null, null, 30);
+
+        self::assertSame(30, $config->getTimeout());
+    }
 }
