@@ -61,6 +61,28 @@ $client = new ApiClient(
 );
 ```
 
+### Using DS
+
+Instead of importing individual DTO classes, use `Dropshipping\DS` as a single entry point for all request objects:
+
+```php
+use Dropshipping\DS;
+use Dropshipping\Enums\Gender;
+
+$address  = DS::address(firstName: 'Max', ..., gender: Gender::Male);
+$response = $client->orders->create(
+    DS::order(
+        externalId: 'order-001',
+        email: 'max@example.com',
+        deliveryAddress: $address,
+        invoiceAddress: $address,
+        items: [DS::orderItem(42, 'Zulassung', 'ZL-001', 1, DS::plate('B', 'AB', '1234'))],
+    )
+);
+```
+
+The only imports you need are `Dropshipping\DS` and the enums you use (e.g. `Gender`, `LicensePlateType`). See the [`examples/`](examples/) directory for complete runnable scripts.
+
 The client exposes six endpoint groups as public readonly properties:
 
 - `$client->orders` -- Order operations
@@ -70,17 +92,29 @@ The client exposes six endpoint groups as public readonly properties:
 - `$client->gksConfigurations` -- GKS configuration management (KBA interface)
 - `$client->vehicleDeregistrations` -- Vehicle deregistration operations
 
+## Examples
+
+Ready-to-run PHP scripts are available in the [`examples/`](examples/) directory. Each example has an accompanying Markdown file that explains what it does.
+
+| Example | Description |
+|---------|-------------|
+| [create-order.php](examples/create-order.php) · [docs](examples/create-order.md) | Create a standard order with a license plate item |
+| [create-emission-sticker-order.php](examples/create-emission-sticker-order.php) · [docs](examples/create-emission-sticker-order.md) | Create an emission sticker order with file upload |
+| [create-reshipped-order.php](examples/create-reshipped-order.php) · [docs](examples/create-reshipped-order.md) | Create a reshipped order for a returned delivery |
+| [check-license-plate-availability.php](examples/check-license-plate-availability.php) · [docs](examples/check-license-plate-availability.md) | Check available license plate numbers at a registration office |
+| [reserve-license-plate.php](examples/reserve-license-plate.php) · [docs](examples/reserve-license-plate.md) | Reserve a license plate |
+| [gks-configurations.php](examples/gks-configurations.php) · [docs](examples/gks-configurations.md) | Create, update, list, and get GKS configurations |
+| [vehicle-deregistration.php](examples/vehicle-deregistration.php) · [docs](examples/vehicle-deregistration.md) | Submit a vehicle deregistration and handle the XKFZ webhook with file download |
+| [webhooks.php](examples/webhooks.php) · [docs](examples/webhooks.md) | Process incoming webhooks with the middleware pipeline |
+| [async-webhooks.php](examples/async-webhooks.php) · [docs](examples/async-webhooks.md) | Enqueue and process webhooks asynchronously via a queue |
+
 ### Creating an Order
 
 ```php
-use Dropshipping\DTO\Address;
-use Dropshipping\DTO\OrderItem;
-use Dropshipping\DTO\LicensePlateItemCustomization;
-use Dropshipping\DTO\EuroLicensePlateNumberComponents;
-use Dropshipping\DTO\Requests\OrderCreationRequest;
+use Dropshipping\DS;
 use Dropshipping\Enums\Gender;
 
-$address = new Address(
+$address = DS::address(
     firstName: 'Max',
     lastName: 'Mustermann',
     gender: Gender::Male,
@@ -91,29 +125,15 @@ $address = new Address(
     countryCode: 'DE',
 );
 
-$item = new OrderItem(
-    productVariantId: 42,
-    name: 'Zulassung',
-    sku: 'ZL-001',
-    quantity: 1,
-    customization: new LicensePlateItemCustomization(
-        licensePlateNumberComponents: new EuroLicensePlateNumberComponents(
-            city: 'B',
-            middle: 'AB',
-            end: '1234',
-        ),
-    ),
+$response = $client->orders->create(
+    DS::order(
+        externalId: 'order-001',
+        email: 'max@example.com',
+        deliveryAddress: $address,
+        invoiceAddress: $address,
+        items: [DS::orderItem(42, 'Zulassung', 'ZL-001', 1, DS::plate('B', 'AB', '1234'))],
+    )
 );
-
-$request = new OrderCreationRequest(
-    externalId: 'order-001',
-    email: 'max@example.com',
-    deliveryAddress: $address,
-    invoiceAddress: $address,
-    items: [$item],
-);
-
-$response = $client->orders->create($request);
 
 echo $response->id; // Order ID
 ```
@@ -121,58 +141,53 @@ echo $response->id; // Order ID
 ### Creating an Emission Sticker Order
 
 ```php
-use Dropshipping\DTO\Requests\EmissionStickerOrderRequest;
+use Dropshipping\DS;
 
-$request = new EmissionStickerOrderRequest(
-    externalId: 'sticker-001',
-    email: 'max@example.com',
-    deliveryAddress: $address,
-    invoiceAddress: $address,
-    licensePlateNumberComponents: new EuroLicensePlateNumberComponents(
-        city: 'B',
-        middle: 'AB',
-        end: '1234',
-    ),
-    electric: false,
-    emissionKeyNumber: '0005',
-    filePaths: ['/path/to/fahrzeugschein.pdf'],
+$response = $client->orders->createEmissionStickerOrder(
+    DS::emissionStickerOrder(
+        externalId: 'sticker-001',
+        email: 'max@example.com',
+        deliveryAddress: $address,
+        invoiceAddress: $address,
+        plate: DS::plate('B', 'AB', '1234'),
+        electric: false,
+        emissionKeyNumber: '0005',
+        filePaths: ['/path/to/fahrzeugschein.pdf'],
+    )
 );
-
-$response = $client->orders->createEmissionStickerOrder($request);
 ```
 
 ### Creating a Reshipped Order
 
 ```php
-use Dropshipping\DTO\Requests\ReshippedOrderRequest;
+use Dropshipping\DS;
 
-$request = new ReshippedOrderRequest(
-    externalId: 'reship-001',
-    returnedDeliveryId: 456,
-    deliveryAddress: $address,
-    invoiceAddress: $address,
+$response = $client->orders->createReshippedOrder(
+    DS::reshippedOrder(
+        externalId: 'reship-001',
+        returnedDeliveryId: 456,
+        deliveryAddress: $address,
+        invoiceAddress: $address,
+    )
 );
-
-$response = $client->orders->createReshippedOrder($request);
 ```
 
 ### Checking License Plate Availability
 
 ```php
-use Dropshipping\DTO\Requests\AvailabilityCheckRequest;
-use Dropshipping\Enums\LicensePlateType;
-use Dropshipping\Enums\VehicleType;
+use Dropshipping\DS;
+use Dropshipping\Enums\{LicensePlateType, VehicleType};
 
-$request = new AvailabilityCheckRequest(
-    registrationOfficeServiceId: 1,
-    city: 'B',
-    middle: 'AB',
-    end: '1234',
-    licensePlateType: LicensePlateType::Regular,
-    vehicleType: VehicleType::Car,
+$response = $client->products->checkLicensePlateAvailability(
+    DS::availabilityCheck(
+        registrationOfficeServiceId: 1,
+        city: 'B',
+        middle: 'AB',
+        end: '1234',
+        licensePlateType: LicensePlateType::Regular,
+        vehicleType: VehicleType::Car,
+    )
 );
-
-$response = $client->products->checkLicensePlateAvailability($request);
 
 foreach ($response->availableLicensePlateNumbers as $plate) {
     echo "{$plate->city} {$plate->middle} {$plate->end}\n";
@@ -182,28 +197,118 @@ foreach ($response->availableLicensePlateNumbers as $plate) {
 ### Reserving a License Plate
 
 ```php
-use Dropshipping\DTO\Requests\LicensePlateReservationRequest;
-use Dropshipping\DTO\Requests\LicensePlateReservationCustomization;
-use Dropshipping\DTO\Requests\LicensePlateReservationVehicleHolder;
+use Dropshipping\DS;
+use Dropshipping\Enums\{LicensePlateType, VehicleType};
 
-$request = new LicensePlateReservationRequest(
-    email: 'max@example.com',
-    customization: new LicensePlateReservationCustomization(
-        registrationOfficeServiceId: 1,
-        licensePlateType: LicensePlateType::Regular,
-        vehicleType: VehicleType::Car,
-        licensePlateNumberComponents: new EuroLicensePlateNumberComponents(
-            city: 'B',
-            middle: 'AB',
-            end: '1234',
+$response = $client->shipments->createLicensePlateReservation(
+    DS::licensePlateReservation(
+        email: 'max@example.com',
+        customization: DS::reservationCustomization(
+            registrationOfficeServiceId: 1,
+            licensePlateType: LicensePlateType::Regular,
+            vehicleType: VehicleType::Car,
+            plate: DS::plate('B', 'AB', '1234'),
         ),
-    ),
-    vehicleHolder: new LicensePlateReservationVehicleHolder(
-        address: $address,
+        vehicleHolder: DS::reservationVehicleHolder(address: $address),
+    )
+);
+```
+
+### Managing GKS Configurations
+
+```php
+use Dropshipping\DS;
+
+$request = DS::gksConfiguration(
+    name: 'My KBA Config',
+    kopaKey: 'kopa-key-value',
+    username: 'kba-username',
+    password: 'kba-password',
+    publicKeyCertificate: file_get_contents('/path/to/cert.pem'),
+    privateKey: file_get_contents('/path/to/private.key'),
+    company: DS::gksCompany(
+        name: 'Musterfirma GmbH',
+        streetName: 'Musterstraße',
+        houseNumber: '1',
+        zipCode: '12345',
+        cityName: 'Berlin',
+        countryCode: 'DE',
     ),
 );
 
-$response = $client->shipments->createLicensePlateReservation($request);
+// Create
+$cfg = $client->gksConfigurations->create($request);
+echo $cfg->id;   // UUID of the new configuration
+
+// Update
+$client->gksConfigurations->update($cfg->id, $request);
+
+// List all
+foreach ($client->gksConfigurations->getOverviews()->overviewGksConfigurations as $cfg) {
+    echo "{$cfg->id}: {$cfg->name}\n";
+}
+
+// Get single
+$cfg = $client->gksConfigurations->getOverview($id);
+```
+
+### Submitting a Vehicle Deregistration
+
+```php
+use Dropshipping\DS;
+use Dropshipping\Enums\{VehicleDeregistrationLicensePlateType, VehicleDeregistrationVehicleType};
+
+$response = $client->vehicleDeregistrations->createDeregistration(
+    DS::vehicleDeregistration(
+        email: 'max@example.com',
+        customization: DS::deregistrationCustomization(
+            vehicleType: VehicleDeregistrationVehicleType::Car,
+            licensePlateType: VehicleDeregistrationLicensePlateType::Regular,
+            plate: DS::plate('B', 'AB', '1234'),
+            licensePlateReservationIncluded: false,
+            vehicleIdentificationNumber: 'WBA12345678901234',
+            vehicleRegistrationCertificateSecurityCode: 'ABC123',
+            vehicleRegistrationDate: '2020-01-15',
+            rearLicensePlateSecurityCode: 'XY9876',
+        ),
+        vehicleHolderAddress: $address,
+        externalOrderId: 'deregistration-001', // optional
+        gksConfigurationId: 'your-gks-uuid',   // optional
+    )
+);
+
+echo $response->orderId; // Created order ID
+```
+
+### Downloading a Deregistration File
+
+Files attached to a `VEHICLE_DEREGISTRATION_XKFZ_EVENT` webhook can be downloaded using the `fileAccessKey` from the event:
+
+```php
+use Dropshipping\Contracts\WebhookHandlerInterface;
+use Dropshipping\DTO\Webhooks\{VehicleDeregistrationXkfzEvent, WebhookEventInterface};
+use Dropshipping\Enums\WebhookEventType;
+
+class DeregistrationXkfzHandler implements WebhookHandlerInterface
+{
+    public function __construct(private readonly ApiClient $client) {}
+
+    public function supports(WebhookEventInterface $event): bool
+    {
+        return $event->getEventType() === WebhookEventType::VehicleDeregistrationXkfzEvent;
+    }
+
+    public function handle(WebhookEventInterface $event): void
+    {
+        /** @var VehicleDeregistrationXkfzEvent $event */
+        echo "Order {$event->order->id} status: {$event->status->value}\n";
+
+        foreach ($event->files ?? [] as $file) {
+            $content = $this->client->vehicleDeregistrations->downloadFileContent($file->fileAccessKey);
+            file_put_contents("{$file->purpose->value}.pdf", $content);
+        }
+    }
+}
 ```
 
 ### Handling Webhooks
@@ -212,27 +317,18 @@ Set up a webhook receiver with the built-in middleware pipeline:
 
 ```php
 use Dropshipping\Contracts\WebhookHandlerInterface;
-use Dropshipping\DTO\Webhooks\WebhookEventInterface;
-use Dropshipping\DTO\Webhooks\DeliveryShipmentEvent;
+use Dropshipping\DTO\Webhooks\{DeliveryShipmentEvent, WebhookEventFactory, WebhookEventInterface};
+use Dropshipping\Enums\WebhookEventType;
 use Dropshipping\Security\WebhookSignatureVerifier;
 use Dropshipping\Serialization\ArrayMapper;
-use Dropshipping\Webhook\WebhookDispatcher;
-use Dropshipping\Webhook\WebhookMessage;
-use Dropshipping\Webhook\WebhookPipeline;
-use Dropshipping\Webhook\Middleware\SignatureValidationMiddleware;
-use Dropshipping\Webhook\Middleware\PayloadValidationMiddleware;
-use Dropshipping\Webhook\Middleware\DeserializationMiddleware;
-use Dropshipping\DTO\Webhooks\WebhookEventFactory;
-use Dropshipping\Enums\WebhookEventType;
+use Dropshipping\Webhook\Middleware\{DeserializationMiddleware, PayloadValidationMiddleware, SignatureValidationMiddleware};
+use Dropshipping\Webhook\{WebhookDispatcher, WebhookMessage, WebhookPipeline};
 
 // Create middleware pipeline
-$serializer = new ArrayMapper();
-$verifier = new WebhookSignatureVerifier($config->getWebhookSignatureSecret());
-
 $pipeline = (new WebhookPipeline())
-    ->pipe(new SignatureValidationMiddleware($verifier))
+    ->pipe(new SignatureValidationMiddleware(new WebhookSignatureVerifier($config->getWebhookSignatureSecret())))
     ->pipe(new PayloadValidationMiddleware())
-    ->pipe(new DeserializationMiddleware($serializer, new WebhookEventFactory()));
+    ->pipe(new DeserializationMiddleware(new ArrayMapper(), new WebhookEventFactory()));
 
 // Implement a handler
 class ShipmentHandler implements WebhookHandlerInterface
@@ -269,20 +365,17 @@ $dispatcher->dispatch($message);
 For high-throughput scenarios, queue webhooks for background processing:
 
 ```php
-use Dropshipping\Async\QueueWebhookDispatcher;
-use Dropshipping\Async\WebhookWorker;
+use Dropshipping\Async\{QueueWebhookDispatcher, WebhookWorker};
 use Dropshipping\Contracts\WebhookQueueInterface;
 
 // Implement WebhookQueueInterface with your queue backend (Redis, RabbitMQ, database, etc.)
 $queue = new YourQueueImplementation();
 
 // In your HTTP controller: enqueue instead of processing inline
-$queueDispatcher = new QueueWebhookDispatcher($queue);
-$queueDispatcher->dispatch($message);
+(new QueueWebhookDispatcher($queue))->dispatch($message);
 
 // In a background worker process
-$worker = new WebhookWorker($queue, $dispatcher);
-$processed = $worker->run(maxMessages: 100);
+$processed = (new WebhookWorker($queue, $dispatcher))->run(maxMessages: 100);
 ```
 
 ## Architecture Overview
@@ -293,6 +386,7 @@ src/
 ├── Client/             API client and HTTP authentication
 ├── Configuration/      SDK configuration
 ├── Contracts/          Interfaces for serialization, webhooks, and queues
+├── DS.php              Static facade — single import for all request DTOs
 ├── DTO/
 │   ├── Requests/       Request objects with toArray() serialization
 │   ├── Responses/      Response objects with fromArray() factories
