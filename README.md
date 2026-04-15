@@ -317,18 +317,9 @@ Set up a webhook receiver with the built-in middleware pipeline:
 
 ```php
 use Dropshipping\Contracts\WebhookHandlerInterface;
-use Dropshipping\DTO\Webhooks\{DeliveryShipmentEvent, WebhookEventFactory, WebhookEventInterface};
+use Dropshipping\DS;
+use Dropshipping\DTO\Webhooks\WebhookEventInterface;
 use Dropshipping\Enums\WebhookEventType;
-use Dropshipping\Security\WebhookSignatureVerifier;
-use Dropshipping\Serialization\ArrayMapper;
-use Dropshipping\Webhook\Middleware\{DeserializationMiddleware, PayloadValidationMiddleware, SignatureValidationMiddleware};
-use Dropshipping\Webhook\{WebhookDispatcher, WebhookMessage, WebhookPipeline};
-
-// Create middleware pipeline
-$pipeline = (new WebhookPipeline())
-    ->pipe(new SignatureValidationMiddleware(new WebhookSignatureVerifier($config->getWebhookSignatureSecret())))
-    ->pipe(new PayloadValidationMiddleware())
-    ->pipe(new DeserializationMiddleware(new ArrayMapper(), new WebhookEventFactory()));
 
 // Implement a handler
 class ShipmentHandler implements WebhookHandlerInterface
@@ -340,24 +331,16 @@ class ShipmentHandler implements WebhookHandlerInterface
 
     public function handle(WebhookEventInterface $event): void
     {
-        /** @var DeliveryShipmentEvent $event */
         echo "Order {$event->order->id} shipped, tracking: {$event->delivery->trackingCode}\n";
     }
 }
 
-// Wire up the dispatcher
-$dispatcher = new WebhookDispatcher($pipeline, []);
+// Wire up pipeline and dispatcher
+$dispatcher = DS::webhookDispatcher(DS::webhookPipeline($config->getWebhookSignatureSecret()));
 $dispatcher->registerHandler(new ShipmentHandler());
 
 // Receive a webhook (e.g. in a controller)
-$message = new WebhookMessage(
-    payload: $requestBody,
-    signature: $request->getHeaderLine('X-Signature'),
-    webhookId: (int) $request->getHeaderLine('X-Webhook-Id'),
-    webhookVersion: $request->getHeaderLine('X-Webhook-Version'),
-);
-
-$dispatcher->dispatch($message);
+$dispatcher->dispatch(DS::incomingWebhook());
 ```
 
 ### Async Webhook Processing
@@ -365,17 +348,17 @@ $dispatcher->dispatch($message);
 For high-throughput scenarios, queue webhooks for background processing:
 
 ```php
-use Dropshipping\Async\{QueueWebhookDispatcher, WebhookWorker};
 use Dropshipping\Contracts\WebhookQueueInterface;
+use Dropshipping\DS;
 
 // Implement WebhookQueueInterface with your queue backend (Redis, RabbitMQ, database, etc.)
 $queue = new YourQueueImplementation();
 
 // In your HTTP controller: enqueue instead of processing inline
-(new QueueWebhookDispatcher($queue))->dispatch($message);
+DS::queueWebhookDispatcher($queue)->dispatch(DS::incomingWebhook());
 
 // In a background worker process
-$processed = (new WebhookWorker($queue, $dispatcher))->run(maxMessages: 100);
+$processed = DS::webhookWorker($queue, $dispatcher)->run(maxMessages: 100);
 ```
 
 ## Architecture Overview
