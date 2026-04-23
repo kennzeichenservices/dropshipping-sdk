@@ -142,6 +142,7 @@ final class WebhookEventFactoryTest extends TestCase
             'eventTime' => '2026-04-12T20:35:07',
             'order' => ['id' => 7, 'externalId' => 'dropshipping-client-external-id'],
             'status' => 'APPROVED_WITH_DOCUMENTS',
+            'derivedStatus' => 'SUCCESS',
             'files' => [
                 ['purposeType' => 'CERTIFICATE', 'mediaType' => 'application/pdf', 'fileAccessKey' => '7_4d61a48b-7209-4e4c-959b-fedfbda248e2_4', 'expirationTime' => '2026-04-12T21:35:07'],
             ],
@@ -177,6 +178,7 @@ final class WebhookEventFactoryTest extends TestCase
             'eventTime' => '2024-06-15T10:30:00Z',
             'order' => ['id' => 42],
             'status' => 'PROCESSED',
+            'derivedStatus' => 'SUCCESS',
         ]);
 
         self::assertInstanceOf(VehicleDeregistrationXkfzEvent::class, $event);

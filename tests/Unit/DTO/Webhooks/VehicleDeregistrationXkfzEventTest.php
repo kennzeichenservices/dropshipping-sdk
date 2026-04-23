@@ -9,6 +9,7 @@ use Dropshipping\DTO\Webhooks\VehicleDeregistrationCostBreakdownItem;
 use Dropshipping\DTO\Webhooks\VehicleDeregistrationRegistrationOfficeCosts;
 use Dropshipping\DTO\Webhooks\VehicleDeregistrationXkfzEvent;
 use Dropshipping\DTO\Webhooks\VehicleDeregistrationXkfzEventFile;
+use Dropshipping\DTO\Webhooks\VehicleDeregistrationXkfzEventMessage;
 use Dropshipping\Enums\VehicleDeregistrationXkfzEventFilePurposeType;
 use Dropshipping\Enums\VehicleDeregistrationXkfzEventStatus;
 use Dropshipping\Enums\WebhookEventType;
@@ -22,6 +23,7 @@ final class VehicleDeregistrationXkfzEventTest extends TestCase
             'eventTime' => '2026-04-12T20:35:07',
             'order' => ['id' => 7, 'externalId' => 'dropshipping-client-external-id'],
             'status' => 'APPROVED_WITH_DOCUMENTS',
+            'derivedStatus' => 'SUCCESS',
             'files' => [
                 ['purposeType' => 'CERTIFICATE', 'mediaType' => 'application/pdf', 'fileAccessKey' => '7_4d61a48b-7209-4e4c-959b-fedfbda248e2_4', 'expirationTime' => '2026-04-12T21:35:07'],
                 ['purposeType' => 'RECEIPT', 'mediaType' => 'image/jpeg', 'fileAccessKey' => '7_4d61a48b-7209-4e4c-959b-fedfbda248e2_5', 'expirationTime' => '2026-04-12T22:35:07'],
@@ -37,6 +39,10 @@ final class VehicleDeregistrationXkfzEventTest extends TestCase
                     'note' => 'NoteCharges',
                 ],
             ],
+            'messages' => [
+                ['type' => 'Type 1', 'kind' => 'Kind 1', 'code' => 'C1', 'text' => 'Text 1', 'additional' => 'Additional 1'],
+                ['type' => 'Type 2', 'kind' => null, 'code' => null, 'text' => null, 'additional' => null],
+            ],
         ]);
 
         self::assertSame(WebhookEventType::VehicleDeregistrationXkfzEvent, $event->getEventType());
@@ -45,6 +51,7 @@ final class VehicleDeregistrationXkfzEventTest extends TestCase
         self::assertSame('dropshipping-client-external-id', $event->order->externalId);
 
         self::assertSame(VehicleDeregistrationXkfzEventStatus::ApprovedWithDocuments, $event->status);
+        self::assertSame('SUCCESS', $event->derivedStatus);
 
         self::assertNotNull($event->files);
         self::assertCount(2, $event->files);
@@ -70,6 +77,17 @@ final class VehicleDeregistrationXkfzEventTest extends TestCase
         self::assertSame('Note1', $officeCosts->items[0]->note);
         self::assertSame(300, $officeCosts->total->amount);
         self::assertSame('NoteCharges', $officeCosts->note);
+
+        self::assertNotNull($event->messages);
+        self::assertCount(2, $event->messages);
+        self::assertInstanceOf(VehicleDeregistrationXkfzEventMessage::class, $event->messages[0]);
+        self::assertSame('Type 1', $event->messages[0]->type);
+        self::assertSame('Kind 1', $event->messages[0]->kind);
+        self::assertSame('C1', $event->messages[0]->code);
+        self::assertSame('Text 1', $event->messages[0]->text);
+        self::assertSame('Additional 1', $event->messages[0]->additional);
+        self::assertSame('Type 2', $event->messages[1]->type);
+        self::assertNull($event->messages[1]->kind);
     }
 
     public function test_fromArray_without_optional_fields(): void
@@ -78,14 +96,17 @@ final class VehicleDeregistrationXkfzEventTest extends TestCase
             'eventTime' => '2024-06-15T10:30:00Z',
             'order' => ['id' => 42],
             'status' => 'PROCESSED',
+            'derivedStatus' => 'SUCCESS',
         ]);
 
         self::assertSame(WebhookEventType::VehicleDeregistrationXkfzEvent, $event->getEventType());
         self::assertSame(42, $event->order->id);
         self::assertNull($event->order->externalId);
         self::assertSame(VehicleDeregistrationXkfzEventStatus::Processed, $event->status);
+        self::assertSame('SUCCESS', $event->derivedStatus);
         self::assertNull($event->files);
         self::assertNull($event->costBreakdown);
+        self::assertNull($event->messages);
     }
 
     public function test_fromArray_with_partial_cost_breakdown(): void
@@ -94,6 +115,7 @@ final class VehicleDeregistrationXkfzEventTest extends TestCase
             'eventTime' => '2024-06-15T10:30:00Z',
             'order' => ['id' => 42],
             'status' => 'FAILED',
+            'derivedStatus' => 'FAILED',
             'costBreakdown' => [
                 'kbaCost' => 500,
             ],

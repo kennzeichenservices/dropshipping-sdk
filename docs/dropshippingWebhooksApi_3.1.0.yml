@@ -126,8 +126,7 @@ components:
                         - DELIVERY_CANCELLATION
                         - LICENSE_PLATE_RESERVATION_APPROVAL
                         - LICENSE_PLATE_RESERVATION_REJECTION
-                        - VEHICLE_DEREGISTRATION_APPROVAL
-                        - VEHICLE_DEREGISTRATION_REJECTION
+                        - LICENSE_PLATE_RESERVATION_TIMEOUT
                         - VEHICLE_DEREGISTRATION_XKFZ_EVENT
                 eventTime:
                     $ref: "#/components/schemas/LocalDateTime"
@@ -559,6 +558,27 @@ components:
                 registrationOfficeCosts:
                     $ref: "#/components/schemas/VehicleDeregistrationXkfzEventWebhookEventCostBreakdownRegistrationOfficeCosts"
 
+        VehicleDeregistrationXkfzEventWebhookEventMessage:
+            type: object
+            nullable: true
+            required:
+                - type
+            properties:
+                type:
+                    type: string
+                kind:
+                    type: string
+                    nullable: true
+                code:
+                    type: string
+                    nullable: true
+                text:
+                    type: string
+                    nullable: true
+                additional:
+                    type: string
+                    nullable: true
+
         VehicleDeregistrationXkfzEventWebhookEventStatus:
             type: string
             enum:
@@ -607,11 +627,14 @@ components:
             required:
                 - order
                 - status
+                - derivedStatus
             properties:
                 order:
                     $ref: "#/components/schemas/VehicleDeregistrationXkfzEventWebhookEventOrder"
                 status:
                     $ref: "#/components/schemas/VehicleDeregistrationXkfzEventWebhookEventStatus"
+                derivedStatus:
+                    type: string
                 files:
                     type: array
                     nullable: true
@@ -619,11 +642,17 @@ components:
                         $ref: "#/components/schemas/VehicleDeregistrationXkfzEventWebhookEventFile"
                 costBreakdown:
                     $ref: "#/components/schemas/VehicleDeregistrationXkfzEventWebhookEventCostBreakdown"
+                messages:
+                    type: array
+                    nullable: true
+                    items:
+                        $ref: "#/components/schemas/VehicleDeregistrationXkfzEventWebhookEventMessage"
             example:
                 {
                     "eventType": "VEHICLE_DEREGISTRATION_XKFZ_EVENT",
                     "order": { "id": 1, "externalId": "ext-1" },
                     "status": "APPROVED_WITH_DOCUMENTS",
+                    "derivedStatus": "SUCCESS",
                     "files":
                         [
                             {
@@ -672,6 +701,23 @@ components:
                                     "note": "Note",
                                 },
                         },
+                    "messages":
+                        [
+                            {
+                                "type": "Type 1",
+                                "kind": "Kind 1",
+                                "code": "C1",
+                                "text": "Text 1",
+                                "additional": "Additional 1",
+                            },
+                            {
+                                "type": "Type 2",
+                                "kind": "Kind 2",
+                                "code": "C2",
+                                "text": "Text 2",
+                                "additional": "Additional 2",
+                            },
+                        ],
                     "eventTime": "2000-10-31T01:30:40",
                 }
 

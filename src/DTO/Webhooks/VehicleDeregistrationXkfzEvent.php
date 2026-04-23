@@ -16,18 +16,22 @@ use Dropshipping\Enums\WebhookEventType;
 final readonly class VehicleDeregistrationXkfzEvent implements WebhookEventInterface
 {
     /**
-     * @param string                                        $eventTime     The ISO 8601 timestamp when the event occurred.
-     * @param WebhookOrder                                  $order         The associated order reference.
-     * @param VehicleDeregistrationXkfzEventStatus          $status        The current processing status of the deregistration.
-     * @param list<VehicleDeregistrationXkfzEventFile>|null $files         Files attached to this event, if any.
-     * @param VehicleDeregistrationCostBreakdown|null        $costBreakdown The cost breakdown, if available.
+     * @param string                                           $eventTime     The ISO 8601 timestamp when the event occurred.
+     * @param WebhookOrder                                     $order         The associated order reference.
+     * @param VehicleDeregistrationXkfzEventStatus             $status        The current processing status of the deregistration.
+     * @param string                                           $derivedStatus A derived human-readable status string.
+     * @param list<VehicleDeregistrationXkfzEventFile>|null    $files         Files attached to this event, if any.
+     * @param VehicleDeregistrationCostBreakdown|null          $costBreakdown The cost breakdown, if available.
+     * @param list<VehicleDeregistrationXkfzEventMessage>|null $messages      Messages attached to this event, if any.
      */
     public function __construct(
         public string $eventTime,
         public WebhookOrder $order,
         public VehicleDeregistrationXkfzEventStatus $status,
+        public string $derivedStatus,
         public ?array $files,
         public ?VehicleDeregistrationCostBreakdown $costBreakdown,
+        public ?array $messages,
     ) {
     }
 
@@ -60,6 +64,7 @@ final readonly class VehicleDeregistrationXkfzEvent implements WebhookEventInter
             eventTime: $data['eventTime'],
             order: WebhookOrder::fromArray($data['order']),
             status: VehicleDeregistrationXkfzEventStatus::from($data['status']),
+            derivedStatus: $data['derivedStatus'],
             files: isset($data['files'])
                 ? array_map(
                     static fn (array $file): VehicleDeregistrationXkfzEventFile => VehicleDeregistrationXkfzEventFile::fromArray($file),
@@ -68,6 +73,12 @@ final readonly class VehicleDeregistrationXkfzEvent implements WebhookEventInter
                 : null,
             costBreakdown: isset($data['costBreakdown'])
                 ? VehicleDeregistrationCostBreakdown::fromArray($data['costBreakdown'])
+                : null,
+            messages: isset($data['messages'])
+                ? array_map(
+                    static fn (array $msg): VehicleDeregistrationXkfzEventMessage => VehicleDeregistrationXkfzEventMessage::fromArray($msg),
+                    $data['messages'],
+                )
                 : null,
         );
     }

@@ -301,11 +301,15 @@ class DeregistrationXkfzHandler implements WebhookHandlerInterface
     public function handle(WebhookEventInterface $event): void
     {
         /** @var VehicleDeregistrationXkfzEvent $event */
-        echo "Order {$event->order->id} status: {$event->status->value}\n";
+        echo "Order {$event->order->id} status: {$event->status->value} ({$event->derivedStatus})\n";
+
+        foreach ($event->messages ?? [] as $message) {
+            echo "[{$message->type}] {$message->text}\n";
+        }
 
         foreach ($event->files ?? [] as $file) {
             $content = $this->client->vehicleDeregistrations->downloadFileContent($file->fileAccessKey);
-            file_put_contents("{$file->purpose->value}.pdf", $content);
+            file_put_contents("{$file->purposeType->value}.pdf", $content);
         }
     }
 }
@@ -420,7 +424,7 @@ The SDK follows these patterns:
 | `LICENSE_PLATE_RESERVATION_APPROVAL` | `LicensePlateReservationApprovalEvent` | Reservation approved with PIN and price |
 | `LICENSE_PLATE_RESERVATION_REJECTION` | `LicensePlateReservationRejectionEvent` | Reservation rejected with alternatives |
 | `LICENSE_PLATE_RESERVATION_TIMEOUT` | `LicensePlateReservationTimeoutEvent` | Reservation timed out |
-| `VEHICLE_DEREGISTRATION_XKFZ_EVENT` | `VehicleDeregistrationXkfzEvent` | Vehicle deregistration XKFZ status update — includes `status`, optional `files` (with `fileAccessKey` for download) and optional `costBreakdown` |
+| `VEHICLE_DEREGISTRATION_XKFZ_EVENT` | `VehicleDeregistrationXkfzEvent` | Vehicle deregistration XKFZ status update — includes `status`, `derivedStatus`, optional `files` (with `fileAccessKey` for download), optional `costBreakdown`, and optional `messages` |
 
 ### Enums
 

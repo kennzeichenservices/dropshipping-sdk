@@ -19,7 +19,8 @@ The API processes the deregistration asynchronously and sends one or more `VEHIC
 | `VehicleDeregistrationVehicleHolder` | Vehicle holder address |
 | `VehicleDeregistrationVehicleType` | Enum: `CAR`, `MOTORCYCLE`, `TRUCK`, `TRAILER`, `TRACTOR`, `LIGHT_MOTORCYCLE`, `OTHER` |
 | `VehicleDeregistrationLicensePlateType` | Enum: `REGULAR`, `ELECTRIC`, `HISTORICAL`, `*_SEASON` variants |
-| `VehicleDeregistrationXkfzEvent` | Webhook event with `status`, optional `files`, and optional `costBreakdown` |
+| `VehicleDeregistrationXkfzEvent` | Webhook event with `status`, `derivedStatus`, optional `files`, optional `costBreakdown`, and optional `messages` |
+| `VehicleDeregistrationXkfzEventMessage` | Message attached to the event with `type`, `kind`, `code`, `text`, `additional` |
 | `VehicleDeregistrationXkfzEventFilePurposeType` | Enum: `CERTIFICATE`, `RECEIPT`, `APPLICATION`, `UNSPECIFIED` |
 
 ## Run
