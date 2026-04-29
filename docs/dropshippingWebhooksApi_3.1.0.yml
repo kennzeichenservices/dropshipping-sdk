@@ -647,6 +647,9 @@ components:
                     nullable: true
                     items:
                         $ref: "#/components/schemas/VehicleDeregistrationXkfzEventWebhookEventMessage"
+                applicationId:
+                    type: string
+                    nullable: true
             example:
                 {
                     "eventType": "VEHICLE_DEREGISTRATION_XKFZ_EVENT",
@@ -718,6 +721,7 @@ components:
                                 "additional": "Additional 2",
                             },
                         ],
+                    "applicationId": "88888020001031000123",
                     "eventTime": "2000-10-31T01:30:40",
                 }
 

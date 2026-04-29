@@ -23,6 +23,7 @@ final readonly class VehicleDeregistrationXkfzEvent implements WebhookEventInter
      * @param list<VehicleDeregistrationXkfzEventFile>|null    $files         Files attached to this event, if any.
      * @param VehicleDeregistrationCostBreakdown|null          $costBreakdown The cost breakdown, if available.
      * @param list<VehicleDeregistrationXkfzEventMessage>|null $messages      Messages attached to this event, if any.
+     * @param string|null                                      $applicationId The XKFZ application ID, if available.
      */
     public function __construct(
         public string $eventTime,
@@ -32,6 +33,7 @@ final readonly class VehicleDeregistrationXkfzEvent implements WebhookEventInter
         public ?array $files,
         public ?VehicleDeregistrationCostBreakdown $costBreakdown,
         public ?array $messages,
+        public ?string $applicationId,
     ) {
     }
 
@@ -80,6 +82,7 @@ final readonly class VehicleDeregistrationXkfzEvent implements WebhookEventInter
                     $data['messages'],
                 )
                 : null,
+            applicationId: $data['applicationId'] ?? null,
         );
     }
 }

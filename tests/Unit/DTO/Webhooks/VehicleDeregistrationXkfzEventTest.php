@@ -43,6 +43,7 @@ final class VehicleDeregistrationXkfzEventTest extends TestCase
                 ['type' => 'Type 1', 'kind' => 'Kind 1', 'code' => 'C1', 'text' => 'Text 1', 'additional' => 'Additional 1'],
                 ['type' => 'Type 2', 'kind' => null, 'code' => null, 'text' => null, 'additional' => null],
             ],
+            'applicationId' => '88888020001031000123',
         ]);
 
         self::assertSame(WebhookEventType::VehicleDeregistrationXkfzEvent, $event->getEventType());
@@ -88,6 +89,7 @@ final class VehicleDeregistrationXkfzEventTest extends TestCase
         self::assertSame('Additional 1', $event->messages[0]->additional);
         self::assertSame('Type 2', $event->messages[1]->type);
         self::assertNull($event->messages[1]->kind);
+        self::assertSame('88888020001031000123', $event->applicationId);
     }
 
     public function test_fromArray_without_optional_fields(): void
@@ -107,6 +109,7 @@ final class VehicleDeregistrationXkfzEventTest extends TestCase
         self::assertNull($event->files);
         self::assertNull($event->costBreakdown);
         self::assertNull($event->messages);
+        self::assertNull($event->applicationId);
     }
 
     public function test_fromArray_with_partial_cost_breakdown(): void
