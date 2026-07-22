@@ -92,10 +92,13 @@ final class VehicleDeregistrationRequestTest extends TestCase
         $this->createRequest(email: 'invalid');
     }
 
-    public function test_rejects_gksConfigurationId_and_contractPartnerKopaKey_set_together(): void
+    public function test_toArray_includes_gksConfigurationId_and_contractPartnerKopaKey_together(): void
     {
-        $this->expectException(DropshippingException::class);
-        $this->createRequest(gksConfigurationId: 'uuid-123', contractPartnerKopaKey: 'K123X');
+        $request = $this->createRequest(gksConfigurationId: 'uuid-123', contractPartnerKopaKey: 'K123X');
+        $array = $request->toArray();
+
+        self::assertSame('uuid-123', $array['gksConfigurationId']);
+        self::assertSame('K123X', $array['contractPartnerKopaKey']);
     }
 
     public function test_validates_season_month_range(): void
