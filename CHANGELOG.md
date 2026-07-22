@@ -1,10 +1,17 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [2.3.11] — 2026-07-22
+
+### Miscellaneous
+
+- Bump version to 2.3.11 and update VehicleDeregistrationRequest tests
+
 ## [2.3.10] — 2026-07-22
 
 ### Miscellaneous
 
+- Release v2.3.10
 - Bump version to 2.3.10 in composer.json
 
 ## [2.3.9] — 2026-04-29
