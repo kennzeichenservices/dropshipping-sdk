@@ -425,6 +425,7 @@ final class DS
         Address $vehicleHolderAddress,
         ?string $externalOrderId = null,
         ?string $gksConfigurationId = null,
+        ?string $contractPartnerKopaKey = null,
     ): VehicleDeregistrationRequest {
         return new VehicleDeregistrationRequest(
             email: $email,
@@ -432,6 +433,7 @@ final class DS
             vehicleHolder: new VehicleDeregistrationVehicleHolder(address: $vehicleHolderAddress),
             externalOrderId: $externalOrderId,
             gksConfigurationId: $gksConfigurationId,
+            contractPartnerKopaKey: $contractPartnerKopaKey,
         );
     }
 }

@@ -272,8 +272,9 @@ $response = $client->vehicleDeregistrations->createDeregistration(
             rearLicensePlateSecurityCode: 'XY9876',
         ),
         vehicleHolderAddress: $address,
-        externalOrderId: 'deregistration-001', // optional
-        gksConfigurationId: 'your-gks-uuid',   // optional
+        externalOrderId: 'deregistration-001',  // optional
+        gksConfigurationId: 'your-gks-uuid',    // optional
+        contractPartnerKopaKey: 'K123X',        // optional
     )
 );
 

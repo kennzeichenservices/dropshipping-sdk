@@ -33,6 +33,15 @@ final class VehicleDeregistrationRequestTest extends TestCase
         self::assertSame('WBA12345678901234', $array['customization']['vehicleIdentificationNumber']);
     }
 
+    public function test_toArray_includes_contractPartnerKopaKey(): void
+    {
+        $request = $this->createRequest(contractPartnerKopaKey: 'K123X');
+        $array = $request->toArray();
+
+        self::assertSame('K123X', $array['contractPartnerKopaKey']);
+        self::assertArrayNotHasKey('gksConfigurationId', $array);
+    }
+
     public function test_toArray_excludes_null_optional_fields(): void
     {
         $request = $this->createRequest();
@@ -40,6 +49,7 @@ final class VehicleDeregistrationRequestTest extends TestCase
 
         self::assertArrayNotHasKey('externalOrderId', $array);
         self::assertArrayNotHasKey('gksConfigurationId', $array);
+        self::assertArrayNotHasKey('contractPartnerKopaKey', $array);
     }
 
     public function test_customization_excludes_null_season_months(): void
@@ -82,6 +92,12 @@ final class VehicleDeregistrationRequestTest extends TestCase
         $this->createRequest(email: 'invalid');
     }
 
+    public function test_rejects_gksConfigurationId_and_contractPartnerKopaKey_set_together(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->createRequest(gksConfigurationId: 'uuid-123', contractPartnerKopaKey: 'K123X');
+    }
+
     public function test_validates_season_month_range(): void
     {
         $this->expectException(DropshippingException::class);
@@ -105,6 +121,7 @@ final class VehicleDeregistrationRequestTest extends TestCase
         string $email = 'test@example.com',
         ?string $externalOrderId = null,
         ?string $gksConfigurationId = null,
+        ?string $contractPartnerKopaKey = null,
     ): VehicleDeregistrationRequest {
         $components = new EuroLicensePlateNumberComponents('B', 'AB', '123');
         $customization = new VehicleDeregistrationCustomization(
@@ -126,6 +143,7 @@ final class VehicleDeregistrationRequestTest extends TestCase
             vehicleHolder: $vehicleHolder,
             externalOrderId: $externalOrderId,
             gksConfigurationId: $gksConfigurationId,
+            contractPartnerKopaKey: $contractPartnerKopaKey,
         );
     }
 }
