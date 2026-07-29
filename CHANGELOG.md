@@ -1,17 +1,16 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
 ## [2.3.20] — 2026-07-29
-
-### Miscellaneous
-
-- Bump version to 2.3.20
-
-## [2.3.2.0] — 2026-07-29
 
 ### Features
 
 - Add beta vehicle registration feature
+
+### Miscellaneous
+
+- Bump version to 2.3.20
 
 ## [2.3.11] — 2026-07-22
 
@@ -136,5 +135,3 @@ All notable changes to this project will be documented in this file.
 ### Features
 
 - Add initial project files including README, .gitignore, and GitHub Actions workflow
-
-
