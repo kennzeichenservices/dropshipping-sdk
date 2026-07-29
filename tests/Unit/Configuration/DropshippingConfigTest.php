@@ -50,4 +50,88 @@ final class DropshippingConfigTest extends TestCase
 
         self::assertSame(30, $config->getTimeout());
     }
+
+    public function test_getBaseUrl_uses_explicit_api_version(): void
+    {
+        $config = new DropshippingConfig('api.example.com', 42, 'user', 'pass', null, '2.3.2');
+
+        self::assertSame('https://api.example.com/dropshipping-api/42/2.3.2', $config->getBaseUrl());
+    }
+
+    /**
+     * The API version is part of the request URL, and an unreleased version makes the API answer
+     * 403 on every endpoint. composer.json must therefore declare a version that is live for all
+     * clients — a beta is opted into per integration, never shipped as the default.
+     */
+    public function test_default_api_version_comes_from_composer_json(): void
+    {
+        self::withoutApiVersionEnv(function (): void {
+            $config = new DropshippingConfig('api.example.com', 42, 'user', 'pass');
+
+            self::assertSame(
+                'https://api.example.com/dropshipping-api/42/' . self::composerApiVersion(),
+                $config->getBaseUrl(),
+            );
+        });
+    }
+
+    public function test_env_var_overrides_the_default_api_version(): void
+    {
+        $previous = getenv('DROPSHIPPING_API_VERSION');
+        putenv('DROPSHIPPING_API_VERSION=9.9.9');
+
+        try {
+            $config = new DropshippingConfig('api.example.com', 42, 'user', 'pass');
+
+            self::assertStringEndsWith('/9.9.9', $config->getBaseUrl());
+        } finally {
+            self::restoreApiVersionEnv($previous);
+        }
+    }
+
+    public function test_explicit_api_version_wins_over_the_env_var(): void
+    {
+        $previous = getenv('DROPSHIPPING_API_VERSION');
+        putenv('DROPSHIPPING_API_VERSION=9.9.9');
+
+        try {
+            $config = new DropshippingConfig('api.example.com', 42, 'user', 'pass', null, '2.3.2');
+
+            self::assertStringEndsWith('/2.3.2', $config->getBaseUrl());
+        } finally {
+            self::restoreApiVersionEnv($previous);
+        }
+    }
+
+    private static function withoutApiVersionEnv(callable $test): void
+    {
+        $previous = getenv('DROPSHIPPING_API_VERSION');
+        putenv('DROPSHIPPING_API_VERSION');
+
+        try {
+            $test();
+        } finally {
+            self::restoreApiVersionEnv($previous);
+        }
+    }
+
+    private static function restoreApiVersionEnv(string|false $previous): void
+    {
+        if (is_string($previous)) {
+            putenv('DROPSHIPPING_API_VERSION=' . $previous);
+
+            return;
+        }
+
+        putenv('DROPSHIPPING_API_VERSION');
+    }
+
+    private static function composerApiVersion(): string
+    {
+        $data = json_decode((string) file_get_contents(dirname(__DIR__, 3) . '/composer.json'), true);
+
+        self::assertIsString($data['api-version'] ?? null, 'composer.json must declare a string "api-version"');
+
+        return $data['api-version'];
+    }
 }

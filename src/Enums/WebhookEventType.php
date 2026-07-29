@@ -18,4 +18,12 @@ enum WebhookEventType: string
     case LicensePlateReservationRejection = 'LICENSE_PLATE_RESERVATION_REJECTION';
     case LicensePlateReservationTimeout = 'LICENSE_PLATE_RESERVATION_TIMEOUT';
     case VehicleDeregistrationXkfzEvent = 'VEHICLE_DEREGISTRATION_XKFZ_EVENT';
+
+    /**
+     * Placeholder for event types this SDK version does not know.
+     *
+     * Never sent by the API — assigned locally by {@see \Dropshipping\DTO\Webhooks\UnknownWebhookEvent}
+     * when unknown event types are tolerated.
+     */
+    case Unknown = 'UNKNOWN';
 }

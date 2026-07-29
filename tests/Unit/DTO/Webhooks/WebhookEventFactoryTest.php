@@ -11,6 +11,7 @@ use Dropshipping\DTO\Webhooks\LicensePlateReservationApprovalEvent;
 use Dropshipping\DTO\Webhooks\LicensePlateReservationRejectionEvent;
 use Dropshipping\DTO\Webhooks\LicensePlateReservationTimeoutEvent;
 use Dropshipping\DTO\Webhooks\PingEvent;
+use Dropshipping\DTO\Webhooks\UnknownWebhookEvent;
 use Dropshipping\DTO\Webhooks\VehicleDeregistrationXkfzEvent;
 use Dropshipping\DTO\Webhooks\WebhookDelivery;
 use Dropshipping\DTO\Webhooks\WebhookEventFactory;
@@ -200,6 +201,41 @@ final class WebhookEventFactoryTest extends TestCase
         $this->expectExceptionMessage('Unknown webhook event type');
 
         WebhookEventFactory::fromArray(['eventType' => 'UNKNOWN_TYPE', 'eventTime' => '2024-01-01T00:00:00Z']);
+    }
+
+    public function test_fromArray_returns_unknown_event_when_tolerated(): void
+    {
+        $payload = [
+            'eventType' => 'VEHICLE_REGISTRATION_SOME_FUTURE_EVENT',
+            'eventTime' => '2024-01-01T00:00:00Z',
+            'order' => ['id' => 42],
+        ];
+
+        $event = WebhookEventFactory::fromArray($payload, tolerateUnknown: true);
+
+        self::assertInstanceOf(UnknownWebhookEvent::class, $event);
+        self::assertSame(WebhookEventType::Unknown, $event->getEventType());
+        self::assertSame('VEHICLE_REGISTRATION_SOME_FUTURE_EVENT', $event->rawEventType);
+        self::assertSame('2024-01-01T00:00:00Z', $event->getEventTime());
+        self::assertSame($payload, $event->payload);
+    }
+
+    public function test_fromArray_still_throws_on_missing_eventType_when_tolerated(): void
+    {
+        $this->expectException(WebhookException::class);
+        $this->expectExceptionMessage('Missing eventType');
+
+        WebhookEventFactory::fromArray(['eventTime' => '2024-01-01T00:00:00Z'], tolerateUnknown: true);
+    }
+
+    public function test_fromArray_still_resolves_known_events_when_tolerated(): void
+    {
+        $event = WebhookEventFactory::fromArray(
+            ['eventType' => 'PING', 'eventTime' => '2024-01-01T00:00:00Z'],
+            tolerateUnknown: true,
+        );
+
+        self::assertSame(WebhookEventType::Ping, $event->getEventType());
     }
 
     public function test_webhook_delivery_fromArray(): void

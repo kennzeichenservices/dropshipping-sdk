@@ -21,12 +21,19 @@ use Dropshipping\DTO\Requests\OrderCreationRequest;
 use Dropshipping\DTO\Requests\ReshippedOrderRequest;
 use Dropshipping\DTO\Requests\VehicleDeregistrationRequest;
 use Dropshipping\DTO\Requests\VehicleDeregistrationVehicleHolder;
+use Dropshipping\DTO\Requests\VehicleRegistrationRequest;
+use Dropshipping\DTO\Requests\VehicleRegistrationVehicleHolder;
 use Dropshipping\DTO\VehicleDeregistrationCustomization;
-use Dropshipping\DTO\Webhooks\WebhookEventFactory;
+use Dropshipping\DTO\VehicleRegistrationCustomization;
+use Dropshipping\DTO\VehicleRegistrationPreviousLicensePlate;
 use Dropshipping\Enums\Gender;
 use Dropshipping\Enums\LicensePlateType;
 use Dropshipping\Enums\VehicleDeregistrationLicensePlateType;
 use Dropshipping\Enums\VehicleDeregistrationVehicleType;
+use Dropshipping\Enums\VehicleRegistrationLicensePlateNumberAssignmentStrategy;
+use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
+use Dropshipping\Enums\VehicleRegistrationServiceTypeCode;
+use Dropshipping\Enums\VehicleRegistrationVehicleType;
 use Dropshipping\Enums\VehicleType;
 use Dropshipping\Security\WebhookSignatureVerifier;
 use Dropshipping\Serialization\ArrayMapper;
@@ -329,14 +336,22 @@ final class DS
      * Wires up signature validation, payload validation, and deserialization
      * middleware in the correct order.
      *
-     * @param string $signatureSecret The webhook signature secret from the SDK config.
+     * @param string $signatureSecret       The webhook signature secret from the SDK config.
+     * @param bool   $tolerateUnknownEvents When true, event types this SDK version does not know are
+     *                                      delivered as {@see \Dropshipping\DTO\Webhooks\UnknownWebhookEvent}
+     *                                      instead of throwing. Enable this to stay resilient while the
+     *                                      API rolls out beta events such as vehicle registration.
      */
-    public static function webhookPipeline(string $signatureSecret): WebhookPipeline
-    {
+    public static function webhookPipeline(
+        string $signatureSecret,
+        bool $tolerateUnknownEvents = false,
+    ): WebhookPipeline {
+        $serializer = new ArrayMapper();
+
         return (new WebhookPipeline())
             ->pipe(new SignatureValidationMiddleware(new WebhookSignatureVerifier($signatureSecret)))
-            ->pipe(new PayloadValidationMiddleware())
-            ->pipe(new DeserializationMiddleware(new ArrayMapper(), new WebhookEventFactory()));
+            ->pipe(new PayloadValidationMiddleware($serializer))
+            ->pipe(new DeserializationMiddleware($serializer, $tolerateUnknownEvents));
     }
 
     /**
@@ -431,6 +446,103 @@ final class DS
             email: $email,
             customization: $customization,
             vehicleHolder: new VehicleDeregistrationVehicleHolder(address: $vehicleHolderAddress),
+            externalOrderId: $externalOrderId,
+            gksConfigurationId: $gksConfigurationId,
+            contractPartnerKopaKey: $contractPartnerKopaKey,
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Vehicle registrations (beta)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Create the previous license plate for a vehicle registration.
+     *
+     * @experimental Vehicle registration is a beta feature of the dropshipping API (2.3.2).
+     */
+    public static function previousLicensePlate(
+        EuroLicensePlateNumberComponents $plate,
+        VehicleRegistrationLicensePlateType $licensePlateType,
+        ?int $seasonStartMonth = null,
+        ?int $seasonEndMonth = null,
+        ?string $frontLicensePlateSecurityCode = null,
+        ?string $rearLicensePlateSecurityCode = null,
+    ): VehicleRegistrationPreviousLicensePlate {
+        return new VehicleRegistrationPreviousLicensePlate(
+            licensePlateNumberComponents: $plate,
+            licensePlateType: $licensePlateType,
+            seasonStartMonth: $seasonStartMonth,
+            seasonEndMonth: $seasonEndMonth,
+            frontLicensePlateSecurityCode: $frontLicensePlateSecurityCode,
+            rearLicensePlateSecurityCode: $rearLicensePlateSecurityCode,
+        );
+    }
+
+    /**
+     * Create a vehicle registration customization DTO.
+     *
+     * @experimental Vehicle registration is a beta feature of the dropshipping API (2.3.2).
+     */
+    public static function registrationCustomization(
+        VehicleRegistrationLicensePlateNumberAssignmentStrategy $licensePlateNumberAssignmentStrategy,
+        VehicleRegistrationServiceTypeCode $vehicleRegistrationServiceTypeCode,
+        EuroLicensePlateNumberComponents $plate,
+        bool $deregistered,
+        VehicleRegistrationVehicleType $vehicleType,
+        VehicleRegistrationLicensePlateType $licensePlateType,
+        string $electronicInsuranceConfirmationNumber,
+        string $vehicleIdentificationNumber,
+        string $vehicleTitleSecurityCode,
+        string $iban,
+        string $bic,
+        ?int $seasonStartMonth = null,
+        ?int $seasonEndMonth = null,
+        ?string $vehicleRegistrationCertificateSecurityCode = null,
+        ?string $vehicleTitleNumber = null,
+        ?VehicleRegistrationPreviousLicensePlate $previousLicensePlate = null,
+        ?string $reservationPin = null,
+    ): VehicleRegistrationCustomization {
+        return new VehicleRegistrationCustomization(
+            licensePlateNumberAssignmentStrategy: $licensePlateNumberAssignmentStrategy,
+            vehicleRegistrationServiceTypeCode: $vehicleRegistrationServiceTypeCode,
+            licensePlateNumberComponents: $plate,
+            deregistered: $deregistered,
+            vehicleType: $vehicleType,
+            licensePlateType: $licensePlateType,
+            electronicInsuranceConfirmationNumber: $electronicInsuranceConfirmationNumber,
+            vehicleIdentificationNumber: $vehicleIdentificationNumber,
+            vehicleTitleSecurityCode: $vehicleTitleSecurityCode,
+            iban: $iban,
+            bic: $bic,
+            seasonStartMonth: $seasonStartMonth,
+            seasonEndMonth: $seasonEndMonth,
+            vehicleRegistrationCertificateSecurityCode: $vehicleRegistrationCertificateSecurityCode,
+            vehicleTitleNumber: $vehicleTitleNumber,
+            previousLicensePlate: $previousLicensePlate,
+            reservationPin: $reservationPin,
+        );
+    }
+
+    /**
+     * Create a vehicle registration request.
+     *
+     * The vehicle holder address is wrapped automatically — pass the Address directly.
+     *
+     * @experimental Vehicle registration is a beta feature of the dropshipping API (2.3.2).
+     */
+    public static function vehicleRegistration(
+        string $email,
+        VehicleRegistrationCustomization $customization,
+        Address $vehicleHolderAddress,
+        ?string $externalOrderId = null,
+        ?string $gksConfigurationId = null,
+        ?string $contractPartnerKopaKey = null,
+    ): VehicleRegistrationRequest {
+        return new VehicleRegistrationRequest(
+            email: $email,
+            customization: $customization,
+            vehicleHolder: new VehicleRegistrationVehicleHolder(address: $vehicleHolderAddress),
             externalOrderId: $externalOrderId,
             gksConfigurationId: $gksConfigurationId,
             contractPartnerKopaKey: $contractPartnerKopaKey,

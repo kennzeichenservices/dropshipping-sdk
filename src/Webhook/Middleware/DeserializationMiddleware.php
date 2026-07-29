@@ -18,10 +18,15 @@ use Dropshipping\Webhook\WebhookMessage;
 final class DeserializationMiddleware implements WebhookMiddlewareInterface
 {
     /**
-     * @param SerializerInterface $serializer Serializer used to decode the raw payload.
+     * @param SerializerInterface $serializer             Serializer used to decode the raw payload.
+     * @param bool                $tolerateUnknownEvents  When true, payloads with an event type this SDK
+     *                                                    version does not know yield an
+     *                                                    {@see \Dropshipping\DTO\Webhooks\UnknownWebhookEvent}
+     *                                                    instead of throwing.
      */
     public function __construct(
         private readonly SerializerInterface $serializer,
+        private readonly bool $tolerateUnknownEvents = false,
     ) {
     }
 
@@ -31,7 +36,7 @@ final class DeserializationMiddleware implements WebhookMiddlewareInterface
     public function process(WebhookMessage $message, callable $next): WebhookMessage
     {
         $data = $this->serializer->decode($message->getPayload());
-        $event = WebhookEventFactory::fromArray($data);
+        $event = WebhookEventFactory::fromArray($data, $this->tolerateUnknownEvents);
         $message = $message->withEvent($event);
 
         return $next($message);

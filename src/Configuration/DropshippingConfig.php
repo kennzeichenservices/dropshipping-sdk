@@ -12,7 +12,7 @@ namespace Dropshipping\Configuration;
  */
 final readonly class DropshippingConfig
 {
-    private const DEFAULT_API_VERSION = '2.3.0';
+    private const DEFAULT_API_VERSION = '2.3.1';
 
     private string $apiVersion;
 
@@ -39,6 +39,17 @@ final readonly class DropshippingConfig
         $this->apiVersion = $apiVersion ?? (getenv('DROPSHIPPING_API_VERSION') ?: self::resolveDefaultApiVersion());
     }
 
+    /**
+     * Resolve the API version used when the caller does not specify one.
+     *
+     * The version is part of the request URL, and the API answers 403 on *every*
+     * endpoint when a client is not entitled to the requested version. So
+     * {@code api-version} in composer.json must always name a version that is
+     * live for all clients — never a beta. Beta versions are opted into per
+     * integration via the $apiVersion argument or the DROPSHIPPING_API_VERSION
+     * env var, which keeps a `composer update` from moving anyone onto a version
+     * their client cannot use.
+     */
     private static function resolveDefaultApiVersion(): string
     {
         $composerJson = dirname(__DIR__, 2) . '/composer.json';

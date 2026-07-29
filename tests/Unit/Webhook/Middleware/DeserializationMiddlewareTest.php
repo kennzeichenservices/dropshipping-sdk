@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Dropshipping\Tests\Unit\Webhook\Middleware;
 
 use Dropshipping\DTO\Webhooks\PingEvent;
+use Dropshipping\DTO\Webhooks\UnknownWebhookEvent;
 use Dropshipping\Enums\WebhookEventType;
+use Dropshipping\Exceptions\WebhookException;
 use Dropshipping\Serialization\ArrayMapper;
 use Dropshipping\Webhook\Middleware\DeserializationMiddleware;
 use Dropshipping\Webhook\WebhookMessage;
@@ -44,5 +46,28 @@ final class DeserializationMiddlewareTest extends TestCase
         $result = $this->middleware->process($message, fn ($msg) => $msg);
 
         self::assertSame(WebhookEventType::DeliveryShipment, $result->getEvent()->getEventType());
+    }
+
+    public function test_process_throws_on_unknown_event_by_default(): void
+    {
+        $payload = json_encode(['eventType' => 'SOME_FUTURE_EVENT', 'eventTime' => '2024-01-01T00:00:00Z']);
+        $message = new WebhookMessage($payload, 'sig', 1, '1.0');
+
+        $this->expectException(WebhookException::class);
+
+        $this->middleware->process($message, fn ($msg) => $msg);
+    }
+
+    public function test_process_yields_unknown_event_when_tolerance_enabled(): void
+    {
+        $middleware = new DeserializationMiddleware(new ArrayMapper(), tolerateUnknownEvents: true);
+        $payload = json_encode(['eventType' => 'SOME_FUTURE_EVENT', 'eventTime' => '2024-01-01T00:00:00Z']);
+        $message = new WebhookMessage($payload, 'sig', 1, '1.0');
+
+        $result = $middleware->process($message, fn ($msg) => $msg);
+        $event = $result->getEvent();
+
+        self::assertInstanceOf(UnknownWebhookEvent::class, $event);
+        self::assertSame('SOME_FUTURE_EVENT', $event->rawEventType);
     }
 }

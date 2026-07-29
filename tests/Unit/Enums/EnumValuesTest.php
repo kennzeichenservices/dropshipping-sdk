@@ -10,6 +10,10 @@ use Dropshipping\Enums\LicensePlateUsageType;
 use Dropshipping\Enums\ProductType;
 use Dropshipping\Enums\VehicleDeregistrationLicensePlateType;
 use Dropshipping\Enums\VehicleDeregistrationVehicleType;
+use Dropshipping\Enums\VehicleRegistrationLicensePlateNumberAssignmentStrategy;
+use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
+use Dropshipping\Enums\VehicleRegistrationServiceTypeCode;
+use Dropshipping\Enums\VehicleRegistrationVehicleType;
 use Dropshipping\Enums\VehicleType;
 use Dropshipping\Enums\WebhookEventType;
 use PHPUnit\Framework\TestCase;
@@ -53,8 +57,9 @@ final class EnumValuesTest extends TestCase
     {
         self::assertSame('LICENSE_PLATE', ProductType::LicensePlate->value);
         self::assertSame('VEHICLE_DEREGISTRATION', ProductType::VehicleDeregistration->value);
+        self::assertSame('VEHICLE_REGISTRATION', ProductType::VehicleRegistration->value);
         self::assertSame('OTHER', ProductType::Other->value);
-        self::assertCount(3, ProductType::cases());
+        self::assertCount(4, ProductType::cases());
     }
 
     public function test_webhook_event_type_values(): void
@@ -67,7 +72,8 @@ final class EnumValuesTest extends TestCase
         self::assertSame('LICENSE_PLATE_RESERVATION_REJECTION', WebhookEventType::LicensePlateReservationRejection->value);
         self::assertSame('LICENSE_PLATE_RESERVATION_TIMEOUT', WebhookEventType::LicensePlateReservationTimeout->value);
         self::assertSame('VEHICLE_DEREGISTRATION_XKFZ_EVENT', WebhookEventType::VehicleDeregistrationXkfzEvent->value);
-        self::assertCount(8, WebhookEventType::cases());
+        self::assertSame('UNKNOWN', WebhookEventType::Unknown->value);
+        self::assertCount(9, WebhookEventType::cases());
     }
 
     public function test_vehicle_deregistration_vehicle_type_values(): void
@@ -92,6 +98,47 @@ final class EnumValuesTest extends TestCase
         self::assertSame('HISTORICAL', VehicleDeregistrationLicensePlateType::Historical->value);
         self::assertSame('HISTORICAL_SEASON', VehicleDeregistrationLicensePlateType::HistoricalSeason->value);
         self::assertCount(6, VehicleDeregistrationLicensePlateType::cases());
+    }
+
+    public function test_vehicle_registration_vehicle_type_values(): void
+    {
+        self::assertSame('CAR', VehicleRegistrationVehicleType::Car->value);
+        self::assertSame('MOTORCYCLE', VehicleRegistrationVehicleType::Motorcycle->value);
+        self::assertSame('TRAILER', VehicleRegistrationVehicleType::Trailer->value);
+        self::assertCount(3, VehicleRegistrationVehicleType::cases());
+        self::assertSame(VehicleRegistrationVehicleType::Car, VehicleRegistrationVehicleType::from('CAR'));
+    }
+
+    public function test_vehicle_registration_license_plate_type_values(): void
+    {
+        self::assertSame('REGULAR', VehicleRegistrationLicensePlateType::Regular->value);
+        self::assertSame('REGULAR_SEASON', VehicleRegistrationLicensePlateType::RegularSeason->value);
+        self::assertSame('ELECTRIC', VehicleRegistrationLicensePlateType::Electric->value);
+        self::assertSame('ELECTRIC_SEASON', VehicleRegistrationLicensePlateType::ElectricSeason->value);
+        self::assertSame('HISTORICAL', VehicleRegistrationLicensePlateType::Historical->value);
+        self::assertSame('HISTORICAL_SEASON', VehicleRegistrationLicensePlateType::HistoricalSeason->value);
+        self::assertCount(6, VehicleRegistrationLicensePlateType::cases());
+    }
+
+    public function test_vehicle_registration_license_plate_number_assignment_strategy_values(): void
+    {
+        self::assertSame('RANDOM', VehicleRegistrationLicensePlateNumberAssignmentStrategy::Random->value);
+        self::assertSame('RESERVATION', VehicleRegistrationLicensePlateNumberAssignmentStrategy::Reservation->value);
+        self::assertSame('RETAINMENT', VehicleRegistrationLicensePlateNumberAssignmentStrategy::Retainment->value);
+        self::assertCount(3, VehicleRegistrationLicensePlateNumberAssignmentStrategy::cases());
+    }
+
+    public function test_vehicle_registration_service_type_code_values(): void
+    {
+        self::assertSame('NZ', VehicleRegistrationServiceTypeCode::NZ->value);
+        self::assertSame('WZ', VehicleRegistrationServiceTypeCode::WZ->value);
+        self::assertSame('UO', VehicleRegistrationServiceTypeCode::UO->value);
+        self::assertSame('UI', VehicleRegistrationServiceTypeCode::UI->value);
+        self::assertSame('UM', VehicleRegistrationServiceTypeCode::UM->value);
+        self::assertSame('WG', VehicleRegistrationServiceTypeCode::WG->value);
+        self::assertSame('UG', VehicleRegistrationServiceTypeCode::UG->value);
+        self::assertSame('HA', VehicleRegistrationServiceTypeCode::HA->value);
+        self::assertCount(8, VehicleRegistrationServiceTypeCode::cases());
     }
 
     public function test_from_invalid_value_throws(): void

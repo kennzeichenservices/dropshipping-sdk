@@ -12,6 +12,7 @@ use Dropshipping\Endpoints\Orders\OrdersEndpoint;
 use Dropshipping\Endpoints\Products\ProductsEndpoint;
 use Dropshipping\Endpoints\Shipments\ShipmentsEndpoint;
 use Dropshipping\Endpoints\VehicleDeregistrations\VehicleDeregistrationsEndpoint;
+use Dropshipping\Endpoints\VehicleRegistrations\VehicleRegistrationsEndpoint;
 use Dropshipping\Endpoints\Webhooks\WebhooksEndpoint;
 use Dropshipping\Http\RequestFactory;
 use Dropshipping\Http\ResponseMapper;
@@ -26,7 +27,8 @@ use Psr\Http\Message\StreamFactoryInterface;
  *
  * Orchestrates the HTTP client, authentication, request building and response
  * mapping. Exposes endpoint objects for orders, shipments, products, webhooks,
- * GKS configurations and vehicle deregistrations as public readonly properties.
+ * GKS configurations, vehicle deregistrations and vehicle registrations as
+ * public readonly properties.
  */
 final class ApiClient
 {
@@ -41,6 +43,9 @@ final class ApiClient
     public readonly WebhooksEndpoint $webhooks;
     public readonly GksConfigurationsEndpoint $gksConfigurations;
     public readonly VehicleDeregistrationsEndpoint $vehicleDeregistrations;
+
+    /** @experimental Vehicle registration is a beta feature of the dropshipping API (2.3.2). */
+    public readonly VehicleRegistrationsEndpoint $vehicleRegistrations;
 
     public function __construct(
         DropshippingConfig $config,
@@ -107,6 +112,13 @@ final class ApiClient
         );
 
         $this->vehicleDeregistrations = new VehicleDeregistrationsEndpoint(
+            $this->httpClient,
+            $this->requestFactory,
+            $this->responseMapper,
+            $this->baseUrl,
+        );
+
+        $this->vehicleRegistrations = new VehicleRegistrationsEndpoint(
             $this->httpClient,
             $this->requestFactory,
             $this->responseMapper,
