@@ -7,6 +7,7 @@ require_once __DIR__ . '/_bootstrap.php';
 use Dropshipping\DS;
 use Dropshipping\Enums\{
     Gender,
+    VehicleRegistrationLicensePlateType,
     VehicleRegistrationServiceTypeCode,
     VehicleRegistrationVehicleType,
 };
@@ -29,11 +30,14 @@ $response = $client->vehicleRegistrations->createRegistration(
     DS::vehicleRegistration(
         email: 'max@example.com',
         customization: DS::registrationCustomization(
-            // The office picks an arbitrary available number. Alternatives:
+            // The office picks an arbitrary available number of the given plate type.
+            // Alternatives:
             //   DS::reservedLicensePlateNumber(...) — use a previously reserved number
             //   DS::retainedLicensePlateNumber()    — keep the number of previousLicensePlate
-            // Only the reserved variant carries a plate; for the other two the office decides.
-            licensePlateNumberAssignmentStrategy: DS::randomLicensePlateNumber(),
+            licensePlateNumberAssignmentStrategy: DS::randomLicensePlateNumber(
+                licensePlateType: VehicleRegistrationLicensePlateType::Regular,
+                // seasonStartMonth: 4, seasonEndMonth: 10,  // for *_SEASON plate types
+            ),
             vehicleRegistrationServiceTypeCode: VehicleRegistrationServiceTypeCode::NZ, // Neuzulassung
             deregistered: false,
             vehicleType: VehicleRegistrationVehicleType::Car,

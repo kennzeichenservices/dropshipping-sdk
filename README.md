@@ -356,6 +356,7 @@ class DeregistrationXkfzHandler implements WebhookHandlerInterface
 ```php
 use Dropshipping\DS;
 use Dropshipping\Enums\{
+    VehicleRegistrationLicensePlateType,
     VehicleRegistrationServiceTypeCode,
     VehicleRegistrationVehicleType,
 };
@@ -364,7 +365,9 @@ $response = $client->vehicleRegistrations->createRegistration(
     DS::vehicleRegistration(
         email: 'max@example.com',
         customization: DS::registrationCustomization(
-            licensePlateNumberAssignmentStrategy: DS::randomLicensePlateNumber(),
+            licensePlateNumberAssignmentStrategy: DS::randomLicensePlateNumber(
+                licensePlateType: VehicleRegistrationLicensePlateType::Regular,
+            ),
             vehicleRegistrationServiceTypeCode: VehicleRegistrationServiceTypeCode::NZ,
             deregistered: false,
             vehicleType: VehicleRegistrationVehicleType::Car,
@@ -392,21 +395,22 @@ data and signatures required for the registration. Nothing is processed until th
 
 The assignment strategy is an object, not a plain enum value -- it serializes with a
 `strategyType` discriminator and carries the plate data belonging to that strategy. Build it
-with `DS::randomLicensePlateNumber()`, `DS::reservedLicensePlateNumber(...)` or
+with `DS::randomLicensePlateNumber(...)`, `DS::reservedLicensePlateNumber(...)` or
 `DS::retainedLicensePlateNumber()`:
 
 ```php
 licensePlateNumberAssignmentStrategy: DS::reservedLicensePlateNumber(
     plate: DS::plate('B', 'AB', '1234'),
-    licensePlateType: VehicleRegistrationLicensePlateType::Regular,
+    licensePlateType: VehicleRegistrationLicensePlateType::ElectricSeason,
     reservationPin: '1234',
+    seasonStartMonth: 4,  // optional, for *_SEASON plate types
+    seasonEndMonth: 10,   // optional
 ),
 ```
 
-Only the reserved variant takes a plate, so `licensePlateType` and the season months are
-only specifiable there -- for `RANDOM` and `RETAINMENT` the registration office decides.
-Pair `DS::retainedLicensePlateNumber()` with `DS::previousLicensePlate(...)` on the
-customization to keep an existing number.
+`RANDOM` leaves only the *number* to the registration office -- the plate type is still yours
+to choose, so it takes a `licensePlateType` too. `RETAINMENT` carries nothing; pair it with
+`DS::previousLicensePlate(...)` on the customization to keep an existing number.
 
 ### Handling Webhooks
 

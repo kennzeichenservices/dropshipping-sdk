@@ -9,7 +9,6 @@ use Dropshipping\DTO\EuroLicensePlateNumberComponents;
 use Dropshipping\DTO\Requests\VehicleRegistrationRequest;
 use Dropshipping\DTO\Requests\VehicleRegistrationVehicleHolder;
 use Dropshipping\DTO\VehicleRegistrationCustomization;
-use Dropshipping\DTO\VehicleRegistrationLicensePlate;
 use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom;
 use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyReservation;
 use Dropshipping\Enums\Gender;
@@ -122,10 +121,8 @@ final class VehicleRegistrationRequestTest extends TestCase
     {
         $customization = new VehicleRegistrationCustomization(
             licensePlateNumberAssignmentStrategy: new VehicleRegistrationLicensePlateNumberAssignmentStrategyReservation(
-                licensePlate: new VehicleRegistrationLicensePlate(
-                    licensePlateNumberComponents: new EuroLicensePlateNumberComponents('B', 'AB', '123'),
-                    licensePlateType: VehicleRegistrationLicensePlateType::Regular,
-                ),
+                licensePlateNumberComponents: new EuroLicensePlateNumberComponents('B', 'AB', '123'),
+                licensePlateType: VehicleRegistrationLicensePlateType::Regular,
                 reservationPin: '1234',
             ),
             vehicleRegistrationServiceTypeCode: VehicleRegistrationServiceTypeCode::NZ,
@@ -140,7 +137,7 @@ final class VehicleRegistrationRequestTest extends TestCase
 
         $strategy = $customization->toArray()['licensePlateNumberAssignmentStrategy'];
 
-        self::assertSame('EURO', $strategy['licensePlate']['licensePlateNumberComponents']['usageType']);
+        self::assertSame('EURO', $strategy['licensePlateNumberComponents']['usageType']);
     }
 
     public function test_constructor_rejects_invalid_email(): void
@@ -184,7 +181,9 @@ final class VehicleRegistrationRequestTest extends TestCase
     private function createCustomization(): VehicleRegistrationCustomization
     {
         return new VehicleRegistrationCustomization(
-            licensePlateNumberAssignmentStrategy: new VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom(),
+            licensePlateNumberAssignmentStrategy: new VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom(
+                licensePlateType: VehicleRegistrationLicensePlateType::Regular,
+            ),
             vehicleRegistrationServiceTypeCode: VehicleRegistrationServiceTypeCode::NZ,
             deregistered: false,
             vehicleType: VehicleRegistrationVehicleType::Car,

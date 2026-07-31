@@ -1414,16 +1414,32 @@ components:
             type: object
             allOf:
                 - $ref: "#/components/schemas/VehicleRegistrationLicensePlateNumberAssignmentStrategy"
+            required:
+                - licensePlateType
+            properties:
+                licensePlateType:
+                    $ref: "#/components/schemas/VehicleRegistrationLicensePlateType"
+                seasonStartMonth:
+                    $ref: "#/components/schemas/NullableMonthOrdinal"
+                seasonEndMonth:
+                    $ref: "#/components/schemas/NullableMonthOrdinal"
         VehicleRegistrationLicensePlateNumberAssignmentStrategyReservation:
             type: object
             allOf:
                 - $ref: "#/components/schemas/VehicleRegistrationLicensePlateNumberAssignmentStrategy"
             required:
-                - licensePlate
+                - licensePlateNumberComponents
+                - licensePlateType
                 - reservationPin
             properties:
-                licensePlate:
-                    $ref: "#/components/schemas/VehicleRegistrationLicensePlate"
+                licensePlateNumberComponents:
+                    $ref: "#/components/schemas/EuroLicensePlateNumberComponents"
+                licensePlateType:
+                    $ref: "#/components/schemas/VehicleRegistrationLicensePlateType"
+                seasonStartMonth:
+                    $ref: "#/components/schemas/NullableMonthOrdinal"
+                seasonEndMonth:
+                    $ref: "#/components/schemas/NullableMonthOrdinal"
                 reservationPin:
                     type: string
                     minLength: 4
@@ -1464,29 +1480,6 @@ components:
                 - REGULAR
                 - ELECTRIC
                 - HISTORICAL
-        VehicleRegistrationLicensePlate:
-            type: object
-            required:
-                - licensePlateNumberComponents
-                - licensePlateType
-            properties:
-                licensePlateNumberComponents:
-                    $ref: "#/components/schemas/EuroLicensePlateNumberComponents"
-                licensePlateType:
-                    $ref: "#/components/schemas/VehicleRegistrationLicensePlateType"
-                seasonStartMonth:
-                    type: integer
-                    format: int32
-                    nullable: true
-                    minimum: 1
-                    maximum: 12
-                seasonEndMonth:
-                    type: integer
-                    format: int32
-                    nullable: true
-                    minimum: 1
-                    maximum: 12
-                    maxLength: 11
         VehicleRegistrationPreviousLicensePlate:
             type: object
             nullable: true
@@ -1499,18 +1492,9 @@ components:
                 licensePlateType:
                     $ref: "#/components/schemas/VehicleRegistrationLicensePlateType"
                 seasonStartMonth:
-                    type: integer
-                    format: int32
-                    nullable: true
-                    minimum: 1
-                    maximum: 12
+                    $ref: "#/components/schemas/NullableMonthOrdinal"
                 seasonEndMonth:
-                    type: integer
-                    format: int32
-                    nullable: true
-                    minimum: 1
-                    maximum: 12
-                    maxLength: 11
+                    $ref: "#/components/schemas/NullableMonthOrdinal"
                 frontLicensePlateSecurityCode:
                     type: string
                     nullable: true
@@ -1626,7 +1610,6 @@ components:
                     type: string
                     minLength: 1
                     maxLength: 150
-                    nullable: true
                 birthDate:
                     $ref: "#/components/schemas/LocalDate"
                 birthName:
@@ -1656,6 +1639,12 @@ components:
                     description: The URL of the form for the customer to provide input for identification and signatures.
                     type: string
                     format: uri
+        NullableMonthOrdinal:
+            type: integer
+            format: int32
+            nullable: true
+            minimum: 1
+            maximum: 12
     securitySchemes:
         basicAuth:
             type: http

@@ -18,12 +18,12 @@ discriminator and carries the plate data belonging to that strategy:
 
 | Factory | `strategyType` | Meaning | Carries |
 |---------|----------------|---------|---------|
-| `DS::randomLicensePlateNumber()` | `RANDOM` | The registration office assigns an arbitrary available number | — |
-| `DS::reservedLicensePlateNumber(...)` | `RESERVATION` | A previously reserved number is used | the reserved plate + `reservationPin` |
+| `DS::randomLicensePlateNumber(...)` | `RANDOM` | The registration office assigns an arbitrary available number | `licensePlateType` + optional season months |
+| `DS::reservedLicensePlateNumber(...)` | `RESERVATION` | A previously reserved number is used | the plate number, `licensePlateType`, `reservationPin` + optional season months |
 | `DS::retainedLicensePlateNumber()` | `RETAINMENT` | The number of the previous plate is kept | — (set `previousLicensePlate` on the customization) |
 
-Only the `RESERVATION` strategy takes a plate, so `licensePlateType` and the season months
-are only specifiable there. For `RANDOM` and `RETAINMENT` the registration office decides.
+`RANDOM` leaves only the *number* to the office -- the plate type is still yours to choose.
+`RETAINMENT` carries nothing, since it keeps the previous plate as-is.
 
 ```php
 licensePlateNumberAssignmentStrategy: DS::reservedLicensePlateNumber(
@@ -41,8 +41,7 @@ licensePlateNumberAssignmentStrategy: DS::reservedLicensePlateNumber(
 |-------|---------|
 | `VehicleRegistrationRequest` | Top-level request DTO |
 | `VehicleRegistrationCustomization` | Vehicle, insurance and bank data |
-| `VehicleRegistrationLicensePlate` | Plate number components, type and season months |
-| `VehicleRegistrationLicensePlateNumberAssignmentStrategyInterface` | Implemented by the `…Random`, `…Reservation` and `…Retained` strategies |
+| `VehicleRegistrationLicensePlateNumberAssignmentStrategyInterface` | Implemented by the `…Random`, `…Reservation` and `…Retained` strategies, each carrying its own plate fields |
 | `VehicleRegistrationPreviousLicensePlate` | The plate the vehicle carried before, if any |
 | `VehicleRegistrationVehicleHolder` | Vehicle holder address and birth details |
 | `VehicleRegistrationResponse` | `orderId`, `identityVerificationVendorId`, `customerInputFormUrl` |

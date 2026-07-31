@@ -25,7 +25,6 @@ use Dropshipping\DTO\Requests\VehicleRegistrationRequest;
 use Dropshipping\DTO\Requests\VehicleRegistrationVehicleHolder;
 use Dropshipping\DTO\VehicleDeregistrationCustomization;
 use Dropshipping\DTO\VehicleRegistrationCustomization;
-use Dropshipping\DTO\VehicleRegistrationLicensePlate;
 use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyInterface;
 use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom;
 use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyReservation;
@@ -462,13 +461,20 @@ final class DS
 
     /**
      * Create a license plate number assignment strategy letting the registration
-     * office pick an arbitrary available number.
+     * office pick an arbitrary available number of the given plate type.
      *
      * @experimental Vehicle registration is a beta feature of the dropshipping API (2.3.2).
      */
-    public static function randomLicensePlateNumber(): VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom
-    {
-        return new VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom();
+    public static function randomLicensePlateNumber(
+        VehicleRegistrationLicensePlateType $licensePlateType,
+        ?int $seasonStartMonth = null,
+        ?int $seasonEndMonth = null,
+    ): VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom {
+        return new VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom(
+            licensePlateType: $licensePlateType,
+            seasonStartMonth: $seasonStartMonth,
+            seasonEndMonth: $seasonEndMonth,
+        );
     }
 
     /**
@@ -485,13 +491,11 @@ final class DS
         ?int $seasonEndMonth = null,
     ): VehicleRegistrationLicensePlateNumberAssignmentStrategyReservation {
         return new VehicleRegistrationLicensePlateNumberAssignmentStrategyReservation(
-            licensePlate: new VehicleRegistrationLicensePlate(
-                licensePlateNumberComponents: $plate,
-                licensePlateType: $licensePlateType,
-                seasonStartMonth: $seasonStartMonth,
-                seasonEndMonth: $seasonEndMonth,
-            ),
+            licensePlateNumberComponents: $plate,
+            licensePlateType: $licensePlateType,
             reservationPin: $reservationPin,
+            seasonStartMonth: $seasonStartMonth,
+            seasonEndMonth: $seasonEndMonth,
         );
     }
 

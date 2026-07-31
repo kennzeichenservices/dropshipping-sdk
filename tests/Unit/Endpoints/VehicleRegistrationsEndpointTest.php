@@ -13,6 +13,7 @@ use Dropshipping\DTO\VehicleRegistrationCustomization;
 use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom;
 use Dropshipping\Endpoints\VehicleRegistrations\VehicleRegistrationsEndpoint;
 use Dropshipping\Enums\Gender;
+use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
 use Dropshipping\Enums\VehicleRegistrationServiceTypeCode;
 use Dropshipping\Enums\VehicleRegistrationVehicleType;
 use Dropshipping\Http\RequestFactory;
@@ -58,7 +59,9 @@ final class VehicleRegistrationsEndpointTest extends TestCase
         );
 
         $customization = new VehicleRegistrationCustomization(
-            licensePlateNumberAssignmentStrategy: new VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom(),
+            licensePlateNumberAssignmentStrategy: new VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom(
+                licensePlateType: VehicleRegistrationLicensePlateType::Regular,
+            ),
             vehicleRegistrationServiceTypeCode: VehicleRegistrationServiceTypeCode::NZ,
             deregistered: false,
             vehicleType: VehicleRegistrationVehicleType::Car,

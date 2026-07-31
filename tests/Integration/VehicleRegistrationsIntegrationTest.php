@@ -13,6 +13,7 @@ use Dropshipping\DTO\Responses\VehicleRegistrationResponse;
 use Dropshipping\DTO\VehicleRegistrationCustomization;
 use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom;
 use Dropshipping\Enums\Gender;
+use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
 use Dropshipping\Enums\VehicleRegistrationServiceTypeCode;
 use Dropshipping\Enums\VehicleRegistrationVehicleType;
 use Dropshipping\Exceptions\ApiException;
@@ -63,7 +64,9 @@ final class VehicleRegistrationsIntegrationTest extends TestCase
         );
 
         $customization = new VehicleRegistrationCustomization(
-            licensePlateNumberAssignmentStrategy: new VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom(),
+            licensePlateNumberAssignmentStrategy: new VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom(
+                licensePlateType: VehicleRegistrationLicensePlateType::Regular,
+            ),
             vehicleRegistrationServiceTypeCode: VehicleRegistrationServiceTypeCode::NZ,
             deregistered: false,
             vehicleType: VehicleRegistrationVehicleType::Car,
