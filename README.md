@@ -356,8 +356,6 @@ class DeregistrationXkfzHandler implements WebhookHandlerInterface
 ```php
 use Dropshipping\DS;
 use Dropshipping\Enums\{
-    VehicleRegistrationLicensePlateNumberAssignmentStrategy,
-    VehicleRegistrationLicensePlateType,
     VehicleRegistrationServiceTypeCode,
     VehicleRegistrationVehicleType,
 };
@@ -366,12 +364,10 @@ $response = $client->vehicleRegistrations->createRegistration(
     DS::vehicleRegistration(
         email: 'max@example.com',
         customization: DS::registrationCustomization(
-            licensePlateNumberAssignmentStrategy: VehicleRegistrationLicensePlateNumberAssignmentStrategy::Random,
+            licensePlateNumberAssignmentStrategy: DS::randomLicensePlateNumber(),
             vehicleRegistrationServiceTypeCode: VehicleRegistrationServiceTypeCode::NZ,
-            plate: DS::plate('B', 'AB', '1234'),
             deregistered: false,
             vehicleType: VehicleRegistrationVehicleType::Car,
-            licensePlateType: VehicleRegistrationLicensePlateType::Regular,
             electronicInsuranceConfirmationNumber: 'ABC1234',   // eVB-Nummer, exactly 7 chars
             vehicleIdentificationNumber: 'WBA12345678901234',
             vehicleTitleSecurityCode: 'ABCDEF123456',           // ZB II code, exactly 12 chars
@@ -379,8 +375,11 @@ $response = $client->vehicleRegistrations->createRegistration(
             bic: 'COBADEFFXXX',
         ),
         vehicleHolderAddress: $address,
-        externalOrderId: 'registration-001',  // optional
-        gksConfigurationId: 'your-gks-uuid',  // optional
+        vehicleHolderPlaceOfBirth: 'Berlin',   // required
+        vehicleHolderBirthDate: '1990-01-31',  // required, ISO 8601
+        vehicleHolderBirthName: 'Musterfrau',  // optional
+        externalOrderId: 'registration-001',   // optional
+        gksConfigurationId: 'your-gks-uuid',   // optional
     )
 );
 
@@ -391,10 +390,23 @@ echo $response->customerInputFormUrl; // redirect the customer here
 The customer **must** complete the form at `customerInputFormUrl` -- it collects the identification
 data and signatures required for the registration. Nothing is processed until they do.
 
-Use `VehicleRegistrationLicensePlateNumberAssignmentStrategy::Reservation` together with a
-`reservationPin` to register a previously reserved number; the SDK rejects that strategy locally
-when no PIN is given. Use `::Retainment` plus `DS::previousLicensePlate(...)` to keep an existing
-number.
+The assignment strategy is an object, not a plain enum value -- it serializes with a
+`strategyType` discriminator and carries the plate data belonging to that strategy. Build it
+with `DS::randomLicensePlateNumber()`, `DS::reservedLicensePlateNumber(...)` or
+`DS::retainedLicensePlateNumber()`:
+
+```php
+licensePlateNumberAssignmentStrategy: DS::reservedLicensePlateNumber(
+    plate: DS::plate('B', 'AB', '1234'),
+    licensePlateType: VehicleRegistrationLicensePlateType::Regular,
+    reservationPin: '1234',
+),
+```
+
+Only the reserved variant takes a plate, so `licensePlateType` and the season months are
+only specifiable there -- for `RANDOM` and `RETAINMENT` the registration office decides.
+Pair `DS::retainedLicensePlateNumber()` with `DS::previousLicensePlate(...)` on the
+customization to keep an existing number.
 
 ### Handling Webhooks
 
@@ -538,7 +550,7 @@ events will be added once the webhooks spec covers them.
 | `VehicleDeregistrationXkfzEventFilePurposeType` | `CERTIFICATE`, `RECEIPT`, `APPLICATION`, `UNSPECIFIED` |
 | `VehicleRegistrationVehicleType` (beta) | `CAR`, `MOTORCYCLE`, `TRAILER` |
 | `VehicleRegistrationLicensePlateType` (beta) | `REGULAR`, `REGULAR_SEASON`, `ELECTRIC`, `ELECTRIC_SEASON`, `HISTORICAL`, `HISTORICAL_SEASON` |
-| `VehicleRegistrationLicensePlateNumberAssignmentStrategy` (beta) | `RANDOM`, `RESERVATION`, `RETAINMENT` |
+| `VehicleRegistrationLicensePlateNumberAssignmentStrategyType` (beta) | `RANDOM`, `RESERVATION`, `RETAINMENT` |
 | `VehicleRegistrationServiceTypeCode` (beta) | `NZ`, `WZ`, `UO`, `UI`, `UM`, `WG`, `UG`, `HA` |
 | `WebhookEventType` | see [Webhook Event Types](#webhook-event-types), plus `UNKNOWN` for unrecognised types |
 

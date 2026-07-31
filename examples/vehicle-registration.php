@@ -7,8 +7,6 @@ require_once __DIR__ . '/_bootstrap.php';
 use Dropshipping\DS;
 use Dropshipping\Enums\{
     Gender,
-    VehicleRegistrationLicensePlateNumberAssignmentStrategy,
-    VehicleRegistrationLicensePlateType,
     VehicleRegistrationServiceTypeCode,
     VehicleRegistrationVehicleType,
 };
@@ -31,14 +29,14 @@ $response = $client->vehicleRegistrations->createRegistration(
     DS::vehicleRegistration(
         email: 'max@example.com',
         customization: DS::registrationCustomization(
-            // RANDOM: the office picks a number. RESERVATION: requires reservationPin.
-            // RETAINMENT: keeps the number of previousLicensePlate.
-            licensePlateNumberAssignmentStrategy: VehicleRegistrationLicensePlateNumberAssignmentStrategy::Random,
+            // The office picks an arbitrary available number. Alternatives:
+            //   DS::reservedLicensePlateNumber(...) — use a previously reserved number
+            //   DS::retainedLicensePlateNumber()    — keep the number of previousLicensePlate
+            // Only the reserved variant carries a plate; for the other two the office decides.
+            licensePlateNumberAssignmentStrategy: DS::randomLicensePlateNumber(),
             vehicleRegistrationServiceTypeCode: VehicleRegistrationServiceTypeCode::NZ, // Neuzulassung
-            plate: DS::plate('B', 'AB', '1234'),
             deregistered: false,
             vehicleType: VehicleRegistrationVehicleType::Car,
-            licensePlateType: VehicleRegistrationLicensePlateType::Regular,
             electronicInsuranceConfirmationNumber: 'ABC1234',        // eVB-Nummer, exactly 7 chars
             vehicleIdentificationNumber: 'WBA12345678901234',        // VIN / FIN
             vehicleTitleSecurityCode: 'ABCDEF123456',                // ZB II security code, exactly 12 chars
@@ -48,9 +46,12 @@ $response = $client->vehicleRegistrations->createRegistration(
             vehicleTitleNumber: 'AB123456',                          // optional, exactly 8 chars
         ),
         vehicleHolderAddress: $address,
-        externalOrderId: 'registration-001',  // optional
-        gksConfigurationId: 'your-gks-uuid',  // optional
-        contractPartnerKopaKey: 'K123X',      // optional
+        vehicleHolderPlaceOfBirth: 'Berlin',   // required
+        vehicleHolderBirthDate: '1990-01-31',  // required, ISO 8601
+        vehicleHolderBirthName: 'Musterfrau',  // optional
+        externalOrderId: 'registration-001',   // optional
+        gksConfigurationId: 'your-gks-uuid',   // optional
+        contractPartnerKopaKey: 'K123X',       // optional
     )
 );
 

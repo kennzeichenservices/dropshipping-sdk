@@ -10,7 +10,7 @@ use Dropshipping\Enums\LicensePlateUsageType;
 use Dropshipping\Enums\ProductType;
 use Dropshipping\Enums\VehicleDeregistrationLicensePlateType;
 use Dropshipping\Enums\VehicleDeregistrationVehicleType;
-use Dropshipping\Enums\VehicleRegistrationLicensePlateNumberAssignmentStrategy;
+use Dropshipping\Enums\VehicleRegistrationLicensePlateNumberAssignmentStrategyType;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
 use Dropshipping\Enums\VehicleRegistrationServiceTypeCode;
 use Dropshipping\Enums\VehicleRegistrationVehicleType;
@@ -122,10 +122,10 @@ final class EnumValuesTest extends TestCase
 
     public function test_vehicle_registration_license_plate_number_assignment_strategy_values(): void
     {
-        self::assertSame('RANDOM', VehicleRegistrationLicensePlateNumberAssignmentStrategy::Random->value);
-        self::assertSame('RESERVATION', VehicleRegistrationLicensePlateNumberAssignmentStrategy::Reservation->value);
-        self::assertSame('RETAINMENT', VehicleRegistrationLicensePlateNumberAssignmentStrategy::Retainment->value);
-        self::assertCount(3, VehicleRegistrationLicensePlateNumberAssignmentStrategy::cases());
+        self::assertSame('RANDOM', VehicleRegistrationLicensePlateNumberAssignmentStrategyType::Random->value);
+        self::assertSame('RESERVATION', VehicleRegistrationLicensePlateNumberAssignmentStrategyType::Reservation->value);
+        self::assertSame('RETAINMENT', VehicleRegistrationLicensePlateNumberAssignmentStrategyType::Retainment->value);
+        self::assertCount(3, VehicleRegistrationLicensePlateNumberAssignmentStrategyType::cases());
     }
 
     public function test_vehicle_registration_service_type_code_values(): void

@@ -9,8 +9,10 @@ use Dropshipping\DTO\EuroLicensePlateNumberComponents;
 use Dropshipping\DTO\Requests\VehicleRegistrationRequest;
 use Dropshipping\DTO\Requests\VehicleRegistrationVehicleHolder;
 use Dropshipping\DTO\VehicleRegistrationCustomization;
+use Dropshipping\DTO\VehicleRegistrationLicensePlate;
+use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom;
+use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyReservation;
 use Dropshipping\Enums\Gender;
-use Dropshipping\Enums\VehicleRegistrationLicensePlateNumberAssignmentStrategy;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
 use Dropshipping\Enums\VehicleRegistrationServiceTypeCode;
 use Dropshipping\Enums\VehicleRegistrationVehicleType;
@@ -30,10 +32,9 @@ final class VehicleRegistrationRequestTest extends TestCase
         self::assertArrayHasKey('customization', $array);
         self::assertArrayHasKey('vehicleHolder', $array);
         self::assertSame('VEHICLE_REGISTRATION', $array['customization']['productType']);
-        self::assertSame('RANDOM', $array['customization']['licensePlateNumberAssignmentStrategy']);
+        self::assertSame('RANDOM', $array['customization']['licensePlateNumberAssignmentStrategy']['strategyType']);
         self::assertSame('NZ', $array['customization']['vehicleRegistrationServiceTypeCode']);
         self::assertSame('CAR', $array['customization']['vehicleType']);
-        self::assertSame('REGULAR', $array['customization']['licensePlateType']);
         self::assertSame('WBA12345678901234', $array['customization']['vehicleIdentificationNumber']);
     }
 
@@ -55,19 +56,91 @@ final class VehicleRegistrationRequestTest extends TestCase
         self::assertArrayNotHasKey('contractPartnerKopaKey', $array);
     }
 
-    public function test_vehicleHolder_contains_only_address(): void
+    public function test_vehicleHolder_contains_address_and_birth_details(): void
     {
         $array = $this->createRequest()->toArray();
 
-        self::assertSame(['address'], array_keys($array['vehicleHolder']));
+        self::assertSame(['address', 'placeOfBirth', 'birthDate'], array_keys($array['vehicleHolder']));
         self::assertSame('Mustermann', $array['vehicleHolder']['address']['lastName']);
+        self::assertSame('Berlin', $array['vehicleHolder']['placeOfBirth']);
+        self::assertSame('1990-01-31', $array['vehicleHolder']['birthDate']);
     }
 
-    public function test_licensePlateNumberComponents_carry_euro_usage_type(): void
+    public function test_vehicleHolder_omits_birthName_when_null(): void
     {
-        $array = $this->createRequest()->toArray();
+        $array = $this->createVehicleHolder()->toArray();
 
-        self::assertSame('EURO', $array['customization']['licensePlateNumberComponents']['usageType']);
+        self::assertArrayNotHasKey('birthName', $array);
+    }
+
+    public function test_vehicleHolder_rejects_empty_placeOfBirth(): void
+    {
+        $this->expectException(DropshippingException::class);
+
+        new VehicleRegistrationVehicleHolder(
+            address: $this->createAddress(),
+            placeOfBirth: '',
+            birthDate: '1990-01-31',
+        );
+    }
+
+    public function test_vehicleHolder_includes_birthName_when_set(): void
+    {
+        $holder = new VehicleRegistrationVehicleHolder(
+            address: $this->createAddress(),
+            placeOfBirth: 'Berlin',
+            birthDate: '1990-01-31',
+            birthName: 'Musterfrau',
+        );
+
+        self::assertSame('Musterfrau', $holder->toArray()['birthName']);
+    }
+
+    public function test_vehicleHolder_rejects_too_long_placeOfBirth(): void
+    {
+        $this->expectException(DropshippingException::class);
+
+        new VehicleRegistrationVehicleHolder(
+            address: $this->createAddress(),
+            placeOfBirth: str_repeat('a', 151),
+            birthDate: '1990-01-31',
+        );
+    }
+
+    public function test_vehicleHolder_rejects_empty_birthDate(): void
+    {
+        $this->expectException(DropshippingException::class);
+
+        new VehicleRegistrationVehicleHolder(
+            address: $this->createAddress(),
+            placeOfBirth: 'Berlin',
+            birthDate: '',
+        );
+    }
+
+    public function test_reserved_licensePlateNumberComponents_carry_euro_usage_type(): void
+    {
+        $customization = new VehicleRegistrationCustomization(
+            licensePlateNumberAssignmentStrategy: new VehicleRegistrationLicensePlateNumberAssignmentStrategyReservation(
+                licensePlate: new VehicleRegistrationLicensePlate(
+                    licensePlateNumberComponents: new EuroLicensePlateNumberComponents('B', 'AB', '123'),
+                    licensePlateType: VehicleRegistrationLicensePlateType::Regular,
+                ),
+                reservationPin: '1234',
+            ),
+            vehicleRegistrationServiceTypeCode: VehicleRegistrationServiceTypeCode::NZ,
+            deregistered: false,
+            vehicleType: VehicleRegistrationVehicleType::Car,
+            electronicInsuranceConfirmationNumber: 'ABC1234',
+            vehicleIdentificationNumber: 'WBA12345678901234',
+            vehicleTitleSecurityCode: 'ABCDEF123456',
+            iban: 'DE89370400440532013000',
+            bic: 'COBADEFFXXX',
+        );
+
+        $strategy = $customization->toArray()['licensePlateNumberAssignmentStrategy'];
+
+        self::assertSame('EURO', $strategy['licensePlate']['licensePlateNumberComponents']['usageType']);
     }
 
     public function test_constructor_rejects_invalid_email(): void
@@ -77,7 +150,7 @@ final class VehicleRegistrationRequestTest extends TestCase
         new VehicleRegistrationRequest(
             email: 'not-an-email',
             customization: $this->createCustomization(),
-            vehicleHolder: new VehicleRegistrationVehicleHolder($this->createAddress()),
+            vehicleHolder: $this->createVehicleHolder(),
         );
     }
 
@@ -88,7 +161,7 @@ final class VehicleRegistrationRequestTest extends TestCase
         new VehicleRegistrationRequest(
             email: 'test@example.com',
             customization: $this->createCustomization(),
-            vehicleHolder: new VehicleRegistrationVehicleHolder($this->createAddress()),
+            vehicleHolder: $this->createVehicleHolder(),
             externalOrderId: str_repeat('a', 101),
         );
     }
@@ -101,7 +174,7 @@ final class VehicleRegistrationRequestTest extends TestCase
         return new VehicleRegistrationRequest(
             email: 'test@example.com',
             customization: $this->createCustomization(),
-            vehicleHolder: new VehicleRegistrationVehicleHolder($this->createAddress()),
+            vehicleHolder: $this->createVehicleHolder(),
             externalOrderId: $externalOrderId,
             gksConfigurationId: $gksConfigurationId,
             contractPartnerKopaKey: $contractPartnerKopaKey,
@@ -111,17 +184,24 @@ final class VehicleRegistrationRequestTest extends TestCase
     private function createCustomization(): VehicleRegistrationCustomization
     {
         return new VehicleRegistrationCustomization(
-            licensePlateNumberAssignmentStrategy: VehicleRegistrationLicensePlateNumberAssignmentStrategy::Random,
+            licensePlateNumberAssignmentStrategy: new VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom(),
             vehicleRegistrationServiceTypeCode: VehicleRegistrationServiceTypeCode::NZ,
-            licensePlateNumberComponents: new EuroLicensePlateNumberComponents('B', 'AB', '123'),
             deregistered: false,
             vehicleType: VehicleRegistrationVehicleType::Car,
-            licensePlateType: VehicleRegistrationLicensePlateType::Regular,
             electronicInsuranceConfirmationNumber: 'ABC1234',
             vehicleIdentificationNumber: 'WBA12345678901234',
             vehicleTitleSecurityCode: 'ABCDEF123456',
             iban: 'DE89370400440532013000',
             bic: 'COBADEFFXXX',
+        );
+    }
+
+    private function createVehicleHolder(): VehicleRegistrationVehicleHolder
+    {
+        return new VehicleRegistrationVehicleHolder(
+            address: $this->createAddress(),
+            placeOfBirth: 'Berlin',
+            birthDate: '1990-01-31',
         );
     }
 

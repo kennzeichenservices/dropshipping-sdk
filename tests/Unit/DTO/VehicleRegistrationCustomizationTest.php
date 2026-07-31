@@ -6,9 +6,12 @@ namespace Dropshipping\Tests\Unit\DTO;
 
 use Dropshipping\DTO\EuroLicensePlateNumberComponents;
 use Dropshipping\DTO\VehicleRegistrationCustomization;
+use Dropshipping\DTO\VehicleRegistrationLicensePlate;
+use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom;
+use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyReservation;
+use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained;
 use Dropshipping\DTO\VehicleRegistrationPreviousLicensePlate;
 use Dropshipping\Enums\ProductType;
-use Dropshipping\Enums\VehicleRegistrationLicensePlateNumberAssignmentStrategy;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
 use Dropshipping\Enums\VehicleRegistrationServiceTypeCode;
 use Dropshipping\Enums\VehicleRegistrationVehicleType;
@@ -37,12 +40,9 @@ final class VehicleRegistrationCustomizationTest extends TestCase
     {
         $array = $this->create()->toArray();
 
-        self::assertArrayNotHasKey('seasonStartMonth', $array);
-        self::assertArrayNotHasKey('seasonEndMonth', $array);
         self::assertArrayNotHasKey('vehicleRegistrationCertificateSecurityCode', $array);
         self::assertArrayNotHasKey('vehicleTitleNumber', $array);
         self::assertArrayNotHasKey('previousLicensePlate', $array);
-        self::assertArrayNotHasKey('reservationPin', $array);
     }
 
     public function test_toArray_includes_previousLicensePlate_when_set(): void
@@ -62,34 +62,80 @@ final class VehicleRegistrationCustomizationTest extends TestCase
         self::assertSame('EURO', $array['previousLicensePlate']['licensePlateNumberComponents']['usageType']);
     }
 
-    public function test_reservation_strategy_requires_reservationPin(): void
+    public function test_random_strategy_serializes_to_discriminator_only(): void
     {
-        $this->expectException(DropshippingException::class);
-        $this->expectExceptionMessage('reservationPin is required');
+        $array = $this->create()->toArray();
 
-        $this->create([
-            'licensePlateNumberAssignmentStrategy' => VehicleRegistrationLicensePlateNumberAssignmentStrategy::Reservation,
-        ]);
+        self::assertSame(['strategyType' => 'RANDOM'], $array['licensePlateNumberAssignmentStrategy']);
     }
 
-    public function test_reservation_strategy_accepts_reservationPin(): void
+    public function test_retained_strategy_serializes_to_discriminator_only(): void
     {
         $array = $this->create([
-            'licensePlateNumberAssignmentStrategy' => VehicleRegistrationLicensePlateNumberAssignmentStrategy::Reservation,
-            'reservationPin' => '1234',
+            'licensePlateNumberAssignmentStrategy' => new VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained(),
         ])->toArray();
 
-        self::assertSame('RESERVATION', $array['licensePlateNumberAssignmentStrategy']);
-        self::assertSame('1234', $array['reservationPin']);
+        self::assertSame(['strategyType' => 'RETAINMENT'], $array['licensePlateNumberAssignmentStrategy']);
     }
 
-    public function test_random_strategy_does_not_require_reservationPin(): void
+    public function test_reservation_strategy_serializes_plate_and_pin(): void
     {
-        $customization = $this->create([
-            'licensePlateNumberAssignmentStrategy' => VehicleRegistrationLicensePlateNumberAssignmentStrategy::Random,
-        ]);
+        $array = $this->create([
+            'licensePlateNumberAssignmentStrategy' => new VehicleRegistrationLicensePlateNumberAssignmentStrategyReservation(
+                licensePlate: new VehicleRegistrationLicensePlate(
+                    licensePlateNumberComponents: new EuroLicensePlateNumberComponents('B', 'AB', '123'),
+                    licensePlateType: VehicleRegistrationLicensePlateType::ElectricSeason,
+                    seasonStartMonth: 3,
+                    seasonEndMonth: 10,
+                ),
+                reservationPin: '1234',
+            ),
+        ])->toArray();
 
-        self::assertNull($customization->reservationPin);
+        $strategy = $array['licensePlateNumberAssignmentStrategy'];
+
+        self::assertSame('RESERVATION', $strategy['strategyType']);
+        self::assertSame('1234', $strategy['reservationPin']);
+        self::assertSame('ELECTRIC_SEASON', $strategy['licensePlate']['licensePlateType']);
+        self::assertSame(3, $strategy['licensePlate']['seasonStartMonth']);
+        self::assertSame(10, $strategy['licensePlate']['seasonEndMonth']);
+        self::assertSame('EURO', $strategy['licensePlate']['licensePlateNumberComponents']['usageType']);
+    }
+
+    public function test_reservation_strategy_rejects_too_short_reservationPin(): void
+    {
+        $this->expectException(DropshippingException::class);
+
+        new VehicleRegistrationLicensePlateNumberAssignmentStrategyReservation(
+            licensePlate: new VehicleRegistrationLicensePlate(
+                licensePlateNumberComponents: new EuroLicensePlateNumberComponents('B', 'AB', '123'),
+                licensePlateType: VehicleRegistrationLicensePlateType::Regular,
+            ),
+            reservationPin: '123',
+        );
+    }
+
+    public function test_licensePlate_rejects_out_of_range_season_month(): void
+    {
+        $this->expectException(DropshippingException::class);
+
+        new VehicleRegistrationLicensePlate(
+            licensePlateNumberComponents: new EuroLicensePlateNumberComponents('B', 'AB', '123'),
+            licensePlateType: VehicleRegistrationLicensePlateType::RegularSeason,
+            seasonStartMonth: 13,
+        );
+    }
+
+    public function test_licensePlate_toArray_excludes_null_season_months(): void
+    {
+        $array = (new VehicleRegistrationLicensePlate(
+            licensePlateNumberComponents: new EuroLicensePlateNumberComponents('B', 'AB', '123'),
+            licensePlateType: VehicleRegistrationLicensePlateType::Regular,
+        ))->toArray();
+
+        self::assertArrayNotHasKey('seasonStartMonth', $array);
+        self::assertArrayNotHasKey('seasonEndMonth', $array);
+        self::assertSame('REGULAR', $array['licensePlateType']);
     }
 
     public function test_constructor_rejects_electronicInsuranceConfirmationNumber_of_wrong_length(): void
@@ -134,36 +180,24 @@ final class VehicleRegistrationCustomizationTest extends TestCase
         $this->create(['bic' => 'COBADEFFXXXX']);
     }
 
-    public function test_constructor_rejects_out_of_range_season_month(): void
-    {
-        $this->expectException(DropshippingException::class);
-
-        $this->create(['seasonStartMonth' => 13]);
-    }
-
     /**
      * @param array<string, mixed> $overrides
      */
     private function create(array $overrides = []): VehicleRegistrationCustomization
     {
         $defaults = [
-            'licensePlateNumberAssignmentStrategy' => VehicleRegistrationLicensePlateNumberAssignmentStrategy::Random,
+            'licensePlateNumberAssignmentStrategy' => new VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom(),
             'vehicleRegistrationServiceTypeCode' => VehicleRegistrationServiceTypeCode::NZ,
-            'licensePlateNumberComponents' => new EuroLicensePlateNumberComponents('B', 'AB', '123'),
             'deregistered' => false,
             'vehicleType' => VehicleRegistrationVehicleType::Car,
-            'licensePlateType' => VehicleRegistrationLicensePlateType::Regular,
             'electronicInsuranceConfirmationNumber' => 'ABC1234',
             'vehicleIdentificationNumber' => 'WBA12345678901234',
             'vehicleTitleSecurityCode' => 'ABCDEF123456',
             'iban' => 'DE89370400440532013000',
             'bic' => 'COBADEFFXXX',
-            'seasonStartMonth' => null,
-            'seasonEndMonth' => null,
             'vehicleRegistrationCertificateSecurityCode' => null,
             'vehicleTitleNumber' => null,
             'previousLicensePlate' => null,
-            'reservationPin' => null,
         ];
 
         /** @var array<string, mixed> $args */

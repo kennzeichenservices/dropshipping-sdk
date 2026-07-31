@@ -7,14 +7,12 @@ namespace Dropshipping\Tests\Integration;
 use Dropshipping\Client\ApiClient;
 use Dropshipping\Configuration\DropshippingConfig;
 use Dropshipping\DTO\Address;
-use Dropshipping\DTO\EuroLicensePlateNumberComponents;
 use Dropshipping\DTO\Requests\VehicleRegistrationRequest;
 use Dropshipping\DTO\Requests\VehicleRegistrationVehicleHolder;
 use Dropshipping\DTO\Responses\VehicleRegistrationResponse;
 use Dropshipping\DTO\VehicleRegistrationCustomization;
+use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom;
 use Dropshipping\Enums\Gender;
-use Dropshipping\Enums\VehicleRegistrationLicensePlateNumberAssignmentStrategy;
-use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
 use Dropshipping\Enums\VehicleRegistrationServiceTypeCode;
 use Dropshipping\Enums\VehicleRegistrationVehicleType;
 use Dropshipping\Exceptions\ApiException;
@@ -65,12 +63,10 @@ final class VehicleRegistrationsIntegrationTest extends TestCase
         );
 
         $customization = new VehicleRegistrationCustomization(
-            licensePlateNumberAssignmentStrategy: VehicleRegistrationLicensePlateNumberAssignmentStrategy::Random,
+            licensePlateNumberAssignmentStrategy: new VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom(),
             vehicleRegistrationServiceTypeCode: VehicleRegistrationServiceTypeCode::NZ,
-            licensePlateNumberComponents: new EuroLicensePlateNumberComponents('BO', 'CD', '123'),
             deregistered: false,
             vehicleType: VehicleRegistrationVehicleType::Car,
-            licensePlateType: VehicleRegistrationLicensePlateType::Regular,
             electronicInsuranceConfirmationNumber: 'EVB1234',
             vehicleIdentificationNumber: 'W0L000051T2123456',
             vehicleTitleSecurityCode: 'VTSC12345678',
@@ -81,7 +77,11 @@ final class VehicleRegistrationsIntegrationTest extends TestCase
         $request = new VehicleRegistrationRequest(
             email: 'dropshipping-api-end-customer@localhost.test',
             customization: $customization,
-            vehicleHolder: new VehicleRegistrationVehicleHolder(address: $address),
+            vehicleHolder: new VehicleRegistrationVehicleHolder(
+                address: $address,
+                placeOfBirth: 'Icity',
+                birthDate: '1990-01-31',
+            ),
             externalOrderId: 'dropshipping-api-registration-' . uniqid(),
         );
 

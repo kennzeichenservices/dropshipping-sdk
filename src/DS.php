@@ -25,12 +25,16 @@ use Dropshipping\DTO\Requests\VehicleRegistrationRequest;
 use Dropshipping\DTO\Requests\VehicleRegistrationVehicleHolder;
 use Dropshipping\DTO\VehicleDeregistrationCustomization;
 use Dropshipping\DTO\VehicleRegistrationCustomization;
+use Dropshipping\DTO\VehicleRegistrationLicensePlate;
+use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyInterface;
+use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom;
+use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyReservation;
+use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained;
 use Dropshipping\DTO\VehicleRegistrationPreviousLicensePlate;
 use Dropshipping\Enums\Gender;
 use Dropshipping\Enums\LicensePlateType;
 use Dropshipping\Enums\VehicleDeregistrationLicensePlateType;
 use Dropshipping\Enums\VehicleDeregistrationVehicleType;
-use Dropshipping\Enums\VehicleRegistrationLicensePlateNumberAssignmentStrategy;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
 use Dropshipping\Enums\VehicleRegistrationServiceTypeCode;
 use Dropshipping\Enums\VehicleRegistrationVehicleType;
@@ -457,6 +461,52 @@ final class DS
     // -------------------------------------------------------------------------
 
     /**
+     * Create a license plate number assignment strategy letting the registration
+     * office pick an arbitrary available number.
+     *
+     * @experimental Vehicle registration is a beta feature of the dropshipping API (2.3.2).
+     */
+    public static function randomLicensePlateNumber(): VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom
+    {
+        return new VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom();
+    }
+
+    /**
+     * Create a license plate number assignment strategy using a previously
+     * reserved number.
+     *
+     * @experimental Vehicle registration is a beta feature of the dropshipping API (2.3.2).
+     */
+    public static function reservedLicensePlateNumber(
+        EuroLicensePlateNumberComponents $plate,
+        VehicleRegistrationLicensePlateType $licensePlateType,
+        string $reservationPin,
+        ?int $seasonStartMonth = null,
+        ?int $seasonEndMonth = null,
+    ): VehicleRegistrationLicensePlateNumberAssignmentStrategyReservation {
+        return new VehicleRegistrationLicensePlateNumberAssignmentStrategyReservation(
+            licensePlate: new VehicleRegistrationLicensePlate(
+                licensePlateNumberComponents: $plate,
+                licensePlateType: $licensePlateType,
+                seasonStartMonth: $seasonStartMonth,
+                seasonEndMonth: $seasonEndMonth,
+            ),
+            reservationPin: $reservationPin,
+        );
+    }
+
+    /**
+     * Create a license plate number assignment strategy retaining the number of
+     * the previous license plate.
+     *
+     * @experimental Vehicle registration is a beta feature of the dropshipping API (2.3.2).
+     */
+    public static function retainedLicensePlateNumber(): VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained
+    {
+        return new VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained();
+    }
+
+    /**
      * Create the previous license plate for a vehicle registration.
      *
      * @experimental Vehicle registration is a beta feature of the dropshipping API (2.3.2).
@@ -485,49 +535,40 @@ final class DS
      * @experimental Vehicle registration is a beta feature of the dropshipping API (2.3.2).
      */
     public static function registrationCustomization(
-        VehicleRegistrationLicensePlateNumberAssignmentStrategy $licensePlateNumberAssignmentStrategy,
+        VehicleRegistrationLicensePlateNumberAssignmentStrategyInterface $licensePlateNumberAssignmentStrategy,
         VehicleRegistrationServiceTypeCode $vehicleRegistrationServiceTypeCode,
-        EuroLicensePlateNumberComponents $plate,
         bool $deregistered,
         VehicleRegistrationVehicleType $vehicleType,
-        VehicleRegistrationLicensePlateType $licensePlateType,
         string $electronicInsuranceConfirmationNumber,
         string $vehicleIdentificationNumber,
         string $vehicleTitleSecurityCode,
         string $iban,
         string $bic,
-        ?int $seasonStartMonth = null,
-        ?int $seasonEndMonth = null,
         ?string $vehicleRegistrationCertificateSecurityCode = null,
         ?string $vehicleTitleNumber = null,
         ?VehicleRegistrationPreviousLicensePlate $previousLicensePlate = null,
-        ?string $reservationPin = null,
     ): VehicleRegistrationCustomization {
         return new VehicleRegistrationCustomization(
             licensePlateNumberAssignmentStrategy: $licensePlateNumberAssignmentStrategy,
             vehicleRegistrationServiceTypeCode: $vehicleRegistrationServiceTypeCode,
-            licensePlateNumberComponents: $plate,
             deregistered: $deregistered,
             vehicleType: $vehicleType,
-            licensePlateType: $licensePlateType,
             electronicInsuranceConfirmationNumber: $electronicInsuranceConfirmationNumber,
             vehicleIdentificationNumber: $vehicleIdentificationNumber,
             vehicleTitleSecurityCode: $vehicleTitleSecurityCode,
             iban: $iban,
             bic: $bic,
-            seasonStartMonth: $seasonStartMonth,
-            seasonEndMonth: $seasonEndMonth,
             vehicleRegistrationCertificateSecurityCode: $vehicleRegistrationCertificateSecurityCode,
             vehicleTitleNumber: $vehicleTitleNumber,
             previousLicensePlate: $previousLicensePlate,
-            reservationPin: $reservationPin,
         );
     }
 
     /**
      * Create a vehicle registration request.
      *
-     * The vehicle holder address is wrapped automatically — pass the Address directly.
+     * The vehicle holder is wrapped automatically — pass the address and birth
+     * details directly. The API requires both the place of birth and the birth date.
      *
      * @experimental Vehicle registration is a beta feature of the dropshipping API (2.3.2).
      */
@@ -535,6 +576,9 @@ final class DS
         string $email,
         VehicleRegistrationCustomization $customization,
         Address $vehicleHolderAddress,
+        string $vehicleHolderPlaceOfBirth,
+        string $vehicleHolderBirthDate,
+        ?string $vehicleHolderBirthName = null,
         ?string $externalOrderId = null,
         ?string $gksConfigurationId = null,
         ?string $contractPartnerKopaKey = null,
@@ -542,7 +586,12 @@ final class DS
         return new VehicleRegistrationRequest(
             email: $email,
             customization: $customization,
-            vehicleHolder: new VehicleRegistrationVehicleHolder(address: $vehicleHolderAddress),
+            vehicleHolder: new VehicleRegistrationVehicleHolder(
+                address: $vehicleHolderAddress,
+                placeOfBirth: $vehicleHolderPlaceOfBirth,
+                birthDate: $vehicleHolderBirthDate,
+                birthName: $vehicleHolderBirthName,
+            ),
             externalOrderId: $externalOrderId,
             gksConfigurationId: $gksConfigurationId,
             contractPartnerKopaKey: $contractPartnerKopaKey,

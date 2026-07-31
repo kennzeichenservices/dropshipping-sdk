@@ -7,14 +7,12 @@ namespace Dropshipping\Tests\Unit\Endpoints;
 use Dropshipping\Client\Authentication\ApiKeyAuthenticator;
 use Dropshipping\Client\Psr18HttpClient;
 use Dropshipping\DTO\Address;
-use Dropshipping\DTO\EuroLicensePlateNumberComponents;
 use Dropshipping\DTO\Requests\VehicleRegistrationRequest;
 use Dropshipping\DTO\Requests\VehicleRegistrationVehicleHolder;
 use Dropshipping\DTO\VehicleRegistrationCustomization;
+use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom;
 use Dropshipping\Endpoints\VehicleRegistrations\VehicleRegistrationsEndpoint;
 use Dropshipping\Enums\Gender;
-use Dropshipping\Enums\VehicleRegistrationLicensePlateNumberAssignmentStrategy;
-use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
 use Dropshipping\Enums\VehicleRegistrationServiceTypeCode;
 use Dropshipping\Enums\VehicleRegistrationVehicleType;
 use Dropshipping\Http\RequestFactory;
@@ -60,12 +58,10 @@ final class VehicleRegistrationsEndpointTest extends TestCase
         );
 
         $customization = new VehicleRegistrationCustomization(
-            licensePlateNumberAssignmentStrategy: VehicleRegistrationLicensePlateNumberAssignmentStrategy::Random,
+            licensePlateNumberAssignmentStrategy: new VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom(),
             vehicleRegistrationServiceTypeCode: VehicleRegistrationServiceTypeCode::NZ,
-            licensePlateNumberComponents: new EuroLicensePlateNumberComponents('B', 'AB', '123'),
             deregistered: false,
             vehicleType: VehicleRegistrationVehicleType::Car,
-            licensePlateType: VehicleRegistrationLicensePlateType::Regular,
             electronicInsuranceConfirmationNumber: 'ABC1234',
             vehicleIdentificationNumber: 'WBA12345678901234',
             vehicleTitleSecurityCode: 'ABCDEF123456',
@@ -73,7 +69,11 @@ final class VehicleRegistrationsEndpointTest extends TestCase
             bic: 'COBADEFFXXX',
         );
         $address = new Address('Max', 'Mustermann', Gender::Male, 'Str', '1', '12345', 'Berlin', 'DE');
-        $vehicleHolder = new VehicleRegistrationVehicleHolder($address);
+        $vehicleHolder = new VehicleRegistrationVehicleHolder(
+            address: $address,
+            placeOfBirth: 'Berlin',
+            birthDate: '1990-01-31',
+        );
         $request = new VehicleRegistrationRequest('test@example.com', $customization, $vehicleHolder);
 
         $response = $endpoint->createRegistration($request);
