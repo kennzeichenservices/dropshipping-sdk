@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dropshipping\DTO\Webhooks;
 
+use Dropshipping\Support\Hydrator;
+
 /**
  * Represents a single cost breakdown line item in a vehicle deregistration webhook event.
  *
@@ -12,6 +14,8 @@ namespace Dropshipping\DTO\Webhooks;
  */
 final readonly class VehicleDeregistrationCostBreakdownItem
 {
+    private const CONTEXT = 'VehicleDeregistrationCostBreakdownItem';
+
     /**
      * @param int         $number Item position number.
      * @param string|null $code   Optional cost item code.
@@ -38,11 +42,11 @@ final readonly class VehicleDeregistrationCostBreakdownItem
     public static function fromArray(array $data): self
     {
         return new self(
-            number: $data['number'],
-            code: $data['code'] ?? null,
-            name: $data['name'] ?? null,
-            amount: $data['amount'],
-            note: $data['note'] ?? null,
+            number: Hydrator::requireInt($data, 'number', self::CONTEXT),
+            code: Hydrator::optionalString($data, 'code', self::CONTEXT),
+            name: Hydrator::optionalString($data, 'name', self::CONTEXT),
+            amount: Hydrator::requireInt($data, 'amount', self::CONTEXT),
+            note: Hydrator::optionalString($data, 'note', self::CONTEXT),
         );
     }
 }

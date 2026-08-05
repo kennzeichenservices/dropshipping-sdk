@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dropshipping\DTO\Webhooks;
 
 use Dropshipping\Enums\VehicleDeregistrationXkfzEventFilePurposeType;
+use Dropshipping\Support\Hydrator;
 
 /**
  * Represents a file attached to a vehicle deregistration XKFZ webhook event.
@@ -14,6 +15,8 @@ use Dropshipping\Enums\VehicleDeregistrationXkfzEventFilePurposeType;
  */
 final readonly class VehicleDeregistrationXkfzEventFile
 {
+    private const CONTEXT = 'VehicleDeregistrationXkfzEventFile';
+
     /**
      * @param VehicleDeregistrationXkfzEventFilePurposeType $purposeType    The purpose of the file.
      * @param string                                         $mediaType      MIME type of the file.
@@ -38,10 +41,15 @@ final readonly class VehicleDeregistrationXkfzEventFile
     public static function fromArray(array $data): self
     {
         return new self(
-            purposeType: VehicleDeregistrationXkfzEventFilePurposeType::from($data['purposeType']),
-            mediaType: $data['mediaType'],
-            fileAccessKey: $data['fileAccessKey'],
-            expirationTime: $data['expirationTime'],
+            purposeType: Hydrator::requireEnum(
+                VehicleDeregistrationXkfzEventFilePurposeType::class,
+                $data,
+                'purposeType',
+                self::CONTEXT,
+            ),
+            mediaType: Hydrator::requireString($data, 'mediaType', self::CONTEXT),
+            fileAccessKey: Hydrator::requireString($data, 'fileAccessKey', self::CONTEXT),
+            expirationTime: Hydrator::requireString($data, 'expirationTime', self::CONTEXT),
         );
     }
 }

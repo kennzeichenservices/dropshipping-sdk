@@ -32,18 +32,29 @@ final class WebhookEventFactory
      */
     public static function fromArray(array $data, bool $tolerateUnknown = false): WebhookEventInterface
     {
-        if (!isset($data['eventType'])) {
+        $rawEventType = $data['eventType'] ?? null;
+
+        if ($rawEventType === null) {
             throw new WebhookException('Missing eventType in webhook payload');
         }
 
-        $eventType = WebhookEventType::tryFrom($data['eventType']);
+        // tryFrom() only accepts the enum's backing type, so a payload sending a number
+        // or an object here would raise a TypeError instead of a WebhookException.
+        if (!is_string($rawEventType)) {
+            throw new WebhookException(sprintf(
+                'Invalid eventType in webhook payload: expected string, got %s',
+                get_debug_type($rawEventType),
+            ));
+        }
+
+        $eventType = WebhookEventType::tryFrom($rawEventType);
 
         if ($eventType === null || $eventType === WebhookEventType::Unknown) {
             if ($tolerateUnknown) {
                 return UnknownWebhookEvent::fromArray($data);
             }
 
-            throw new WebhookException(sprintf('Unknown webhook event type: %s', $data['eventType']));
+            throw new WebhookException(sprintf('Unknown webhook event type: %s', $rawEventType));
         }
 
         return match ($eventType) {

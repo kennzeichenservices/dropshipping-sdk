@@ -7,6 +7,7 @@ namespace Dropshipping\DTO\Webhooks;
 use Dropshipping\DTO\EuroLicensePlateNumberComponents;
 use Dropshipping\DTO\Requests\LicensePlateReservationCustomization;
 use Dropshipping\Enums\WebhookEventType;
+use Dropshipping\Support\Hydrator;
 
 /**
  * Webhook event fired when a license plate reservation is rejected.
@@ -16,6 +17,8 @@ use Dropshipping\Enums\WebhookEventType;
  */
 final readonly class LicensePlateReservationRejectionEvent implements WebhookEventInterface
 {
+    private const CONTEXT = 'LicensePlateReservationRejectionEvent';
+
     /**
      * @param string                                 $eventTime                                      The ISO 8601 timestamp when the rejection occurred.
      * @param WebhookOrder                           $order                                          The associated order reference.
@@ -56,13 +59,15 @@ final readonly class LicensePlateReservationRejectionEvent implements WebhookEve
     public static function fromArray(array $data): self
     {
         return new self(
-            eventTime: $data['eventTime'],
-            order: WebhookOrder::fromArray($data['order']),
-            customization: LicensePlateReservationCustomization::fromArray($data['customization']),
-            proposedAlternativeLicensePlateNumberComponents: array_values(array_map(
+            eventTime: Hydrator::requireString($data, 'eventTime', self::CONTEXT),
+            order: WebhookOrder::fromArray(Hydrator::requireArray($data, 'order', self::CONTEXT)),
+            customization: LicensePlateReservationCustomization::fromArray(
+                Hydrator::requireArray($data, 'customization', self::CONTEXT),
+            ),
+            proposedAlternativeLicensePlateNumberComponents: array_map(
                 static fn (array $item): EuroLicensePlateNumberComponents => EuroLicensePlateNumberComponents::fromArray($item),
-                $data['proposedAlternativeLicensePlateNumberComponents'] ?? [],
-            )),
+                Hydrator::optionalArrayList($data, 'proposedAlternativeLicensePlateNumberComponents', self::CONTEXT),
+            ),
         );
     }
 }

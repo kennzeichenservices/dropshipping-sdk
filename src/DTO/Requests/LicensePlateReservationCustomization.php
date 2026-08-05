@@ -7,6 +7,7 @@ namespace Dropshipping\DTO\Requests;
 use Dropshipping\DTO\EuroLicensePlateNumberComponents;
 use Dropshipping\Enums\LicensePlateType;
 use Dropshipping\Enums\VehicleType;
+use Dropshipping\Support\Hydrator;
 use Dropshipping\Support\Validator;
 
 /**
@@ -17,6 +18,8 @@ use Dropshipping\Support\Validator;
  */
 final readonly class LicensePlateReservationCustomization
 {
+    private const CONTEXT = 'LicensePlateReservationCustomization';
+
     /**
      * @param int                              $registrationOfficeServiceId ID of the registration office service.
      * @param LicensePlateType                 $licensePlateType            Type of license plate.
@@ -62,12 +65,14 @@ final readonly class LicensePlateReservationCustomization
     public static function fromArray(array $data): self
     {
         return new self(
-            registrationOfficeServiceId: $data['registrationOfficeServiceId'],
-            licensePlateType: LicensePlateType::from($data['licensePlateType']),
-            vehicleType: VehicleType::from($data['vehicleType']),
-            licensePlateNumberComponents: EuroLicensePlateNumberComponents::fromArray($data['licensePlateNumberComponents']),
-            seasonStartMonth: $data['seasonStartMonth'] ?? null,
-            seasonEndMonth: $data['seasonEndMonth'] ?? null,
+            registrationOfficeServiceId: Hydrator::requireInt($data, 'registrationOfficeServiceId', self::CONTEXT),
+            licensePlateType: Hydrator::requireEnum(LicensePlateType::class, $data, 'licensePlateType', self::CONTEXT),
+            vehicleType: Hydrator::requireEnum(VehicleType::class, $data, 'vehicleType', self::CONTEXT),
+            licensePlateNumberComponents: EuroLicensePlateNumberComponents::fromArray(
+                Hydrator::requireArray($data, 'licensePlateNumberComponents', self::CONTEXT),
+            ),
+            seasonStartMonth: Hydrator::optionalInt($data, 'seasonStartMonth', self::CONTEXT),
+            seasonEndMonth: Hydrator::optionalInt($data, 'seasonEndMonth', self::CONTEXT),
         );
     }
 }

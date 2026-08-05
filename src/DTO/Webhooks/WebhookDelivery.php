@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dropshipping\DTO\Webhooks;
 
+use Dropshipping\Support\Hydrator;
+
 /**
  * Represents a delivery reference within a webhook event payload.
  *
@@ -11,6 +13,8 @@ namespace Dropshipping\DTO\Webhooks;
  */
 final readonly class WebhookDelivery
 {
+    private const CONTEXT = 'WebhookDelivery';
+
     /**
      * @param int         $id           The internal delivery ID.
      * @param string|null $trackingCode The shipment tracking code, if available.
@@ -31,8 +35,8 @@ final readonly class WebhookDelivery
     public static function fromArray(array $data): self
     {
         return new self(
-            id: $data['id'],
-            trackingCode: $data['trackingCode'] ?? null,
+            id: Hydrator::requireInt($data, 'id', self::CONTEXT),
+            trackingCode: Hydrator::optionalString($data, 'trackingCode', self::CONTEXT),
         );
     }
 }

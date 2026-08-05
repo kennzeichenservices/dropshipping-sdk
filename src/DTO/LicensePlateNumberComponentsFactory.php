@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dropshipping\DTO;
 
 use Dropshipping\Enums\LicensePlateUsageType;
+use Dropshipping\Support\Hydrator;
 
 /**
  * Factory for creating the appropriate LicensePlateNumberComponentsInterface implementation based on usage type.
@@ -18,7 +19,12 @@ final class LicensePlateNumberComponentsFactory
      */
     public static function fromArray(array $data): LicensePlateNumberComponentsInterface
     {
-        $usageType = LicensePlateUsageType::from($data['usageType']);
+        $usageType = Hydrator::requireEnum(
+            LicensePlateUsageType::class,
+            $data,
+            'usageType',
+            'LicensePlateComponents',
+        );
 
         return match ($usageType) {
             LicensePlateUsageType::Euro => EuroLicensePlateNumberComponents::fromArray($data),

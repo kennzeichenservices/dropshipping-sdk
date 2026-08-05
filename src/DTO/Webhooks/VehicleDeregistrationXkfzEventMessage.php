@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Dropshipping\DTO\Webhooks;
 
+use Dropshipping\Support\Hydrator;
+
 /**
  * Represents a message attached to a vehicle deregistration XKFZ webhook event.
  */
 final readonly class VehicleDeregistrationXkfzEventMessage
 {
+    private const CONTEXT = 'VehicleDeregistrationXkfzEventMessage';
+
     /**
      * @param string      $type       The message type.
      * @param string|null $kind       Optional message kind.
@@ -35,11 +39,11 @@ final readonly class VehicleDeregistrationXkfzEventMessage
     public static function fromArray(array $data): self
     {
         return new self(
-            type: $data['type'],
-            kind: $data['kind'] ?? null,
-            code: $data['code'] ?? null,
-            text: $data['text'] ?? null,
-            additional: $data['additional'] ?? null,
+            type: Hydrator::requireString($data, 'type', self::CONTEXT),
+            kind: Hydrator::optionalString($data, 'kind', self::CONTEXT),
+            code: Hydrator::optionalString($data, 'code', self::CONTEXT),
+            text: Hydrator::optionalString($data, 'text', self::CONTEXT),
+            additional: Hydrator::optionalString($data, 'additional', self::CONTEXT),
         );
     }
 }

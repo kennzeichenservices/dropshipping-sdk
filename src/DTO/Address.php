@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dropshipping\DTO;
 
 use Dropshipping\Enums\Gender;
+use Dropshipping\Support\Hydrator;
 use Dropshipping\Support\Validator;
 
 /**
@@ -12,6 +13,8 @@ use Dropshipping\Support\Validator;
  */
 final readonly class Address
 {
+    private const CONTEXT = 'Address';
+
     /**
      * Create a new Address instance.
      */
@@ -73,18 +76,18 @@ final readonly class Address
     public static function fromArray(array $data): self
     {
         return new self(
-            firstName: $data['firstName'],
-            lastName: $data['lastName'],
-            gender: Gender::from($data['gender']),
-            streetName: $data['streetName'],
-            houseNumber: $data['houseNumber'],
-            zipCode: $data['zipCode'],
-            cityName: $data['cityName'],
-            countryCode: $data['countryCode'],
-            taxNumber: $data['taxNumber'] ?? null,
-            companyName: $data['companyName'] ?? null,
-            additionalField: $data['additionalField'] ?? null,
-            phoneNumber: $data['phoneNumber'] ?? null,
+            firstName: Hydrator::requireString($data, 'firstName', self::CONTEXT),
+            lastName: Hydrator::requireString($data, 'lastName', self::CONTEXT),
+            gender: Hydrator::requireEnum(Gender::class, $data, 'gender', self::CONTEXT),
+            streetName: Hydrator::requireString($data, 'streetName', self::CONTEXT),
+            houseNumber: Hydrator::requireString($data, 'houseNumber', self::CONTEXT),
+            zipCode: Hydrator::requireString($data, 'zipCode', self::CONTEXT),
+            cityName: Hydrator::requireString($data, 'cityName', self::CONTEXT),
+            countryCode: Hydrator::requireString($data, 'countryCode', self::CONTEXT),
+            taxNumber: Hydrator::optionalString($data, 'taxNumber', self::CONTEXT),
+            companyName: Hydrator::optionalString($data, 'companyName', self::CONTEXT),
+            additionalField: Hydrator::optionalString($data, 'additionalField', self::CONTEXT),
+            phoneNumber: Hydrator::optionalString($data, 'phoneNumber', self::CONTEXT),
         );
     }
 }

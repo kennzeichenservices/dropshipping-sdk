@@ -47,6 +47,7 @@
         "lint": "pint --test",
         "lint:fix": "pint",
         "audit:security": "composer audit",
+        "bc-check": "bash scripts/bc-check.sh",
         "check": [
             "@lint",
             "@analyse",
@@ -59,6 +60,7 @@
         "lint": "Check code style without changing files.",
         "lint:fix": "Apply code style fixes.",
         "audit:security": "Report known CVEs in installed dependencies.",
+        "bc-check": "Diff the public API and DTO hydration behaviour against a released tag. Run before every release.",
         "check": "Run lint, static analysis and unit tests — the pre-commit gate."
     },
     "minimum-stability": "stable",

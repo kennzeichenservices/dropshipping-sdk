@@ -6,6 +6,7 @@ namespace Dropshipping\DTO\Webhooks;
 
 use Dropshipping\Enums\VehicleDeregistrationXkfzEventStatus;
 use Dropshipping\Enums\WebhookEventType;
+use Dropshipping\Support\Hydrator;
 
 /**
  * Webhook event fired when a vehicle deregistration XKFZ status update is received.
@@ -15,6 +16,8 @@ use Dropshipping\Enums\WebhookEventType;
  */
 final readonly class VehicleDeregistrationXkfzEvent implements WebhookEventInterface
 {
+    private const CONTEXT = 'VehicleDeregistrationXkfzEvent';
+
     /**
      * @param string                                           $eventTime     The ISO 8601 timestamp when the event occurred.
      * @param WebhookOrder                                     $order         The associated order reference.
@@ -63,26 +66,34 @@ final readonly class VehicleDeregistrationXkfzEvent implements WebhookEventInter
     public static function fromArray(array $data): self
     {
         return new self(
-            eventTime: $data['eventTime'],
-            order: WebhookOrder::fromArray($data['order']),
-            status: VehicleDeregistrationXkfzEventStatus::from($data['status']),
-            derivedStatus: $data['derivedStatus'],
+            eventTime: Hydrator::requireString($data, 'eventTime', self::CONTEXT),
+            order: WebhookOrder::fromArray(Hydrator::requireArray($data, 'order', self::CONTEXT)),
+            // The API may introduce statuses before this SDK models them. Falling back to
+            // Unknown keeps an otherwise valid event deliverable instead of throwing.
+            status: Hydrator::requireEnum(
+                VehicleDeregistrationXkfzEventStatus::class,
+                $data,
+                'status',
+                self::CONTEXT,
+                VehicleDeregistrationXkfzEventStatus::Unknown,
+            ),
+            derivedStatus: Hydrator::requireString($data, 'derivedStatus', self::CONTEXT),
             files: isset($data['files'])
-                ? array_values(array_map(
+                ? array_map(
                     static fn (array $file): VehicleDeregistrationXkfzEventFile => VehicleDeregistrationXkfzEventFile::fromArray($file),
-                    $data['files'],
-                ))
+                    Hydrator::requireArrayList($data, 'files', self::CONTEXT),
+                )
                 : null,
-            costBreakdown: isset($data['costBreakdown'])
-                ? VehicleDeregistrationCostBreakdown::fromArray($data['costBreakdown'])
+            costBreakdown: ($costs = Hydrator::optionalArray($data, 'costBreakdown', self::CONTEXT)) !== null
+                ? VehicleDeregistrationCostBreakdown::fromArray($costs)
                 : null,
             messages: isset($data['messages'])
-                ? array_values(array_map(
+                ? array_map(
                     static fn (array $msg): VehicleDeregistrationXkfzEventMessage => VehicleDeregistrationXkfzEventMessage::fromArray($msg),
-                    $data['messages'],
-                ))
+                    Hydrator::requireArrayList($data, 'messages', self::CONTEXT),
+                )
                 : null,
-            applicationId: $data['applicationId'] ?? null,
+            applicationId: Hydrator::optionalString($data, 'applicationId', self::CONTEXT),
         );
     }
 }

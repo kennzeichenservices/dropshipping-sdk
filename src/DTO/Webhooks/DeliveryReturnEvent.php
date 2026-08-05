@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dropshipping\DTO\Webhooks;
 
 use Dropshipping\Enums\WebhookEventType;
+use Dropshipping\Support\Hydrator;
 
 /**
  * Webhook event fired when a delivery has been returned.
@@ -14,6 +15,8 @@ use Dropshipping\Enums\WebhookEventType;
  */
 final readonly class DeliveryReturnEvent implements WebhookEventInterface
 {
+    private const CONTEXT = 'DeliveryReturnEvent';
+
     /**
      * @param string          $eventTime                     The ISO 8601 timestamp when the return was registered.
      * @param WebhookDelivery $delivery                      The delivery reference.
@@ -56,11 +59,11 @@ final readonly class DeliveryReturnEvent implements WebhookEventInterface
     public static function fromArray(array $data): self
     {
         return new self(
-            eventTime: $data['eventTime'],
-            delivery: WebhookDelivery::fromArray($data['delivery']),
-            order: WebhookOrder::fromArray($data['order']),
-            returnReason: $data['returnReason'],
-            reshippingOfferExpirationDate: $data['reshippingOfferExpirationDate'],
+            eventTime: Hydrator::requireString($data, 'eventTime', self::CONTEXT),
+            delivery: WebhookDelivery::fromArray(Hydrator::requireArray($data, 'delivery', self::CONTEXT)),
+            order: WebhookOrder::fromArray(Hydrator::requireArray($data, 'order', self::CONTEXT)),
+            returnReason: Hydrator::requireString($data, 'returnReason', self::CONTEXT),
+            reshippingOfferExpirationDate: Hydrator::requireString($data, 'reshippingOfferExpirationDate', self::CONTEXT),
         );
     }
 }

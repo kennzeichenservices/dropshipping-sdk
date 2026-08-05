@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dropshipping\DTO\Responses;
 
+use Dropshipping\Support\Hydrator;
+
 /**
  * Response DTO for a license plate reservation request.
  *
@@ -11,6 +13,8 @@ namespace Dropshipping\DTO\Responses;
  */
 final readonly class LicensePlateReservationResponse
 {
+    private const CONTEXT = 'LicensePlateReservationResponse';
+
     /**
      * Create a new license plate reservation response instance.
      *
@@ -30,9 +34,11 @@ final readonly class LicensePlateReservationResponse
      */
     public static function fromArray(array $data): self
     {
+        $order = Hydrator::requireArray($data, 'order', self::CONTEXT);
+
         return new self(
-            orderId: $data['order']['id'],
-            costNetValue: $data['order']['costNetValue'],
+            orderId: Hydrator::requireInt($order, 'id', self::CONTEXT . '.order'),
+            costNetValue: Hydrator::requireString($order, 'costNetValue', self::CONTEXT . '.order'),
         );
     }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dropshipping\DTO\Responses;
 
+use Dropshipping\Support\Hydrator;
+
 /**
  * Response DTO for a vehicle registration request.
  *
@@ -18,6 +20,8 @@ namespace Dropshipping\DTO\Responses;
  */
 final readonly class VehicleRegistrationResponse
 {
+    private const CONTEXT = 'VehicleRegistrationResponse';
+
     /**
      * @param int    $orderId                      The ID of the created order.
      * @param int    $identityVerificationVendorId The ID of the vendor handling the identity verification.
@@ -40,9 +44,13 @@ final readonly class VehicleRegistrationResponse
     public static function fromArray(array $data): self
     {
         return new self(
-            orderId: $data['order']['id'],
-            identityVerificationVendorId: $data['identityVerificationVendorId'],
-            customerInputFormUrl: $data['customerInputFormUrl'],
+            orderId: Hydrator::requireInt(
+                Hydrator::requireArray($data, 'order', self::CONTEXT),
+                'id',
+                self::CONTEXT . '.order',
+            ),
+            identityVerificationVendorId: Hydrator::requireInt($data, 'identityVerificationVendorId', self::CONTEXT),
+            customerInputFormUrl: Hydrator::requireString($data, 'customerInputFormUrl', self::CONTEXT),
         );
     }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dropshipping\DTO\Responses;
 
+use Dropshipping\Support\Hydrator;
+
 /**
  * Response DTO for the GKS configuration overviews listing.
  *
@@ -12,6 +14,8 @@ namespace Dropshipping\DTO\Responses;
  */
 final readonly class GksConfigurationOverviewsResponse
 {
+    private const CONTEXT = 'GksConfigurationOverviewsResponse';
+
     /**
      * @param list<OverviewGksConfiguration> $overviewGksConfigurations The list of GKS configuration overviews.
      */
@@ -30,10 +34,10 @@ final readonly class GksConfigurationOverviewsResponse
     public static function fromArray(array $data): self
     {
         return new self(
-            overviewGksConfigurations: array_values(array_map(
+            overviewGksConfigurations: array_map(
                 static fn (array $item): OverviewGksConfiguration => OverviewGksConfiguration::fromArray($item),
-                $data['overviewGksConfigurations'],
-            )),
+                Hydrator::requireArrayList($data, 'overviewGksConfigurations', self::CONTEXT),
+            ),
         );
     }
 }

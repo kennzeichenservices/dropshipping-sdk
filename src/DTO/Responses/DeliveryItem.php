@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dropshipping\DTO\Responses;
 
+use Dropshipping\Support\Hydrator;
+
 /**
  * Represents an item within a delivery.
  *
@@ -11,6 +13,8 @@ namespace Dropshipping\DTO\Responses;
  */
 final readonly class DeliveryItem
 {
+    private const CONTEXT = 'DeliveryItem';
+
     /**
      * Create a new delivery item instance.
      *
@@ -29,7 +33,7 @@ final readonly class DeliveryItem
     public static function fromArray(array $data): self
     {
         return new self(
-            orderItemIndex: $data['orderItemIndex'],
+            orderItemIndex: Hydrator::requireInt($data, 'orderItemIndex', self::CONTEXT),
         );
     }
 }

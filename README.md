@@ -667,6 +667,51 @@ new OrderCreationRequest(email: 'not-an-email', ...);
 new LicensePlateReservationCustomization(seasonStartMonth: 0, ...);
 ```
 
+## Development
+
+```bash
+composer check            # lint + static analysis + unit tests — run before committing
+composer test:unit        # unit tests only
+composer test:integration # hits the live API, needs credentials in .env
+composer lint:fix         # apply code style
+composer analyse          # PHPStan: src at level 8, tests at level 6
+composer audit:security   # known CVEs in dependencies
+```
+
+PHP is formatted with [Laravel Pint](pint.json), not with your editor's built-in
+formatter — the two disagree and will overwrite each other. The bundled
+[.vscode/settings.json](.vscode/settings.json) disables format-on-save for PHP in this
+project for that reason.
+
+### Backward-compatibility check
+
+Run before every release. It answers "if a customer upgrades, does the SDK still behave
+the same?" by comparing the working tree against a released tag:
+
+```bash
+composer bc-check              # against the latest tag
+composer bc-check -- v2.3.20   # against a specific ref
+```
+
+It reports two things:
+
+1. **Public API surface** — every public class, property, method signature and enum case,
+   diffed. A removed parameter or a newly required argument shows up here; that is what
+   breaks a consumer's code at call time.
+2. **Hydration behaviour** — a corpus of realistic payloads
+   ([scripts/bc-check/corpus.php](scripts/bc-check/corpus.php)) is run through both
+   versions' DTOs and the resulting objects are compared field by field. This catches
+   silent behaviour changes that no unit test happens to cover.
+
+The command exits non-zero on an unexplained behaviour difference, so it can gate a
+release. Deliberate changes are recorded in
+[scripts/bc-check/accepted.php](scripts/bc-check/accepted.php) with a reason and the
+release they shipped in — without that, the check would stay red after the first
+intentional change and everyone would learn to ignore it.
+
+**When you add a DTO or a field, add a corpus entry for it.** The check can only compare
+what the corpus exercises.
+
 ## License
 
 Proprietary

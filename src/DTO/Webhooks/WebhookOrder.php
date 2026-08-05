@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dropshipping\DTO\Webhooks;
 
+use Dropshipping\Support\Hydrator;
+
 /**
  * Represents an order reference within a webhook event payload.
  *
@@ -12,6 +14,8 @@ namespace Dropshipping\DTO\Webhooks;
  */
 final readonly class WebhookOrder
 {
+    private const CONTEXT = 'WebhookOrder';
+
     /**
      * @param int         $id         The internal order ID.
      * @param string|null $externalId The external order ID, if available.
@@ -32,8 +36,8 @@ final readonly class WebhookOrder
     public static function fromArray(array $data): self
     {
         return new self(
-            id: $data['id'],
-            externalId: $data['externalId'] ?? null,
+            id: Hydrator::requireInt($data, 'id', self::CONTEXT),
+            externalId: Hydrator::optionalString($data, 'externalId', self::CONTEXT),
         );
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dropshipping\DTO\Webhooks;
 
 use Dropshipping\Enums\WebhookEventType;
+use Dropshipping\Support\Hydrator;
 
 /**
  * Webhook event fired to verify webhook endpoint connectivity.
@@ -14,6 +15,8 @@ use Dropshipping\Enums\WebhookEventType;
  */
 final readonly class PingEvent implements WebhookEventInterface
 {
+    private const CONTEXT = 'PingEvent';
+
     /**
      * @param string $eventTime The ISO 8601 timestamp when the ping was issued.
      */
@@ -48,7 +51,7 @@ final readonly class PingEvent implements WebhookEventInterface
     public static function fromArray(array $data): self
     {
         return new self(
-            eventTime: $data['eventTime'],
+            eventTime: Hydrator::requireString($data, 'eventTime', self::CONTEXT),
         );
     }
 }

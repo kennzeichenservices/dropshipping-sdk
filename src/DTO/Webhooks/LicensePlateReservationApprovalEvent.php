@@ -6,6 +6,7 @@ namespace Dropshipping\DTO\Webhooks;
 
 use Dropshipping\DTO\Requests\LicensePlateReservationCustomization;
 use Dropshipping\Enums\WebhookEventType;
+use Dropshipping\Support\Hydrator;
 
 /**
  * Webhook event fired when a license plate reservation is approved.
@@ -15,6 +16,8 @@ use Dropshipping\Enums\WebhookEventType;
  */
 final readonly class LicensePlateReservationApprovalEvent implements WebhookEventInterface
 {
+    private const CONTEXT = 'LicensePlateReservationApprovalEvent';
+
     /**
      * @param string                               $eventTime        The ISO 8601 timestamp when the approval occurred.
      * @param WebhookOrder                         $order            The associated order reference.
@@ -57,11 +60,13 @@ final readonly class LicensePlateReservationApprovalEvent implements WebhookEven
     public static function fromArray(array $data): self
     {
         return new self(
-            eventTime: $data['eventTime'],
-            order: WebhookOrder::fromArray($data['order']),
-            reservationPin: $data['reservationPin'] ?? null,
-            customization: LicensePlateReservationCustomization::fromArray($data['customization']),
-            reservationPrice: $data['reservationPrice'],
+            eventTime: Hydrator::requireString($data, 'eventTime', self::CONTEXT),
+            order: WebhookOrder::fromArray(Hydrator::requireArray($data, 'order', self::CONTEXT)),
+            reservationPin: Hydrator::optionalString($data, 'reservationPin', self::CONTEXT),
+            customization: LicensePlateReservationCustomization::fromArray(
+                Hydrator::requireArray($data, 'customization', self::CONTEXT),
+            ),
+            reservationPrice: Hydrator::requireString($data, 'reservationPrice', self::CONTEXT),
         );
     }
 }

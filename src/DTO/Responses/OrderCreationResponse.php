@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dropshipping\DTO\Responses;
 
+use Dropshipping\Support\Hydrator;
+
 /**
  * Response DTO for order creation.
  *
@@ -11,6 +13,8 @@ namespace Dropshipping\DTO\Responses;
  */
 final readonly class OrderCreationResponse
 {
+    private const CONTEXT = 'OrderCreationResponse';
+
     /**
      * Create a new order creation response instance.
      *
@@ -33,12 +37,12 @@ final readonly class OrderCreationResponse
     public static function fromArray(array $data): self
     {
         return new self(
-            id: $data['id'],
-            deliveries: array_values(array_map(
+            id: Hydrator::requireInt($data, 'id', self::CONTEXT),
+            deliveries: array_map(
                 static fn (array $delivery): Delivery => Delivery::fromArray($delivery),
-                $data['deliveries'] ?? [],
-            )),
-            costNetValue: $data['costNetValue'] ?? null,
+                Hydrator::optionalArrayList($data, 'deliveries', self::CONTEXT),
+            ),
+            costNetValue: Hydrator::optionalString($data, 'costNetValue', self::CONTEXT),
         );
     }
 }

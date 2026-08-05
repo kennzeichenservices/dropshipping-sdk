@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dropshipping\DTO\Responses;
 
+use Dropshipping\Support\Hydrator;
+
 /**
  * Response DTO for a vehicle deregistration request.
  *
@@ -13,6 +15,8 @@ namespace Dropshipping\DTO\Responses;
  */
 final readonly class VehicleDeregistrationResponse
 {
+    private const CONTEXT = 'VehicleDeregistrationResponse';
+
     /**
      * @param int $orderId The ID of the created order.
      */
@@ -31,7 +35,11 @@ final readonly class VehicleDeregistrationResponse
     public static function fromArray(array $data): self
     {
         return new self(
-            orderId: $data['order']['id'],
+            orderId: Hydrator::requireInt(
+                Hydrator::requireArray($data, 'order', self::CONTEXT),
+                'id',
+                self::CONTEXT . '.order',
+            ),
         );
     }
 }

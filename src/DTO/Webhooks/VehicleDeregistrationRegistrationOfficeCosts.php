@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dropshipping\DTO\Webhooks;
 
+use Dropshipping\Support\Hydrator;
+
 /**
  * Represents the registration office costs in a vehicle deregistration webhook event.
  *
@@ -12,6 +14,8 @@ namespace Dropshipping\DTO\Webhooks;
  */
 final readonly class VehicleDeregistrationRegistrationOfficeCosts
 {
+    private const CONTEXT = 'VehicleDeregistrationRegistrationOfficeCosts';
+
     /**
      * @param list<VehicleDeregistrationCostBreakdownItem> $items Individual cost breakdown items.
      * @param VehicleDeregistrationCostBreakdownItem|null  $total Total summary item.
@@ -34,12 +38,14 @@ final readonly class VehicleDeregistrationRegistrationOfficeCosts
     public static function fromArray(array $data): self
     {
         return new self(
-            items: array_values(array_map(
+            items: array_map(
                 static fn (array $item): VehicleDeregistrationCostBreakdownItem => VehicleDeregistrationCostBreakdownItem::fromArray($item),
-                $data['items'],
-            )),
-            total: isset($data['total']) ? VehicleDeregistrationCostBreakdownItem::fromArray($data['total']) : null,
-            note: $data['note'] ?? null,
+                Hydrator::requireArrayList($data, 'items', self::CONTEXT),
+            ),
+            total: ($total = Hydrator::optionalArray($data, 'total', self::CONTEXT)) !== null
+                ? VehicleDeregistrationCostBreakdownItem::fromArray($total)
+                : null,
+            note: Hydrator::optionalString($data, 'note', self::CONTEXT),
         );
     }
 }

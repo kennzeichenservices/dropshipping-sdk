@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dropshipping\DTO\Responses;
 
+use Dropshipping\Support\Hydrator;
+
 /**
  * Response DTO representing a GKS configuration overview.
  *
@@ -12,6 +14,8 @@ namespace Dropshipping\DTO\Responses;
  */
 final readonly class OverviewGksConfiguration
 {
+    private const CONTEXT = 'OverviewGksConfiguration';
+
     /**
      * @param string $id   UUID of the GKS configuration.
      * @param string $name Display name of the GKS configuration.
@@ -32,8 +36,8 @@ final readonly class OverviewGksConfiguration
     public static function fromArray(array $data): self
     {
         return new self(
-            id: $data['id'],
-            name: $data['name'],
+            id: Hydrator::requireString($data, 'id', self::CONTEXT),
+            name: Hydrator::requireString($data, 'name', self::CONTEXT),
         );
     }
 }

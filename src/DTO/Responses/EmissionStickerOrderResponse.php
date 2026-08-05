@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dropshipping\DTO\Responses;
 
+use Dropshipping\Support\Hydrator;
+
 /**
  * Response DTO for emission sticker order creation.
  *
@@ -11,6 +13,8 @@ namespace Dropshipping\DTO\Responses;
  */
 final readonly class EmissionStickerOrderResponse
 {
+    private const CONTEXT = 'EmissionStickerOrderResponse';
+
     /**
      * Create a new emission sticker order response instance.
      *
@@ -33,9 +37,13 @@ final readonly class EmissionStickerOrderResponse
     public static function fromArray(array $data): self
     {
         return new self(
-            id: $data['id'],
-            deliveryId: $data['delivery']['id'],
-            costNetValue: $data['costNetValue'],
+            id: Hydrator::requireInt($data, 'id', self::CONTEXT),
+            deliveryId: Hydrator::requireInt(
+                Hydrator::requireArray($data, 'delivery', self::CONTEXT),
+                'id',
+                self::CONTEXT . '.delivery',
+            ),
+            costNetValue: Hydrator::requireString($data, 'costNetValue', self::CONTEXT),
         );
     }
 }

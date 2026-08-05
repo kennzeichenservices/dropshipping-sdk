@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dropshipping\DTO\Responses;
 
 use Dropshipping\DTO\EuroLicensePlateNumberComponents;
+use Dropshipping\Support\Hydrator;
 
 /**
  * Response DTO for a license plate availability check.
@@ -14,6 +15,8 @@ use Dropshipping\DTO\EuroLicensePlateNumberComponents;
  */
 final readonly class AvailabilityCheckResponse
 {
+    private const CONTEXT = 'AvailabilityCheckResponse';
+
     /**
      * Create a new availability check response instance.
      *
@@ -32,10 +35,10 @@ final readonly class AvailabilityCheckResponse
     public static function fromArray(array $data): self
     {
         return new self(
-            availableLicensePlateNumbers: array_values(array_map(
+            availableLicensePlateNumbers: array_map(
                 static fn (array $item): EuroLicensePlateNumberComponents => EuroLicensePlateNumberComponents::fromArray($item),
-                $data['availableLicensePlateNumbers'] ?? [],
-            )),
+                Hydrator::optionalArrayList($data, 'availableLicensePlateNumbers', self::CONTEXT),
+            ),
         );
     }
 }
