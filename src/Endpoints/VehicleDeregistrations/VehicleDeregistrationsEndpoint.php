@@ -74,21 +74,7 @@ final class VehicleDeregistrationsEndpoint
         );
 
         $response = $this->httpClient->sendRequest($httpRequest);
-        $statusCode = $response->getStatusCode();
 
-        if ($statusCode !== 200) {
-            $body = (string) $response->getBody();
-            $traceId = $response->getHeaderLine('X-Trace-Id') ?: null;
-            $errorMessage = 'API request failed';
-
-            if ($body !== '') {
-                $data = json_decode($body, true);
-                $errorMessage = $data['error'] ?? $errorMessage;
-            }
-
-            throw new ApiException($errorMessage, $statusCode, $traceId);
-        }
-
-        return (string) $response->getBody();
+        return $this->responseMapper->readBody($response);
     }
 }

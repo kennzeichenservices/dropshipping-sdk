@@ -10,16 +10,18 @@ namespace Dropshipping\Exceptions;
 class ApiException extends DropshippingException
 {
     /**
-     * @param string      $message    The error message returned by the API.
-     * @param int         $statusCode The HTTP status code of the error response.
-     * @param string|null $traceId    The trace ID for request correlation, if available.
+     * @param string          $message    The error message returned by the API.
+     * @param int             $statusCode The HTTP status code of the error response.
+     * @param string|null     $traceId    The trace ID for request correlation, if available.
+     * @param \Throwable|null $previous   The underlying cause, e.g. a JSON decoding failure.
      */
     public function __construct(
         string $message,
         private readonly int $statusCode,
         private readonly ?string $traceId = null,
+        ?\Throwable $previous = null,
     ) {
-        parent::__construct($message, $statusCode);
+        parent::__construct($message, $statusCode, $previous);
     }
 
     /**
