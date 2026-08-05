@@ -66,10 +66,10 @@ echo "Identity verification vendor: {$response->identityVerificationVendorId}\n"
 // signatures required for the registration. Nothing is processed until they do.
 echo "Send the customer to: {$response->customerInputFormUrl}\n";
 
-// Registration results arrive asynchronously via webhooks. Those event types are not
-// described in any published webhooks spec yet, so enable unknown-event tolerance to
-// receive them as UnknownWebhookEvent instead of an exception:
+// Registration results arrive asynchronously via webhooks (spec 3.2.0), as typed events:
 //
-//   $pipeline = DS::webhookPipeline($secret, tolerateUnknownEvents: true);
+//   VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED / _SUCCEEDED / _FAILED
+//   VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED / _SUCCEEDED / _FAILED
+//   VEHICLE_REGISTRATION_XKFZ_EVENT  — the registration office verdict and the assigned plate
 //
 // See webhooks.php for the full event handling setup.

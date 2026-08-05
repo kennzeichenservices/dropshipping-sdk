@@ -411,6 +411,11 @@ licensePlateNumberAssignmentStrategy: DS::reservedLicensePlateNumber(
 to choose, so it takes a `licensePlateType` too. `RETAINMENT` carries nothing; pair it with
 `DS::previousLicensePlate(...)` on the customization to keep an existing number.
 
+Everything after the order creation arrives as `VEHICLE_REGISTRATION_*` webhooks: the identity
+check and signing steps report their start and outcome, and `VEHICLE_REGISTRATION_XKFZ_EVENT`
+carries the registration office's verdict along with the assigned plate. See
+[Webhook Event Types](#webhook-event-types).
+
 ### Handling Webhooks
 
 Set up a webhook receiver with the built-in middleware pipeline:
@@ -545,21 +550,31 @@ The SDK follows these patterns:
 | `LICENSE_PLATE_RESERVATION_REJECTION` | `LicensePlateReservationRejectionEvent` | Reservation rejected with alternatives |
 | `LICENSE_PLATE_RESERVATION_TIMEOUT` | `LicensePlateReservationTimeoutEvent` | Reservation timed out |
 | `VEHICLE_DEREGISTRATION_XKFZ_EVENT` | `VehicleDeregistrationXkfzEvent` | Vehicle deregistration XKFZ status update — includes `status`, `derivedStatus`, optional `files` (with `fileAccessKey` for download), optional `costBreakdown`, and optional `messages` |
+| `VEHICLE_REGISTRATION_XKFZ_EVENT` (**beta**) | `VehicleRegistrationXkfzEvent` | Vehicle registration XKFZ status update — same shape as the deregistration event, plus the assigned `licensePlate`. Files carry a `fileAccessKey`, but no download endpoint is exposed yet |
+| `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED` (**beta**) | `VehicleRegistrationIdentityVerificationInitializedEvent` | Identity check started — send the customer to `identityVerificationUrl` |
+| `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_SUCCEEDED` (**beta**) | `VehicleRegistrationIdentityVerificationSucceededEvent` | Customer identified successfully |
+| `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_FAILED` (**beta**) | `VehicleRegistrationIdentityVerificationFailedEvent` | Identity check failed, with an optional `message` |
+| `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED` (**beta**) | `VehicleRegistrationDocumentSignatureInitializedEvent` | Signing started — send the customer to `documentSignatureUrl` |
+| `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED` (**beta**) | `VehicleRegistrationDocumentSignatureSucceededEvent` | Documents signed |
+| `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_FAILED` (**beta**) | `VehicleRegistrationDocumentSignatureFailedEvent` | Signing failed, with an optional `message` |
 | _(any unrecognised type)_ | `UnknownWebhookEvent` | Only produced when the pipeline is built with `tolerateUnknownEvents: true`. Carries `rawEventType` and the full `payload` — see below |
 
 #### Unknown event types
 
-Vehicle registration results are announced via webhook events that are not described in any
-published webhooks spec yet, so the SDK has no typed classes for them. By default an unrecognised
-`eventType` throws a `WebhookException`. Opt into tolerance to receive them instead:
+The table above covers webhooks spec 3.2.0. The API can start sending a new event type before a
+matching SDK release exists — by default such an `eventType` throws a `WebhookException`. Opt into
+tolerance to receive them instead:
 
 ```php
 $pipeline = DS::webhookPipeline($secret, tolerateUnknownEvents: true);
 ```
 
-Unknown payloads then arrive as `UnknownWebhookEvent` with `getEventType() === WebhookEventType::Unknown`,
-the original type string in `rawEventType`, and the complete decoded payload in `payload`. Typed
-events will be added once the webhooks spec covers them.
+Unrecognised payloads then arrive as `UnknownWebhookEvent` with `getEventType() === WebhookEventType::Unknown`,
+the original type string in `rawEventType`, and the complete decoded payload in `payload`.
+
+Note this only covers an unknown `eventType`. An unmodelled value *inside* a known event still
+throws, except where the SDK defines a fallback — `status` on both XKFZ events degrades to
+`UNKNOWN` rather than failing the delivery.
 
 ### Enums
 
@@ -578,6 +593,8 @@ events will be added once the webhooks spec covers them.
 | `VehicleRegistrationLicensePlateType` (beta) | `REGULAR`, `REGULAR_SEASON`, `ELECTRIC`, `ELECTRIC_SEASON`, `HISTORICAL`, `HISTORICAL_SEASON` |
 | `VehicleRegistrationLicensePlateNumberAssignmentStrategyType` (beta) | `RANDOM`, `RESERVATION`, `RETAINMENT` |
 | `VehicleRegistrationServiceTypeCode` (beta) | `NZ`, `WZ`, `UO`, `UI`, `UM`, `WG`, `UG`, `HA` |
+| `VehicleRegistrationXkfzEventStatus` (beta) | `ACCEPTED`, `APPROVED`, `APPROVED_WITH_DOCUMENTS`, `FAILED`, `FORWARDED`, `PROCESSED`, `REJECTED`, `REJECTED_WITH_DOCUMENTS`, `UNKNOWN` |
+| `VehicleRegistrationXkfzEventFilePurposeType` (beta) | `OTHER`, `PROVISIONAL_VEHICLE_REGISTRATION_CERTIFICATE`, `VEHICLE_REGISTRATION_APPLICATION_POWER_OF_ATTORNEY`, `VEHICLE_REGISTRATION_APPROVAL_NOTICE`, `VEHICLE_REGISTRATION_CERTIFICATE_TOKEN`, `VEHICLE_REGISTRATION_CHARGES_NOTICE`, `VEHICLE_REGISTRATION_ELECTRONIC_INSURANCE_CONFIRMATION`, `VEHICLE_REGISTRATION_GDPR_CONSENT_DECLARATION`, `VEHICLE_REGISTRATION_MOTOR_VEHICLE_TAX_SEPA_DIRECT_DEBIT_MANDATE`, `VEHICLE_REGISTRATION_REJECTION_NOTICE` |
 | `WebhookEventType` | see [Webhook Event Types](#webhook-event-types), plus `UNKNOWN` for unrecognised types |
 
 ## Extensibility

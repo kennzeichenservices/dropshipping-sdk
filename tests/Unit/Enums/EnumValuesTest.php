@@ -14,6 +14,8 @@ use Dropshipping\Enums\VehicleRegistrationLicensePlateNumberAssignmentStrategyTy
 use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
 use Dropshipping\Enums\VehicleRegistrationServiceTypeCode;
 use Dropshipping\Enums\VehicleRegistrationVehicleType;
+use Dropshipping\Enums\VehicleRegistrationXkfzEventFilePurposeType;
+use Dropshipping\Enums\VehicleRegistrationXkfzEventStatus;
 use Dropshipping\Enums\VehicleType;
 use Dropshipping\Enums\WebhookEventType;
 use PHPUnit\Framework\TestCase;
@@ -72,8 +74,15 @@ final class EnumValuesTest extends TestCase
         self::assertSame('LICENSE_PLATE_RESERVATION_REJECTION', WebhookEventType::LicensePlateReservationRejection->value);
         self::assertSame('LICENSE_PLATE_RESERVATION_TIMEOUT', WebhookEventType::LicensePlateReservationTimeout->value);
         self::assertSame('VEHICLE_DEREGISTRATION_XKFZ_EVENT', WebhookEventType::VehicleDeregistrationXkfzEvent->value);
+        self::assertSame('VEHICLE_REGISTRATION_XKFZ_EVENT', WebhookEventType::VehicleRegistrationXkfzEvent->value);
+        self::assertSame('VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED', WebhookEventType::VehicleRegistrationIdentityVerificationInitialized->value);
+        self::assertSame('VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_SUCCEEDED', WebhookEventType::VehicleRegistrationIdentityVerificationSucceeded->value);
+        self::assertSame('VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_FAILED', WebhookEventType::VehicleRegistrationIdentityVerificationFailed->value);
+        self::assertSame('VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED', WebhookEventType::VehicleRegistrationDocumentSignatureInitialized->value);
+        self::assertSame('VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED', WebhookEventType::VehicleRegistrationDocumentSignatureSucceeded->value);
+        self::assertSame('VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_FAILED', WebhookEventType::VehicleRegistrationDocumentSignatureFailed->value);
         self::assertSame('UNKNOWN', WebhookEventType::Unknown->value);
-        self::assertCount(9, WebhookEventType::cases());
+        self::assertCount(16, WebhookEventType::cases());
     }
 
     public function test_vehicle_deregistration_vehicle_type_values(): void
@@ -139,6 +148,35 @@ final class EnumValuesTest extends TestCase
         self::assertSame('UG', VehicleRegistrationServiceTypeCode::UG->value);
         self::assertSame('HA', VehicleRegistrationServiceTypeCode::HA->value);
         self::assertCount(8, VehicleRegistrationServiceTypeCode::cases());
+    }
+
+    public function test_vehicle_registration_xkfz_event_status_values(): void
+    {
+        self::assertSame('ACCEPTED', VehicleRegistrationXkfzEventStatus::Accepted->value);
+        self::assertSame('APPROVED', VehicleRegistrationXkfzEventStatus::Approved->value);
+        self::assertSame('APPROVED_WITH_DOCUMENTS', VehicleRegistrationXkfzEventStatus::ApprovedWithDocuments->value);
+        self::assertSame('FAILED', VehicleRegistrationXkfzEventStatus::Failed->value);
+        self::assertSame('FORWARDED', VehicleRegistrationXkfzEventStatus::Forwarded->value);
+        self::assertSame('PROCESSED', VehicleRegistrationXkfzEventStatus::Processed->value);
+        self::assertSame('REJECTED', VehicleRegistrationXkfzEventStatus::Rejected->value);
+        self::assertSame('REJECTED_WITH_DOCUMENTS', VehicleRegistrationXkfzEventStatus::RejectedWithDocuments->value);
+        self::assertSame('UNKNOWN', VehicleRegistrationXkfzEventStatus::Unknown->value);
+        self::assertCount(9, VehicleRegistrationXkfzEventStatus::cases());
+    }
+
+    public function test_vehicle_registration_xkfz_event_file_purpose_type_values(): void
+    {
+        self::assertSame('OTHER', VehicleRegistrationXkfzEventFilePurposeType::Other->value);
+        self::assertSame('PROVISIONAL_VEHICLE_REGISTRATION_CERTIFICATE', VehicleRegistrationXkfzEventFilePurposeType::ProvisionalVehicleRegistrationCertificate->value);
+        self::assertSame('VEHICLE_REGISTRATION_APPLICATION_POWER_OF_ATTORNEY', VehicleRegistrationXkfzEventFilePurposeType::VehicleRegistrationApplicationPowerOfAttorney->value);
+        self::assertSame('VEHICLE_REGISTRATION_APPROVAL_NOTICE', VehicleRegistrationXkfzEventFilePurposeType::VehicleRegistrationApprovalNotice->value);
+        self::assertSame('VEHICLE_REGISTRATION_CERTIFICATE_TOKEN', VehicleRegistrationXkfzEventFilePurposeType::VehicleRegistrationCertificateToken->value);
+        self::assertSame('VEHICLE_REGISTRATION_CHARGES_NOTICE', VehicleRegistrationXkfzEventFilePurposeType::VehicleRegistrationChargesNotice->value);
+        self::assertSame('VEHICLE_REGISTRATION_ELECTRONIC_INSURANCE_CONFIRMATION', VehicleRegistrationXkfzEventFilePurposeType::VehicleRegistrationElectronicInsuranceConfirmation->value);
+        self::assertSame('VEHICLE_REGISTRATION_GDPR_CONSENT_DECLARATION', VehicleRegistrationXkfzEventFilePurposeType::VehicleRegistrationGdprConsentDeclaration->value);
+        self::assertSame('VEHICLE_REGISTRATION_MOTOR_VEHICLE_TAX_SEPA_DIRECT_DEBIT_MANDATE', VehicleRegistrationXkfzEventFilePurposeType::VehicleRegistrationMotorVehicleTaxSepaDirectDebitMandate->value);
+        self::assertSame('VEHICLE_REGISTRATION_REJECTION_NOTICE', VehicleRegistrationXkfzEventFilePurposeType::VehicleRegistrationRejectionNotice->value);
+        self::assertCount(10, VehicleRegistrationXkfzEventFilePurposeType::cases());
     }
 
     public function test_from_invalid_value_throws(): void

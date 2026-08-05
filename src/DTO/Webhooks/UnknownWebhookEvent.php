@@ -15,10 +15,10 @@ use Dropshipping\Enums\WebhookEventType;
  * The original event type string and the complete decoded payload are
  * preserved so consumers can inspect or forward the event.
  *
- * This exists because the dropshipping API announces vehicle registration
- * results via webhook events that are not yet described in any published
- * webhooks spec. Once they are, typed events will be added and this fallback
- * stops matching them.
+ * This exists because the API can start sending an event type before this SDK
+ * models it — a spec revision and an SDK release are separate events in time.
+ * Tolerating unknown types keeps such payloads deliverable until the typed
+ * event ships, at which point this fallback stops matching them.
  */
 final readonly class UnknownWebhookEvent implements WebhookEventInterface
 {

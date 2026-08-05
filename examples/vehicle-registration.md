@@ -49,6 +49,12 @@ licensePlateNumberAssignmentStrategy: DS::reservedLicensePlateNumber(
 | `VehicleRegistrationServiceTypeCode` | Enum: `NZ`, `WZ`, `UO`, `UI`, `UM`, `WG`, `UG`, `HA` |
 | `VehicleRegistrationVehicleType` | Enum: `CAR`, `MOTORCYCLE`, `TRAILER` |
 | `VehicleRegistrationLicensePlateType` | Enum: `REGULAR`, `ELECTRIC`, `HISTORICAL`, `*_SEASON` variants |
+| `VehicleRegistrationXkfzEvent` | Webhook event: registration office verdict, files, costs, assigned plate |
+| `VehicleRegistrationXkfzEventLicensePlate` | The plate assigned to the vehicle |
+| `VehicleRegistrationIdentityVerificationInitializedEvent` | Webhook event: identity check started, carries `identityVerificationUrl` |
+| `VehicleRegistrationDocumentSignatureInitializedEvent` | Webhook event: signing started, carries `documentSignatureUrl` |
+| `VehicleRegistrationXkfzEventStatus` | Enum: `ACCEPTED`, `APPROVED`, `PROCESSED`, `REJECTED`, `FAILED`, … |
+| `VehicleRegistrationXkfzEventFilePurposeType` | Enum: what an attached document is — approval notice, provisional certificate, … |
 
 ## Vehicle holder
 
@@ -76,14 +82,22 @@ before any HTTP call:
 
 ## Webhooks
 
-Registration results are announced via webhook events. Those events are **not yet described
-in any published webhooks spec**, so the SDK has no typed classes for them. Build the pipeline
-with unknown-event tolerance to receive them as `UnknownWebhookEvent` (carrying `rawEventType`
-and the full `payload`) instead of an exception:
+Everything after the order creation is announced via webhook events (webhooks spec 3.2.0), all
+typed:
 
-```php
-$pipeline = DS::webhookPipeline($secret, tolerateUnknownEvents: true);
-```
+| Event type | Class |
+|------------|-------|
+| `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED` | `VehicleRegistrationIdentityVerificationInitializedEvent` |
+| `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_SUCCEEDED` | `VehicleRegistrationIdentityVerificationSucceededEvent` |
+| `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_FAILED` | `VehicleRegistrationIdentityVerificationFailedEvent` |
+| `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED` | `VehicleRegistrationDocumentSignatureInitializedEvent` |
+| `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED` | `VehicleRegistrationDocumentSignatureSucceededEvent` |
+| `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_FAILED` | `VehicleRegistrationDocumentSignatureFailedEvent` |
+| `VEHICLE_REGISTRATION_XKFZ_EVENT` | `VehicleRegistrationXkfzEvent` |
+
+Register a handler per event type as in [webhooks.md](webhooks.md). The XKFZ event's `files`
+carry a `fileAccessKey`; unlike deregistrations there is no download method on the client yet,
+because no published API spec describes the operation.
 
 ## Run
 

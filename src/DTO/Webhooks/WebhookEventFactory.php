@@ -66,6 +66,13 @@ final class WebhookEventFactory
             WebhookEventType::LicensePlateReservationRejection => LicensePlateReservationRejectionEvent::fromArray($data),
             WebhookEventType::LicensePlateReservationTimeout => LicensePlateReservationTimeoutEvent::fromArray($data),
             WebhookEventType::VehicleDeregistrationXkfzEvent => VehicleDeregistrationXkfzEvent::fromArray($data),
+            WebhookEventType::VehicleRegistrationXkfzEvent => VehicleRegistrationXkfzEvent::fromArray($data),
+            WebhookEventType::VehicleRegistrationIdentityVerificationInitialized => VehicleRegistrationIdentityVerificationInitializedEvent::fromArray($data),
+            WebhookEventType::VehicleRegistrationIdentityVerificationSucceeded => VehicleRegistrationIdentityVerificationSucceededEvent::fromArray($data),
+            WebhookEventType::VehicleRegistrationIdentityVerificationFailed => VehicleRegistrationIdentityVerificationFailedEvent::fromArray($data),
+            WebhookEventType::VehicleRegistrationDocumentSignatureInitialized => VehicleRegistrationDocumentSignatureInitializedEvent::fromArray($data),
+            WebhookEventType::VehicleRegistrationDocumentSignatureSucceeded => VehicleRegistrationDocumentSignatureSucceededEvent::fromArray($data),
+            WebhookEventType::VehicleRegistrationDocumentSignatureFailed => VehicleRegistrationDocumentSignatureFailedEvent::fromArray($data),
         };
     }
 }

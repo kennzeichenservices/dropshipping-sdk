@@ -5,8 +5,8 @@ declare(strict_types=1);
 /**
  * Payload corpus for the differential test.
  *
- * Shapes are taken from the request/response examples in docs/dropshippingApi_2.3.1.yml
- * and docs/dropshippingWebhooksApi_3.1.0.yml, plus deliberate edge cases: absent
+ * Shapes are taken from the request/response examples in docs/dropshippingApi_2.3.2.yaml
+ * and docs/dropshippingWebhooksApi_3.2.0.yaml, plus deliberate edge cases: absent
  * optionals, explicit nulls, empty lists and non-sequential array keys.
  *
  * Each entry: [label, FQCN, payload]
@@ -156,6 +156,85 @@ return [
         'derivedStatus' => 'IN_PROGRESS',
     ]],
 
+    ['xkfzRegMessage/full', 'Dropshipping\DTO\Webhooks\VehicleRegistrationXkfzEventMessage', [
+        'type' => 'INFO', 'kind' => 'K', 'code' => 'C', 'text' => 'T', 'additional' => 'A',
+    ]],
+    ['xkfzRegMessage/minimal', 'Dropshipping\DTO\Webhooks\VehicleRegistrationXkfzEventMessage', ['type' => 'INFO']],
+    ['xkfzRegFile', 'Dropshipping\DTO\Webhooks\VehicleRegistrationXkfzEventFile', [
+        'purposeType' => 'VEHICLE_REGISTRATION_APPROVAL_NOTICE', 'mediaType' => 'application/pdf',
+        'fileAccessKey' => 'KEY1', 'expirationTime' => '2026-01-02T10:00:00',
+    ]],
+    ['costItemReg/full', 'Dropshipping\DTO\Webhooks\VehicleRegistrationCostBreakdownItem', $costItem],
+    ['costItemReg/minimal', 'Dropshipping\DTO\Webhooks\VehicleRegistrationCostBreakdownItem', ['number' => 1, 'amount' => 100]],
+    ['officeCostsReg/full', 'Dropshipping\DTO\Webhooks\VehicleRegistrationRegistrationOfficeCosts', [
+        'items' => [$costItem], 'total' => $costItem, 'note' => 'N',
+    ]],
+    ['officeCostsReg/minimal', 'Dropshipping\DTO\Webhooks\VehicleRegistrationRegistrationOfficeCosts', ['items' => []]],
+    ['costBreakdownReg/full', 'Dropshipping\DTO\Webhooks\VehicleRegistrationCostBreakdown', [
+        'kbaCost' => 500, 'registrationOfficeCosts' => ['items' => [$costItem], 'note' => 'N'],
+    ]],
+    ['costBreakdownReg/empty', 'Dropshipping\DTO\Webhooks\VehicleRegistrationCostBreakdown', []],
+    ['identityVerificationVendor', 'Dropshipping\DTO\Webhooks\VehicleRegistrationIdentityVerificationVendor', ['id' => 1]],
+    ['xkfzRegLicensePlate/full', 'Dropshipping\DTO\Webhooks\VehicleRegistrationXkfzEventLicensePlate', [
+        'licensePlateNumberComponents' => $euro, 'licensePlateType' => 'ELECTRIC_SEASON',
+        'seasonStartMonth' => 1, 'seasonEndMonth' => 2,
+    ]],
+    ['xkfzRegLicensePlate/minimal', 'Dropshipping\DTO\Webhooks\VehicleRegistrationXkfzEventLicensePlate', [
+        'licensePlateNumberComponents' => $euro, 'licensePlateType' => 'REGULAR',
+    ]],
+
+    ['xkfzEventReg/full', 'Dropshipping\DTO\Webhooks\VehicleRegistrationXkfzEvent', [
+        'eventTime' => '2026-01-01T10:00:00', 'order' => $order, 'status' => 'ACCEPTED',
+        'derivedStatus' => 'IN_PROGRESS', 'applicationId' => 'APP1',
+        'files' => [[
+            'purposeType' => 'VEHICLE_REGISTRATION_APPROVAL_NOTICE', 'mediaType' => 'application/pdf',
+            'fileAccessKey' => 'KEY1', 'expirationTime' => '2026-01-02T10:00:00',
+        ]],
+        'costBreakdown' => ['kbaCost' => 500],
+        'messages' => [['type' => 'INFO', 'text' => 'T']],
+    ]],
+    ['xkfzEventReg/with-license-plate', 'Dropshipping\DTO\Webhooks\VehicleRegistrationXkfzEvent', [
+        'eventTime' => '2026-01-01T10:00:00', 'order' => $order, 'status' => 'APPROVED_WITH_DOCUMENTS',
+        'derivedStatus' => 'SUCCESS',
+        'licensePlate' => [
+            'licensePlateNumberComponents' => $euro, 'licensePlateType' => 'ELECTRIC_SEASON',
+            'seasonStartMonth' => 1, 'seasonEndMonth' => 2,
+        ],
+    ]],
+    ['xkfzEventReg/minimal', 'Dropshipping\DTO\Webhooks\VehicleRegistrationXkfzEvent', [
+        'eventTime' => '2026-01-01T10:00:00', 'order' => $order, 'status' => 'ACCEPTED',
+        'derivedStatus' => 'IN_PROGRESS',
+    ]],
+
+    ['identityVerificationInitialized', 'Dropshipping\DTO\Webhooks\VehicleRegistrationIdentityVerificationInitializedEvent', [
+        'eventTime' => '2026-01-01T10:00:00', 'order' => $order,
+        'identityVerificationVendor' => ['id' => 1], 'identityVerificationUrl' => 'https://example.test/ident/1',
+    ]],
+    ['identityVerificationSucceeded', 'Dropshipping\DTO\Webhooks\VehicleRegistrationIdentityVerificationSucceededEvent', [
+        'eventTime' => '2026-01-01T10:00:00', 'order' => $order, 'identityVerificationVendor' => ['id' => 1],
+    ]],
+    ['identityVerificationFailed/with-message', 'Dropshipping\DTO\Webhooks\VehicleRegistrationIdentityVerificationFailedEvent', [
+        'eventTime' => '2026-01-01T10:00:00', 'order' => $order, 'identityVerificationVendor' => ['id' => 1],
+        'message' => 'M',
+    ]],
+    ['identityVerificationFailed/no-message', 'Dropshipping\DTO\Webhooks\VehicleRegistrationIdentityVerificationFailedEvent', [
+        'eventTime' => '2026-01-01T10:00:00', 'order' => $order, 'identityVerificationVendor' => ['id' => 1],
+    ]],
+    ['documentSignatureInitialized', 'Dropshipping\DTO\Webhooks\VehicleRegistrationDocumentSignatureInitializedEvent', [
+        'eventTime' => '2026-01-01T10:00:00', 'order' => $order,
+        'identityVerificationVendor' => ['id' => 1], 'documentSignatureUrl' => 'https://example.test/sign/1',
+    ]],
+    ['documentSignatureSucceeded', 'Dropshipping\DTO\Webhooks\VehicleRegistrationDocumentSignatureSucceededEvent', [
+        'eventTime' => '2026-01-01T10:00:00', 'order' => $order, 'identityVerificationVendor' => ['id' => 1],
+    ]],
+    ['documentSignatureFailed/with-message', 'Dropshipping\DTO\Webhooks\VehicleRegistrationDocumentSignatureFailedEvent', [
+        'eventTime' => '2026-01-01T10:00:00', 'order' => $order, 'identityVerificationVendor' => ['id' => 1],
+        'message' => 'M',
+    ]],
+    ['documentSignatureFailed/no-message', 'Dropshipping\DTO\Webhooks\VehicleRegistrationDocumentSignatureFailedEvent', [
+        'eventTime' => '2026-01-01T10:00:00', 'order' => $order, 'identityVerificationVendor' => ['id' => 1],
+    ]],
+
     ['unknownEvent', 'Dropshipping\DTO\Webhooks\UnknownWebhookEvent', [
         'eventType' => 'BRAND_NEW', 'eventTime' => '2026-01-01T10:00:00', 'extra' => 1,
     ]],
@@ -172,6 +251,10 @@ return [
     ['MALFORMED address/missing-lastName', 'Dropshipping\DTO\Address', ['firstName' => 'Max', 'gender' => 'MALE']],
     ['MALFORMED address/unknown-gender', 'Dropshipping\DTO\Address', ['gender' => 'DIVERSE'] + $address],
     ['MALFORMED xkfz/unknown-status', 'Dropshipping\DTO\Webhooks\VehicleDeregistrationXkfzEvent', [
+        'eventTime' => '2026-01-01T10:00:00', 'order' => $order, 'status' => 'BRAND_NEW_STATUS',
+        'derivedStatus' => 'X',
+    ]],
+    ['MALFORMED xkfzReg/unknown-status', 'Dropshipping\DTO\Webhooks\VehicleRegistrationXkfzEvent', [
         'eventTime' => '2026-01-01T10:00:00', 'order' => $order, 'status' => 'BRAND_NEW_STATUS',
         'derivedStatus' => 'X',
     ]],

@@ -13,9 +13,17 @@ use Dropshipping\DTO\Webhooks\LicensePlateReservationTimeoutEvent;
 use Dropshipping\DTO\Webhooks\PingEvent;
 use Dropshipping\DTO\Webhooks\UnknownWebhookEvent;
 use Dropshipping\DTO\Webhooks\VehicleDeregistrationXkfzEvent;
+use Dropshipping\DTO\Webhooks\VehicleRegistrationDocumentSignatureFailedEvent;
+use Dropshipping\DTO\Webhooks\VehicleRegistrationDocumentSignatureInitializedEvent;
+use Dropshipping\DTO\Webhooks\VehicleRegistrationDocumentSignatureSucceededEvent;
+use Dropshipping\DTO\Webhooks\VehicleRegistrationIdentityVerificationFailedEvent;
+use Dropshipping\DTO\Webhooks\VehicleRegistrationIdentityVerificationInitializedEvent;
+use Dropshipping\DTO\Webhooks\VehicleRegistrationIdentityVerificationSucceededEvent;
+use Dropshipping\DTO\Webhooks\VehicleRegistrationXkfzEvent;
 use Dropshipping\DTO\Webhooks\WebhookDelivery;
 use Dropshipping\DTO\Webhooks\WebhookEventFactory;
 use Dropshipping\DTO\Webhooks\WebhookOrder;
+use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
 use Dropshipping\Enums\WebhookEventType;
 use Dropshipping\Exceptions\WebhookException;
 use PHPUnit\Framework\TestCase;
@@ -185,6 +193,155 @@ final class WebhookEventFactoryTest extends TestCase
         self::assertInstanceOf(VehicleDeregistrationXkfzEvent::class, $event);
         self::assertNull($event->files);
         self::assertNull($event->costBreakdown);
+    }
+
+    public function test_fromArray_creates_vehicle_registration_xkfz_event(): void
+    {
+        $event = WebhookEventFactory::fromArray([
+            'eventType' => 'VEHICLE_REGISTRATION_XKFZ_EVENT',
+            'eventTime' => '2023-10-31T12:34:56',
+            'order' => ['id' => 2, 'externalId' => 'ext-2'],
+            'status' => 'APPROVED_WITH_DOCUMENTS',
+            'derivedStatus' => 'SUCCESS',
+            'files' => [
+                ['purposeType' => 'VEHICLE_REGISTRATION_APPROVAL_NOTICE', 'mediaType' => 'application/pdf', 'fileAccessKey' => 'key-1', 'expirationTime' => '2000-10-31T01:30:44'],
+            ],
+            'costBreakdown' => [
+                'kbaCost' => 350,
+                'registrationOfficeCosts' => [
+                    'items' => [
+                        ['number' => 1, 'code' => 'FEE', 'name' => 'Service fee', 'amount' => 200, 'note' => null],
+                    ],
+                    'total' => ['number' => 0, 'code' => null, 'name' => 'Total', 'amount' => 200, 'note' => null],
+                    'note' => 'Test note',
+                ],
+            ],
+            'licensePlate' => [
+                'licensePlateNumberComponents' => ['usageType' => 'EURO', 'city' => 'KÜ', 'middle' => 'PO', 'end' => '321'],
+                'licensePlateType' => 'ELECTRIC_SEASON',
+                'seasonStartMonth' => 1,
+                'seasonEndMonth' => 2,
+            ],
+        ]);
+
+        self::assertInstanceOf(VehicleRegistrationXkfzEvent::class, $event);
+        self::assertSame(WebhookEventType::VehicleRegistrationXkfzEvent, $event->getEventType());
+        self::assertSame('2023-10-31T12:34:56', $event->getEventTime());
+        self::assertSame(2, $event->order->id);
+        self::assertNotNull($event->files);
+        self::assertCount(1, $event->files);
+        self::assertNotNull($event->costBreakdown);
+        self::assertSame(350, $event->costBreakdown->kbaCost);
+        self::assertNotNull($event->costBreakdown->registrationOfficeCosts);
+        self::assertSame(200, $event->costBreakdown->registrationOfficeCosts->total->amount);
+        self::assertNotNull($event->licensePlate);
+        self::assertSame('KÜ', $event->licensePlate->licensePlateNumberComponents->city);
+        self::assertSame(VehicleRegistrationLicensePlateType::ElectricSeason, $event->licensePlate->licensePlateType);
+    }
+
+    public function test_fromArray_creates_vehicle_registration_xkfz_event_without_optional_fields(): void
+    {
+        $event = WebhookEventFactory::fromArray([
+            'eventType' => 'VEHICLE_REGISTRATION_XKFZ_EVENT',
+            'eventTime' => '2024-06-15T10:30:00Z',
+            'order' => ['id' => 42],
+            'status' => 'PROCESSED',
+            'derivedStatus' => 'SUCCESS',
+        ]);
+
+        self::assertInstanceOf(VehicleRegistrationXkfzEvent::class, $event);
+        self::assertNull($event->files);
+        self::assertNull($event->costBreakdown);
+        self::assertNull($event->licensePlate);
+    }
+
+    public function test_fromArray_creates_vehicle_registration_identity_verification_initialized_event(): void
+    {
+        $event = WebhookEventFactory::fromArray([
+            'eventType' => 'VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED',
+            'eventTime' => '2023-10-31T12:34:56',
+            'order' => ['id' => 2, 'externalId' => null],
+            'identityVerificationVendor' => ['id' => 1],
+            'identityVerificationUrl' => 'https://go.test.idnow.de/identifications/abc_123',
+        ]);
+
+        self::assertInstanceOf(VehicleRegistrationIdentityVerificationInitializedEvent::class, $event);
+        self::assertSame(WebhookEventType::VehicleRegistrationIdentityVerificationInitialized, $event->getEventType());
+        self::assertSame(2, $event->order->id);
+        self::assertSame(1, $event->identityVerificationVendor->id);
+        self::assertSame('https://go.test.idnow.de/identifications/abc_123', $event->identityVerificationUrl);
+    }
+
+    public function test_fromArray_creates_vehicle_registration_identity_verification_succeeded_event(): void
+    {
+        $event = WebhookEventFactory::fromArray([
+            'eventType' => 'VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_SUCCEEDED',
+            'eventTime' => '2023-10-31T12:34:56',
+            'order' => ['id' => 2],
+            'identityVerificationVendor' => ['id' => 1],
+        ]);
+
+        self::assertInstanceOf(VehicleRegistrationIdentityVerificationSucceededEvent::class, $event);
+        self::assertSame(WebhookEventType::VehicleRegistrationIdentityVerificationSucceeded, $event->getEventType());
+        self::assertSame(1, $event->identityVerificationVendor->id);
+    }
+
+    public function test_fromArray_creates_vehicle_registration_identity_verification_failed_event(): void
+    {
+        $event = WebhookEventFactory::fromArray([
+            'eventType' => 'VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_FAILED',
+            'eventTime' => '2023-10-31T12:34:56',
+            'order' => ['id' => 2],
+            'identityVerificationVendor' => ['id' => 1],
+            'message' => 'Document could not be read',
+        ]);
+
+        self::assertInstanceOf(VehicleRegistrationIdentityVerificationFailedEvent::class, $event);
+        self::assertSame(WebhookEventType::VehicleRegistrationIdentityVerificationFailed, $event->getEventType());
+        self::assertSame('Document could not be read', $event->message);
+    }
+
+    public function test_fromArray_creates_vehicle_registration_document_signature_initialized_event(): void
+    {
+        $event = WebhookEventFactory::fromArray([
+            'eventType' => 'VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED',
+            'eventTime' => '2023-10-31T12:34:56',
+            'order' => ['id' => 2],
+            'identityVerificationVendor' => ['id' => 1],
+            'documentSignatureUrl' => 'https://go.test.idnow.de/instantsign/abc_123',
+        ]);
+
+        self::assertInstanceOf(VehicleRegistrationDocumentSignatureInitializedEvent::class, $event);
+        self::assertSame(WebhookEventType::VehicleRegistrationDocumentSignatureInitialized, $event->getEventType());
+        self::assertSame('https://go.test.idnow.de/instantsign/abc_123', $event->documentSignatureUrl);
+    }
+
+    public function test_fromArray_creates_vehicle_registration_document_signature_succeeded_event(): void
+    {
+        $event = WebhookEventFactory::fromArray([
+            'eventType' => 'VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED',
+            'eventTime' => '2023-10-31T12:34:56',
+            'order' => ['id' => 2],
+            'identityVerificationVendor' => ['id' => 1],
+        ]);
+
+        self::assertInstanceOf(VehicleRegistrationDocumentSignatureSucceededEvent::class, $event);
+        self::assertSame(WebhookEventType::VehicleRegistrationDocumentSignatureSucceeded, $event->getEventType());
+        self::assertSame(2, $event->order->id);
+    }
+
+    public function test_fromArray_creates_vehicle_registration_document_signature_failed_event(): void
+    {
+        $event = WebhookEventFactory::fromArray([
+            'eventType' => 'VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_FAILED',
+            'eventTime' => '2023-10-31T12:34:56',
+            'order' => ['id' => 2],
+            'identityVerificationVendor' => ['id' => 1],
+        ]);
+
+        self::assertInstanceOf(VehicleRegistrationDocumentSignatureFailedEvent::class, $event);
+        self::assertSame(WebhookEventType::VehicleRegistrationDocumentSignatureFailed, $event->getEventType());
+        self::assertNull($event->message);
     }
 
     public function test_fromArray_throws_on_missing_eventType(): void
