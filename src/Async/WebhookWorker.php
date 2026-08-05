@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Dropshipping\Async;
 
 use Dropshipping\Contracts\WebhookQueueInterface;
-use Dropshipping\Exceptions\WebhookException;
 use Dropshipping\Webhook\WebhookDispatcher;
 
 /**

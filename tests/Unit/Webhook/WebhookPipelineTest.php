@@ -24,22 +24,26 @@ final class WebhookPipelineTest extends TestCase
 
     public function test_process_executes_middleware_in_order(): void
     {
-        $log = [];
+        $log = new MiddlewareLog();
 
         $first = new class ($log) implements WebhookMiddlewareInterface {
-            public function __construct(private array &$log) {}
+            public function __construct(private readonly MiddlewareLog $log)
+            {
+            }
             public function process(WebhookMessage $message, callable $next): WebhookMessage
             {
-                $this->log[] = 'first';
+                $this->log->entries[] = 'first';
                 return $next($message);
             }
         };
 
         $second = new class ($log) implements WebhookMiddlewareInterface {
-            public function __construct(private array &$log) {}
+            public function __construct(private readonly MiddlewareLog $log)
+            {
+            }
             public function process(WebhookMessage $message, callable $next): WebhookMessage
             {
-                $this->log[] = 'second';
+                $this->log->entries[] = 'second';
                 return $next($message);
             }
         };
@@ -49,12 +53,12 @@ final class WebhookPipelineTest extends TestCase
 
         $pipeline->process(new WebhookMessage('p', 's', 1, '1.0'));
 
-        self::assertSame(['first', 'second'], $log);
+        self::assertSame(['first', 'second'], $log->entries);
     }
 
     public function test_middleware_can_modify_message(): void
     {
-        $middleware = new class implements WebhookMiddlewareInterface {
+        $middleware = new class () implements WebhookMiddlewareInterface {
             public function process(WebhookMessage $message, callable $next): WebhookMessage
             {
                 $event = new PingEvent('2024-01-01T00:00:00Z');
@@ -69,4 +73,13 @@ final class WebhookPipelineTest extends TestCase
 
         self::assertNotNull($result->getEvent());
     }
+}
+
+/**
+ * Shared, mutable execution log so middleware order can be asserted.
+ */
+final class MiddlewareLog
+{
+    /** @var list<string> */
+    public array $entries = [];
 }

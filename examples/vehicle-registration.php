@@ -56,7 +56,7 @@ $response = $client->vehicleRegistrations->createRegistration(
         externalOrderId: 'registration-001',   // optional
         gksConfigurationId: 'your-gks-uuid',   // optional
         contractPartnerKopaKey: 'K123X',       // optional
-    )
+    ),
 );
 
 echo "Registration order created: {$response->orderId}\n";

@@ -49,7 +49,14 @@ final class AddressTest extends TestCase
     public function test_toArray_includes_optional_fields_when_set(): void
     {
         $address = new Address(
-            'Max', 'Mustermann', Gender::Male, 'Str', '1', '12345', 'Berlin', 'DE',
+            'Max',
+            'Mustermann',
+            Gender::Male,
+            'Str',
+            '1',
+            '12345',
+            'Berlin',
+            'DE',
             taxNumber: 'DE123456789',
             companyName: 'Test GmbH',
             additionalField: 'Hinterhaus',

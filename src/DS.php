@@ -58,7 +58,9 @@ use Dropshipping\Webhook\{WebhookDispatcher, WebhookMessage, WebhookPipeline};
  */
 final class DS
 {
-    private function __construct() {}
+    private function __construct()
+    {
+    }
 
     // -------------------------------------------------------------------------
     // Shared

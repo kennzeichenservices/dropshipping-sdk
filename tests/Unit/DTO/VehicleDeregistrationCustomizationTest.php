@@ -29,7 +29,7 @@ final class VehicleDeregistrationCustomizationTest extends TestCase
         self::assertSame('VEHICLE_DEREGISTRATION', $array['productType']);
         self::assertSame('CAR', $array['vehicleType']);
         self::assertSame('REGULAR', $array['licensePlateType']);
-        self::assertSame(false, $array['licensePlateReservationIncluded']);
+        self::assertFalse($array['licensePlateReservationIncluded']);
         self::assertSame('WBA12345678901234', $array['vehicleIdentificationNumber']);
         self::assertSame('SEC123', $array['vehicleRegistrationCertificateSecurityCode']);
         self::assertSame('2020-01-15', $array['vehicleRegistrationDate']);

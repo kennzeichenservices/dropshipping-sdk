@@ -1,0 +1,31 @@
+{
+    // This project formats PHP with Laravel Pint (see pint.json), not with
+    // Intelephense. Both formatters disagree on brace placement, import order and
+    // trailing commas, so leaving format-on-save enabled makes them overwrite each
+    // other on every save.
+    //
+    // Run `composer lint:fix` to format, `composer lint` to check without writing.
+    //
+    // Prefer format-on-save? Install the "open-southeners.laravel-pint" extension,
+    // then set formatOnSave back to true and defaultFormatter to
+    // "open-southeners.laravel-pint" below.
+    "[php]": {
+        "editor.formatOnSave": false,
+        "editor.defaultFormatter": "bmewburn.vscode-intelephense-client"
+    },
+
+    // PHPStan (level 6, see phpstan.neon.dist) is the authority on type errors here.
+    // Intelephense does not evaluate PHPDoc intersection types such as
+    // `@var ClientInterface&MockObject`, so it reports false positives on mocked
+    // PHPUnit calls that PHPStan correctly accepts. Trust `composer analyse`.
+    "intelephense.environment.phpVersion": "8.2.0",
+    "intelephense.files.exclude": [
+        "**/.git/**",
+        "**/.history/**",
+        "**/node_modules/**",
+        "**/vendor/**"
+    ],
+
+    "files.insertFinalNewline": true,
+    "files.trimTrailingWhitespace": true
+}

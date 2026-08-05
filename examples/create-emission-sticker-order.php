@@ -28,7 +28,7 @@ $response = $client->orders->createEmissionStickerOrder(
         electric: false,
         emissionKeyNumber: '0005',
         filePaths: ['/path/to/fahrzeugschein.pdf'],
-    )
+    ),
 );
 
 echo "Emission sticker order created: {$response->id}\n";

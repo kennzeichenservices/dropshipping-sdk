@@ -8,8 +8,6 @@ use Dropshipping\DTO\Webhooks\VehicleDeregistrationCostBreakdown;
 use Dropshipping\DTO\Webhooks\VehicleDeregistrationCostBreakdownItem;
 use Dropshipping\DTO\Webhooks\VehicleDeregistrationRegistrationOfficeCosts;
 use Dropshipping\DTO\Webhooks\VehicleDeregistrationXkfzEvent;
-use Dropshipping\DTO\Webhooks\VehicleDeregistrationXkfzEventFile;
-use Dropshipping\DTO\Webhooks\VehicleDeregistrationXkfzEventMessage;
 use Dropshipping\Enums\VehicleDeregistrationXkfzEventFilePurposeType;
 use Dropshipping\Enums\VehicleDeregistrationXkfzEventStatus;
 use Dropshipping\Enums\WebhookEventType;
@@ -56,7 +54,6 @@ final class VehicleDeregistrationXkfzEventTest extends TestCase
 
         self::assertNotNull($event->files);
         self::assertCount(2, $event->files);
-        self::assertInstanceOf(VehicleDeregistrationXkfzEventFile::class, $event->files[0]);
         self::assertSame(VehicleDeregistrationXkfzEventFilePurposeType::Certificate, $event->files[0]->purposeType);
         self::assertSame('application/pdf', $event->files[0]->mediaType);
         self::assertSame('7_4d61a48b-7209-4e4c-959b-fedfbda248e2_4', $event->files[0]->fileAccessKey);
@@ -81,7 +78,6 @@ final class VehicleDeregistrationXkfzEventTest extends TestCase
 
         self::assertNotNull($event->messages);
         self::assertCount(2, $event->messages);
-        self::assertInstanceOf(VehicleDeregistrationXkfzEventMessage::class, $event->messages[0]);
         self::assertSame('Type 1', $event->messages[0]->type);
         self::assertSame('Kind 1', $event->messages[0]->kind);
         self::assertSame('C1', $event->messages[0]->code);

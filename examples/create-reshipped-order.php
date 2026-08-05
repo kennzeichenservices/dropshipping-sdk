@@ -25,7 +25,7 @@ $response = $client->orders->createReshippedOrder(
         returnedDeliveryId: 456,
         deliveryAddress: $address,
         invoiceAddress: $address,
-    )
+    ),
 );
 
 echo "Reshipped order created: {$response->id}\n";

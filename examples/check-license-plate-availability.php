@@ -15,7 +15,7 @@ $response = $client->products->checkLicensePlateAvailability(
         end: '1234',
         licensePlateType: LicensePlateType::Regular,
         vehicleType: VehicleType::Car,
-    )
+    ),
 );
 
 if (empty($response->availableLicensePlateNumbers)) {

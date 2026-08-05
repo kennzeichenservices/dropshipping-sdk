@@ -67,7 +67,7 @@ final readonly class DropshippingConfig
 
     /**
      * Build the versioned API base URL from host, client ID and API version.
-     * 
+     *
      * @return string The full API base URL.
      */
     public function getBaseUrl(): string
@@ -84,7 +84,7 @@ final readonly class DropshippingConfig
 
     /**
      * Get the API username.
-     * 
+     *
      * @return string The API username.
      */
     public function getUsername(): string
@@ -94,7 +94,7 @@ final readonly class DropshippingConfig
 
     /**
      * Get the API password.
-     * 
+     *
      * @return string The API password.
      */
     public function getPassword(): string

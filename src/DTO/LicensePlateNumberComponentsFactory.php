@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Dropshipping\DTO;
 
 use Dropshipping\Enums\LicensePlateUsageType;
-use Dropshipping\Exceptions\DropshippingException;
 
 /**
  * Factory for creating the appropriate LicensePlateNumberComponentsInterface implementation based on usage type.

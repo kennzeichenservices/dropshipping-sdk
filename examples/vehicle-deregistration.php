@@ -35,7 +35,7 @@ $response = $client->vehicleDeregistrations->createDeregistration(
         externalOrderId: 'deregistration-001',  // optional
         gksConfigurationId: 'your-gks-uuid',    // optional
         contractPartnerKopaKey: 'K123X',        // optional
-    )
+    ),
 );
 
 echo "Deregistration order created: {$response->orderId}\n";

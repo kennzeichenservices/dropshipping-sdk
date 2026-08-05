@@ -18,3 +18,9 @@ vendor/
 
 # PHPUnit cache
 .phpunit.cache
+
+# PHPStan cache
+.phpstan.cache
+
+# macOS
+.DS_Store

@@ -23,18 +23,26 @@ final class WebhookDispatcherTest extends TestCase
         $pipeline = new WebhookPipeline();
         $pipeline->pipe($this->createEventMiddleware($event));
 
-        $handled = false;
-        $handler = new class ($handled) implements WebhookHandlerInterface {
-            public function __construct(private bool &$handled) {}
-            public function handle(WebhookEventInterface $event): void { $this->handled = true; }
-            public function supports(WebhookEventInterface $event): bool { return true; }
+        $spy = new HandlerSpy();
+        $handler = new class ($spy) implements WebhookHandlerInterface {
+            public function __construct(private readonly HandlerSpy $spy)
+            {
+            }
+            public function handle(WebhookEventInterface $event): void
+            {
+                $this->spy->handled = true;
+            }
+            public function supports(WebhookEventInterface $event): bool
+            {
+                return true;
+            }
         };
 
         $dispatcher = new WebhookDispatcher($pipeline);
         $dispatcher->registerHandler($handler);
         $dispatcher->dispatch(new WebhookMessage('p', 's', 1, '1.0'));
 
-        self::assertTrue($handled);
+        self::assertTrue($spy->handled);
     }
 
     public function test_dispatch_skips_non_matching_handlers(): void
@@ -44,18 +52,26 @@ final class WebhookDispatcherTest extends TestCase
         $pipeline = new WebhookPipeline();
         $pipeline->pipe($this->createEventMiddleware($event));
 
-        $handled = false;
-        $handler = new class ($handled) implements WebhookHandlerInterface {
-            public function __construct(private bool &$handled) {}
-            public function handle(WebhookEventInterface $event): void { $this->handled = true; }
-            public function supports(WebhookEventInterface $event): bool { return false; }
+        $spy = new HandlerSpy();
+        $handler = new class ($spy) implements WebhookHandlerInterface {
+            public function __construct(private readonly HandlerSpy $spy)
+            {
+            }
+            public function handle(WebhookEventInterface $event): void
+            {
+                $this->spy->handled = true;
+            }
+            public function supports(WebhookEventInterface $event): bool
+            {
+                return false;
+            }
         };
 
         $dispatcher = new WebhookDispatcher($pipeline);
         $dispatcher->registerHandler($handler);
         $dispatcher->dispatch(new WebhookMessage('p', 's', 1, '1.0'));
 
-        self::assertFalse($handled);
+        self::assertFalse($spy->handled);
     }
 
     public function test_dispatch_throws_when_no_event_deserialized(): void
@@ -72,11 +88,21 @@ final class WebhookDispatcherTest extends TestCase
     private function createEventMiddleware(WebhookEventInterface $event): WebhookMiddlewareInterface
     {
         return new class ($event) implements WebhookMiddlewareInterface {
-            public function __construct(private WebhookEventInterface $event) {}
+            public function __construct(private WebhookEventInterface $event)
+            {
+            }
             public function process(WebhookMessage $message, callable $next): WebhookMessage
             {
                 return $next($message->withEvent($this->event));
             }
         };
     }
+}
+
+/**
+ * Mutable flag shared with a handler so the test can observe whether it ran.
+ */
+final class HandlerSpy
+{
+    public bool $handled = false;
 }

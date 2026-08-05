@@ -39,7 +39,7 @@ echo "Webhook enqueued.\n";
 // --- Background worker: process queued messages ---
 $dispatcher = DS::webhookDispatcher(DS::webhookPipeline($config->getWebhookSignatureSecret()));
 
-$dispatcher->registerHandler(new class implements WebhookHandlerInterface {
+$dispatcher->registerHandler(new class () implements WebhookHandlerInterface {
     public function supports(WebhookEventInterface $event): bool
     {
         return $event->getEventType() === WebhookEventType::DeliveryShipment;

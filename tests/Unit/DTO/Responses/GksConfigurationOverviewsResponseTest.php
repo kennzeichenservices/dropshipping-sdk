@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Dropshipping\Tests\Unit\DTO\Responses;
 
 use Dropshipping\DTO\Responses\GksConfigurationOverviewsResponse;
-use Dropshipping\DTO\Responses\OverviewGksConfiguration;
 use PHPUnit\Framework\TestCase;
 
 final class GksConfigurationOverviewsResponseTest extends TestCase
@@ -20,7 +19,6 @@ final class GksConfigurationOverviewsResponseTest extends TestCase
         ]);
 
         self::assertCount(2, $response->overviewGksConfigurations);
-        self::assertInstanceOf(OverviewGksConfiguration::class, $response->overviewGksConfigurations[0]);
         self::assertSame('uuid-1', $response->overviewGksConfigurations[0]->id);
         self::assertSame('Config A', $response->overviewGksConfigurations[0]->name);
         self::assertSame('uuid-2', $response->overviewGksConfigurations[1]->id);

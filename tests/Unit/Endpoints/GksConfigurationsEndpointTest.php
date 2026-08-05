@@ -8,8 +8,6 @@ use Dropshipping\Client\Authentication\ApiKeyAuthenticator;
 use Dropshipping\Client\Psr18HttpClient;
 use Dropshipping\DTO\Requests\GksConfigurationCompany;
 use Dropshipping\DTO\Requests\GksConfigurationWriteRequest;
-use Dropshipping\DTO\Responses\GksConfigurationOverviewsResponse;
-use Dropshipping\DTO\Responses\OverviewGksConfiguration;
 use Dropshipping\Endpoints\GksConfigurations\GksConfigurationsEndpoint;
 use Dropshipping\Http\RequestFactory;
 use Dropshipping\Http\ResponseMapper;
@@ -41,7 +39,6 @@ final class GksConfigurationsEndpointTest extends TestCase
 
         $result = $endpoint->create($request);
 
-        self::assertInstanceOf(OverviewGksConfiguration::class, $result);
         self::assertSame('uuid-1', $result->id);
         self::assertSame('New Config', $result->name);
     }
@@ -87,7 +84,6 @@ final class GksConfigurationsEndpointTest extends TestCase
 
         $result = $endpoint->getOverviews();
 
-        self::assertInstanceOf(GksConfigurationOverviewsResponse::class, $result);
         self::assertCount(2, $result->overviewGksConfigurations);
     }
 
@@ -109,7 +105,6 @@ final class GksConfigurationsEndpointTest extends TestCase
 
         $result = $endpoint->getOverview('uuid-1');
 
-        self::assertInstanceOf(OverviewGksConfiguration::class, $result);
         self::assertSame('uuid-1', $result->id);
     }
 

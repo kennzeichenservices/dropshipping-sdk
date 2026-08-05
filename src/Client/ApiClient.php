@@ -97,12 +97,7 @@ final class ApiClient
             $this->baseUrl,
         );
 
-        $this->webhooks = new WebhooksEndpoint(
-            $this->httpClient,
-            $this->requestFactory,
-            $this->responseMapper,
-            $this->baseUrl,
-        );
+        $this->webhooks = new WebhooksEndpoint();
 
         $this->gksConfigurations = new GksConfigurationsEndpoint(
             $this->httpClient,

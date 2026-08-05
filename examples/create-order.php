@@ -33,7 +33,7 @@ $response = $client->orders->create(
         deliveryAddress: $address,
         invoiceAddress: $address,
         items: [$item],
-    )
+    ),
 );
 
 echo "Order created: {$response->id}\n";

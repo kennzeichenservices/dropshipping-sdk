@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Dropshipping\Tests\Unit\DTO\Responses;
 
-use Dropshipping\DTO\EuroLicensePlateNumberComponents;
 use Dropshipping\DTO\Responses\AvailabilityCheckResponse;
 use PHPUnit\Framework\TestCase;
 
@@ -22,7 +21,6 @@ final class AvailabilityCheckResponseTest extends TestCase
         $response = AvailabilityCheckResponse::fromArray($data);
 
         self::assertCount(2, $response->availableLicensePlateNumbers);
-        self::assertInstanceOf(EuroLicensePlateNumberComponents::class, $response->availableLicensePlateNumbers[0]);
         self::assertSame('AB', $response->availableLicensePlateNumbers[0]->middle);
         self::assertSame('CD', $response->availableLicensePlateNumbers[1]->middle);
     }

@@ -20,12 +20,14 @@ use Dropshipping\Http\ResponseMapper;
 use Dropshipping\Serialization\ArrayMapper;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 
 final class OrdersEndpointTest extends TestCase
 {
+    /** @var ClientInterface&MockObject */
     private ClientInterface $mockClient;
     private OrdersEndpoint $endpoint;
 

@@ -32,7 +32,7 @@ $response = $client->shipments->createLicensePlateReservation(
             birthDate: '1985-06-15',  // optional
             placeOfBirth: 'Berlin',   // optional
         ),
-    )
+    ),
 );
 
 echo "Reservation created: {$response->id}\n";
