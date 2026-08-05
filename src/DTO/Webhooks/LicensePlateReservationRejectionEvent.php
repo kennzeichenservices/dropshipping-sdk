@@ -59,10 +59,10 @@ final readonly class LicensePlateReservationRejectionEvent implements WebhookEve
             eventTime: $data['eventTime'],
             order: WebhookOrder::fromArray($data['order']),
             customization: LicensePlateReservationCustomization::fromArray($data['customization']),
-            proposedAlternativeLicensePlateNumberComponents: array_map(
+            proposedAlternativeLicensePlateNumberComponents: array_values(array_map(
                 static fn (array $item): EuroLicensePlateNumberComponents => EuroLicensePlateNumberComponents::fromArray($item),
                 $data['proposedAlternativeLicensePlateNumberComponents'] ?? [],
-            ),
+            )),
         );
     }
 }

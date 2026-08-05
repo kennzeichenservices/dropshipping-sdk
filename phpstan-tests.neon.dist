@@ -1,0 +1,13 @@
+## Test suite — held one notch below src/ so test scaffolding (mocks, anonymous
+## fixtures) does not force the shipped code to a lower bar. Raise to 8 when the
+## remaining array/list annotations in the fixtures have been tightened.
+includes:
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-phpunit/rules.neon
+
+parameters:
+    level: 6
+    paths:
+        - tests
+    tmpDir: .phpstan.cache
+    treatPhpDocTypesAsCertain: false

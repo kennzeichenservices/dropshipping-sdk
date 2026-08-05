@@ -40,7 +40,10 @@
         "test": "phpunit",
         "test:unit": "phpunit --testsuite=unit",
         "test:integration": "phpunit --testsuite=integration",
-        "analyse": "phpstan analyse",
+        "analyse": [
+            "phpstan analyse -c phpstan.neon.dist",
+            "phpstan analyse -c phpstan-tests.neon.dist"
+        ],
         "lint": "pint --test",
         "lint:fix": "pint",
         "audit:security": "composer audit",
@@ -52,7 +55,7 @@
         "release": "bash scripts/release.sh"
     },
     "scripts-descriptions": {
-        "analyse": "Run PHPStan static analysis (level 6).",
+        "analyse": "Run PHPStan static analysis (src at level 8, tests at level 6).",
         "lint": "Check code style without changing files.",
         "lint:fix": "Apply code style fixes.",
         "audit:security": "Report known CVEs in installed dependencies.",

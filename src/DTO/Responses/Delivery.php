@@ -32,10 +32,10 @@ final readonly class Delivery
     {
         return new self(
             id: $data['id'],
-            items: array_map(
+            items: array_values(array_map(
                 static fn (array $item): DeliveryItem => DeliveryItem::fromArray($item),
                 $data['items'] ?? [],
-            ),
+            )),
         );
     }
 }

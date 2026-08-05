@@ -72,7 +72,9 @@ final readonly class DropshippingConfig
      */
     public function getBaseUrl(): string
     {
-        $host = preg_replace('#^https?://#', '', $this->host);
+        // preg_replace returns null only if the pattern fails to compile; fall back to the
+        // raw host so a base URL is still produced rather than an unrelated TypeError.
+        $host = preg_replace('#^https?://#', '', $this->host) ?? $this->host;
 
         return sprintf(
             'https://%s/dropshipping-api/%d/%s',

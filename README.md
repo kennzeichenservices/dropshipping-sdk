@@ -275,12 +275,12 @@ echo $cfg->id;   // UUID of the new configuration
 $client->gksConfigurations->update($cfg->id, $request);
 
 // List all
-foreach ($client->gksConfigurations->getOverviews()->overviewGksConfigurations as $cfg) {
-    echo "{$cfg->id}: {$cfg->name}\n";
+foreach ($client->gksConfigurations->getOverviews()->overviewGksConfigurations as $overview) {
+    echo "{$overview->id}: {$overview->name}\n";
 }
 
 // Get single
-$cfg = $client->gksConfigurations->getOverview($id);
+$single = $client->gksConfigurations->getOverview($cfg->id);
 ```
 
 ### Submitting a Vehicle Deregistration
@@ -317,6 +317,7 @@ echo $response->orderId; // Created order ID
 Files attached to a `VEHICLE_DEREGISTRATION_XKFZ_EVENT` webhook can be downloaded using the `fileAccessKey` from the event:
 
 ```php
+use Dropshipping\Client\ApiClient;
 use Dropshipping\Contracts\WebhookHandlerInterface;
 use Dropshipping\DTO\Webhooks\{VehicleDeregistrationXkfzEvent, WebhookEventInterface};
 use Dropshipping\Enums\WebhookEventType;

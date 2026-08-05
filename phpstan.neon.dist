@@ -1,11 +1,12 @@
+## Shipped library code — analysed at the strictest level it currently passes.
+## Tests are checked separately at a lower level, see phpstan-tests.neon.dist.
 includes:
     - vendor/phpstan/phpstan-phpunit/extension.neon
     - vendor/phpstan/phpstan-phpunit/rules.neon
 
 parameters:
-    level: 6
+    level: 8
     paths:
         - src
-        - tests
     tmpDir: .phpstan.cache
     treatPhpDocTypesAsCertain: false

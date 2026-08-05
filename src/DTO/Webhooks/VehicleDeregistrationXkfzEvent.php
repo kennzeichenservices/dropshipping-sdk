@@ -68,19 +68,19 @@ final readonly class VehicleDeregistrationXkfzEvent implements WebhookEventInter
             status: VehicleDeregistrationXkfzEventStatus::from($data['status']),
             derivedStatus: $data['derivedStatus'],
             files: isset($data['files'])
-                ? array_map(
+                ? array_values(array_map(
                     static fn (array $file): VehicleDeregistrationXkfzEventFile => VehicleDeregistrationXkfzEventFile::fromArray($file),
                     $data['files'],
-                )
+                ))
                 : null,
             costBreakdown: isset($data['costBreakdown'])
                 ? VehicleDeregistrationCostBreakdown::fromArray($data['costBreakdown'])
                 : null,
             messages: isset($data['messages'])
-                ? array_map(
+                ? array_values(array_map(
                     static fn (array $msg): VehicleDeregistrationXkfzEventMessage => VehicleDeregistrationXkfzEventMessage::fromArray($msg),
                     $data['messages'],
-                )
+                ))
                 : null,
             applicationId: $data['applicationId'] ?? null,
         );

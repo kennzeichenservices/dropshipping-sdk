@@ -32,10 +32,10 @@ final readonly class AvailabilityCheckResponse
     public static function fromArray(array $data): self
     {
         return new self(
-            availableLicensePlateNumbers: array_map(
+            availableLicensePlateNumbers: array_values(array_map(
                 static fn (array $item): EuroLicensePlateNumberComponents => EuroLicensePlateNumberComponents::fromArray($item),
                 $data['availableLicensePlateNumbers'] ?? [],
-            ),
+            )),
         );
     }
 }

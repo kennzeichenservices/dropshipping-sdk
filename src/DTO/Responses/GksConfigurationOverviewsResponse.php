@@ -30,10 +30,10 @@ final readonly class GksConfigurationOverviewsResponse
     public static function fromArray(array $data): self
     {
         return new self(
-            overviewGksConfigurations: array_map(
+            overviewGksConfigurations: array_values(array_map(
                 static fn (array $item): OverviewGksConfiguration => OverviewGksConfiguration::fromArray($item),
                 $data['overviewGksConfigurations'],
-            ),
+            )),
         );
     }
 }

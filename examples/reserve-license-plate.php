@@ -35,4 +35,4 @@ $response = $client->shipments->createLicensePlateReservation(
     ),
 );
 
-echo "Reservation created: {$response->id}\n";
+echo "Reservation created for order {$response->orderId} — net cost: {$response->costNetValue}\n";

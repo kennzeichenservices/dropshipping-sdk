@@ -34,10 +34,10 @@ final readonly class OrderCreationResponse
     {
         return new self(
             id: $data['id'],
-            deliveries: array_map(
+            deliveries: array_values(array_map(
                 static fn (array $delivery): Delivery => Delivery::fromArray($delivery),
                 $data['deliveries'] ?? [],
-            ),
+            )),
             costNetValue: $data['costNetValue'] ?? null,
         );
     }

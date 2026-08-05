@@ -34,10 +34,10 @@ final readonly class VehicleDeregistrationRegistrationOfficeCosts
     public static function fromArray(array $data): self
     {
         return new self(
-            items: array_map(
+            items: array_values(array_map(
                 static fn (array $item): VehicleDeregistrationCostBreakdownItem => VehicleDeregistrationCostBreakdownItem::fromArray($item),
                 $data['items'],
-            ),
+            )),
             total: isset($data['total']) ? VehicleDeregistrationCostBreakdownItem::fromArray($data['total']) : null,
             note: $data['note'] ?? null,
         );
