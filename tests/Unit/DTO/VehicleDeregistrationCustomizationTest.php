@@ -38,6 +38,36 @@ final class VehicleDeregistrationCustomizationTest extends TestCase
         self::assertSame('B', $array['licensePlateNumberComponents']['city']);
     }
 
+    /**
+     * The API team confirmed these four play no part in the deregistration, so they must
+     * disappear from the payload entirely rather than be sent as nulls. The live
+     * integration test proves the API accepts a request without them.
+     */
+    public function test_toArray_omits_the_deprecated_fields_when_they_are_null(): void
+    {
+        $customization = new VehicleDeregistrationCustomization(
+            vehicleType: VehicleDeregistrationVehicleType::Car,
+            licensePlateType: null,
+            licensePlateNumberComponents: new EuroLicensePlateNumberComponents('B', 'AB', '123'),
+            licensePlateReservationIncluded: false,
+            vehicleIdentificationNumber: 'WBA12345678901234',
+            vehicleRegistrationCertificateSecurityCode: 'SEC123',
+            vehicleRegistrationDate: null,
+            rearLicensePlateSecurityCode: 'REAR1',
+        );
+
+        $array = $customization->toArray();
+
+        self::assertArrayNotHasKey('licensePlateType', $array);
+        self::assertArrayNotHasKey('vehicleRegistrationDate', $array);
+        self::assertArrayNotHasKey('seasonStartMonth', $array);
+        self::assertArrayNotHasKey('seasonEndMonth', $array);
+
+        // vehicleType stays: the API schema's frontLicensePlateSecurityCode description
+        // documents a conditional rule that depends on it.
+        self::assertSame('CAR', $array['vehicleType']);
+    }
+
     public function test_toArray_excludes_null_optional_fields(): void
     {
         $customization = $this->createCustomization();

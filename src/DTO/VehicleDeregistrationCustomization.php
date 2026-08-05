@@ -14,6 +14,19 @@ use Dropshipping\Support\Validator;
  *
  * Implements {@see ItemCustomizationInterface} and automatically sets the
  * product type to {@see ProductType::VehicleDeregistration}.
+ *
+ * ## Deprecated fields
+ *
+ * `licensePlateType`, `vehicleRegistrationDate`, `seasonStartMonth` and `seasonEndMonth`
+ * are not declared in any published API schema and the API team confirmed they play no
+ * part in the deregistration itself — `vehicleRegistrationDate` was a shop-side value for
+ * deciding whether a vehicle can be deregistered online at all, and seasonal plate data is
+ * irrelevant here. They are now nullable and omitted from the payload when null. Pass null
+ * for new integrations; they will be removed in the next major version.
+ *
+ * `vehicleType` is deliberately kept: the API schema's own description of
+ * `frontLicensePlateSecurityCode` reads "Required for vehicleType CAR, TRACTOR, TRUCK",
+ * so a conditional rule depends on it even though the field is undeclared.
  */
 final readonly class VehicleDeregistrationCustomization implements ItemCustomizationInterface
 {
@@ -21,26 +34,26 @@ final readonly class VehicleDeregistrationCustomization implements ItemCustomiza
     public ProductType $productType;
 
     /**
-     * @param VehicleDeregistrationVehicleType       $vehicleType                            Type of vehicle being deregistered.
-     * @param VehicleDeregistrationLicensePlateType   $licensePlateType                       Type of license plate on the vehicle.
-     * @param EuroLicensePlateNumberComponents        $licensePlateNumberComponents            License plate number components.
-     * @param bool                                    $licensePlateReservationIncluded         Whether license plate reservation is included.
-     * @param string                                  $vehicleIdentificationNumber             Vehicle identification number (VIN).
-     * @param string                                  $vehicleRegistrationCertificateSecurityCode Security code from the registration certificate.
-     * @param string                                  $vehicleRegistrationDate                 Vehicle registration date in ISO 8601 format.
-     * @param string                                  $rearLicensePlateSecurityCode            Security code from the rear license plate.
-     * @param string|null                             $frontLicensePlateSecurityCode           Security code from the front license plate, if available.
-     * @param int|null                                $seasonStartMonth                        Start month for seasonal plates (1–12).
-     * @param int|null                                $seasonEndMonth                          End month for seasonal plates (1–12).
+     * @param VehicleDeregistrationVehicleType            $vehicleType                                Type of vehicle being deregistered.
+     * @param VehicleDeregistrationLicensePlateType|null  $licensePlateType                           Deprecated, pass null. See the class docblock.
+     * @param EuroLicensePlateNumberComponents            $licensePlateNumberComponents               License plate number components.
+     * @param bool                                        $licensePlateReservationIncluded            Whether license plate reservation is included.
+     * @param string                                      $vehicleIdentificationNumber                Vehicle identification number (VIN).
+     * @param string                                      $vehicleRegistrationCertificateSecurityCode Security code from the registration certificate.
+     * @param string|null                                 $vehicleRegistrationDate                    Deprecated, pass null. See the class docblock.
+     * @param string                                      $rearLicensePlateSecurityCode               Security code from the rear license plate.
+     * @param string|null                                 $frontLicensePlateSecurityCode              Security code from the front license plate, if available.
+     * @param int|null                                    $seasonStartMonth                           Deprecated, pass null. See the class docblock.
+     * @param int|null                                    $seasonEndMonth                             Deprecated, pass null. See the class docblock.
      */
     public function __construct(
         public VehicleDeregistrationVehicleType $vehicleType,
-        public VehicleDeregistrationLicensePlateType $licensePlateType,
+        public ?VehicleDeregistrationLicensePlateType $licensePlateType,
         public EuroLicensePlateNumberComponents $licensePlateNumberComponents,
         public bool $licensePlateReservationIncluded,
         public string $vehicleIdentificationNumber,
         public string $vehicleRegistrationCertificateSecurityCode,
-        public string $vehicleRegistrationDate,
+        public ?string $vehicleRegistrationDate,
         public string $rearLicensePlateSecurityCode,
         public ?string $frontLicensePlateSecurityCode = null,
         public ?int $seasonStartMonth = null,
@@ -50,8 +63,8 @@ final readonly class VehicleDeregistrationCustomization implements ItemCustomiza
 
         Validator::requireNonEmpty($vehicleIdentificationNumber, 'vehicleIdentificationNumber');
         Validator::requireNonEmpty($vehicleRegistrationCertificateSecurityCode, 'vehicleRegistrationCertificateSecurityCode');
-        Validator::requireNonEmpty($vehicleRegistrationDate, 'vehicleRegistrationDate');
         Validator::requireNonEmpty($rearLicensePlateSecurityCode, 'rearLicensePlateSecurityCode');
+        Validator::requireNullableStringLength($vehicleRegistrationDate, 'vehicleRegistrationDate', 1, 255);
         Validator::requireNullableStringLength($frontLicensePlateSecurityCode, 'frontLicensePlateSecurityCode', 1, 255);
         Validator::requireNullableIntRange($seasonStartMonth, 'seasonStartMonth', 1, 12);
         Validator::requireNullableIntRange($seasonEndMonth, 'seasonEndMonth', 1, 12);
@@ -67,7 +80,7 @@ final readonly class VehicleDeregistrationCustomization implements ItemCustomiza
         return array_filter([
             'productType' => $this->productType->value,
             'vehicleType' => $this->vehicleType->value,
-            'licensePlateType' => $this->licensePlateType->value,
+            'licensePlateType' => $this->licensePlateType?->value,
             'licensePlateNumberComponents' => $this->licensePlateNumberComponents->toArray(),
             'licensePlateReservationIncluded' => $this->licensePlateReservationIncluded,
             'vehicleIdentificationNumber' => $this->vehicleIdentificationNumber,

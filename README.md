@@ -294,12 +294,10 @@ $response = $client->vehicleDeregistrations->createDeregistration(
         email: 'max@example.com',
         customization: DS::deregistrationCustomization(
             vehicleType: VehicleDeregistrationVehicleType::Car,
-            licensePlateType: VehicleDeregistrationLicensePlateType::Regular,
             plate: DS::plate('B', 'AB', '1234'),
             licensePlateReservationIncluded: false,
             vehicleIdentificationNumber: 'WBA12345678901234',
             vehicleRegistrationCertificateSecurityCode: 'ABC123',
-            vehicleRegistrationDate: '2020-01-15',
             rearLicensePlateSecurityCode: 'XY9876',
         ),
         vehicleHolderAddress: $address,

@@ -13,7 +13,6 @@ use Dropshipping\DTO\Requests\VehicleDeregistrationVehicleHolder;
 use Dropshipping\DTO\Responses\VehicleDeregistrationResponse;
 use Dropshipping\DTO\VehicleDeregistrationCustomization;
 use Dropshipping\Enums\Gender;
-use Dropshipping\Enums\VehicleDeregistrationLicensePlateType;
 use Dropshipping\Enums\VehicleDeregistrationVehicleType;
 use GuzzleHttp\Client;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -56,16 +55,18 @@ final class VehicleDeregistrationsIntegrationTest extends TestCase
         $components = new EuroLicensePlateNumberComponents('BO', 'CD', '123');
         $customization = new VehicleDeregistrationCustomization(
             vehicleType: VehicleDeregistrationVehicleType::Car,
-            licensePlateType: VehicleDeregistrationLicensePlateType::RegularSeason,
+            // licensePlateType, vehicleRegistrationDate and the season months are
+            // deliberately omitted: the API team confirmed they play no part in the
+            // deregistration. This test is the standing proof that the live API
+            // accepts the request without them.
+            licensePlateType: null,
             licensePlateNumberComponents: $components,
             licensePlateReservationIncluded: false,
             vehicleIdentificationNumber: 'W0L000051T2123456',
             vehicleRegistrationCertificateSecurityCode: 'VCSC123',
-            vehicleRegistrationDate: '2024-03-21',
+            vehicleRegistrationDate: null,
             rearLicensePlateSecurityCode: 'RC2',
             frontLicensePlateSecurityCode: 'FC1',
-            seasonStartMonth: 4,
-            seasonEndMonth: 10,
         );
 
         $vehicleHolder = new VehicleDeregistrationVehicleHolder(address: $address);

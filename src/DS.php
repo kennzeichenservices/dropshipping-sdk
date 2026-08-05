@@ -422,17 +422,24 @@ final class DS
 
     /**
      * Create a vehicle deregistration customization DTO.
+     *
+     * @param VehicleDeregistrationLicensePlateType|null $licensePlateType        Deprecated, omit it.
+     * @param string|null                                $vehicleRegistrationDate Deprecated, omit it.
+     * @param int|null                                   $seasonStartMonth        Deprecated, omit it.
+     * @param int|null                                   $seasonEndMonth          Deprecated, omit it.
+     *
+     * @see VehicleDeregistrationCustomization for why these four are deprecated.
      */
     public static function deregistrationCustomization(
         VehicleDeregistrationVehicleType $vehicleType,
-        VehicleDeregistrationLicensePlateType $licensePlateType,
         EuroLicensePlateNumberComponents $plate,
         bool $licensePlateReservationIncluded,
         string $vehicleIdentificationNumber,
         string $vehicleRegistrationCertificateSecurityCode,
-        string $vehicleRegistrationDate,
         string $rearLicensePlateSecurityCode,
         ?string $frontLicensePlateSecurityCode = null,
+        ?VehicleDeregistrationLicensePlateType $licensePlateType = null,
+        ?string $vehicleRegistrationDate = null,
         ?int $seasonStartMonth = null,
         ?int $seasonEndMonth = null,
     ): VehicleDeregistrationCustomization {
