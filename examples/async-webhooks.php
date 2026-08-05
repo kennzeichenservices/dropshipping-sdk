@@ -29,8 +29,11 @@ class InMemoryWebhookQueue implements WebhookQueueInterface
 
 $queue = new InMemoryWebhookQueue();
 
-// --- HTTP controller: enqueue the incoming webhook immediately ---
-DS::queueWebhookDispatcher($queue)->dispatch(DS::incomingWebhook());
+// --- HTTP controller: verify the signature, then enqueue ---
+// The signature is checked before the message reaches the queue, so a forged
+// payload never gets queued and you can answer 401 right here.
+DS::queueWebhookDispatcher($queue, $config->getWebhookSignatureSecret())
+    ->dispatch(DS::incomingWebhook());
 echo "Webhook enqueued.\n";
 
 // --- Background worker: process queued messages ---

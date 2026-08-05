@@ -456,11 +456,34 @@ use Dropshipping\DS;
 $queue = new YourQueueImplementation();
 
 // In your HTTP controller: enqueue instead of processing inline
-DS::queueWebhookDispatcher($queue)->dispatch(DS::incomingWebhook());
+DS::queueWebhookDispatcher($queue, $config->getWebhookSignatureSecret())
+    ->dispatch(DS::incomingWebhook());
 
 // In a background worker process
 $processed = DS::webhookWorker($queue, $dispatcher)->run(maxMessages: 100);
 ```
+
+The signature is verified **before** the message is enqueued, so a forged payload never
+reaches your queue. Catch `WebhookException` in the controller and answer `401`:
+
+```php
+use Dropshipping\Exceptions\WebhookException;
+
+try {
+    DS::queueWebhookDispatcher($queue, $config->getWebhookSignatureSecret())
+        ->dispatch(DS::incomingWebhook());
+} catch (WebhookException) {
+    http_response_code(401);
+
+    return;
+}
+
+http_response_code(202);
+```
+
+The worker-side pipeline verifies the signature a second time, which is intentional —
+messages may sit in the queue across a secret rotation, and the worker is the last point
+where a bad message can be rejected before a handler runs.
 
 ## Architecture Overview
 

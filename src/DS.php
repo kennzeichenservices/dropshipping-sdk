@@ -339,20 +339,26 @@ final class DS
      * Wires up signature validation, payload validation, and deserialization
      * middleware in the correct order.
      *
-     * @param string $signatureSecret       The webhook signature secret from the SDK config.
-     * @param bool   $tolerateUnknownEvents When true, event types this SDK version does not know are
-     *                                      delivered as {@see \Dropshipping\DTO\Webhooks\UnknownWebhookEvent}
-     *                                      instead of throwing. Enable this to stay resilient while the
-     *                                      API rolls out beta events such as vehicle registration.
+     * @param string|null $signatureSecret       The webhook signature secret from the SDK config.
+     *                                           Accepts null so {@see DropshippingConfig::getWebhookSignatureSecret()}
+     *                                           can be passed straight through; an unset secret raises a
+     *                                           descriptive WebhookException rather than a TypeError.
+     * @param bool        $tolerateUnknownEvents When true, event types this SDK version does not know are
+     *                                           delivered as {@see \Dropshipping\DTO\Webhooks\UnknownWebhookEvent}
+     *                                           instead of throwing. Enable this to stay resilient while the
+     *                                           API rolls out beta events such as vehicle registration.
+     *
+     * @throws \Dropshipping\Exceptions\WebhookException If no signature secret is configured.
      */
     public static function webhookPipeline(
-        string $signatureSecret,
+        #[\SensitiveParameter]
+        ?string $signatureSecret,
         bool $tolerateUnknownEvents = false,
     ): WebhookPipeline {
         $serializer = new ArrayMapper();
 
         return (new WebhookPipeline())
-            ->pipe(new SignatureValidationMiddleware(new WebhookSignatureVerifier($signatureSecret)))
+            ->pipe(new SignatureValidationMiddleware(new WebhookSignatureVerifier($signatureSecret ?? '')))
             ->pipe(new PayloadValidationMiddleware($serializer))
             ->pipe(new DeserializationMiddleware($serializer, $tolerateUnknownEvents));
     }
@@ -383,10 +389,21 @@ final class DS
 
     /**
      * Create a queue-based async webhook dispatcher.
+     *
+     * The signature is verified before the message is enqueued, so a forged payload
+     * never reaches the queue and the HTTP endpoint can answer 401 straight away.
+     *
+     * @param WebhookQueueInterface $queue           Queue implementation to push messages onto.
+     * @param string|null           $signatureSecret The webhook signature secret from the SDK config.
+     *
+     * @throws \Dropshipping\Exceptions\WebhookException If no signature secret is configured.
      */
-    public static function queueWebhookDispatcher(WebhookQueueInterface $queue): QueueWebhookDispatcher
-    {
-        return new QueueWebhookDispatcher($queue);
+    public static function queueWebhookDispatcher(
+        WebhookQueueInterface $queue,
+        #[\SensitiveParameter]
+        ?string $signatureSecret,
+    ): QueueWebhookDispatcher {
+        return new QueueWebhookDispatcher($queue, new WebhookSignatureVerifier($signatureSecret ?? ''));
     }
 
     /**
