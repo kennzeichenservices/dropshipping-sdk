@@ -16,9 +16,6 @@ use Dropshipping\Support\Validator;
  * The number is the office's choice, but the kind of plate is not — pass the
  * desired {@see VehicleRegistrationLicensePlateType} and, for seasonal plates,
  * the season range.
- *
- * @experimental Vehicle registration is a beta feature of the dropshipping API
- *               (2.4.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom implements VehicleRegistrationLicensePlateNumberAssignmentStrategyInterface
 {

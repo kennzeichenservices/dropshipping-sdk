@@ -10,9 +10,6 @@ namespace Dropshipping\Enums;
  * Separate enum from {@see VehicleDeregistrationXkfzEventStatus} because the API
  * spec defines distinct status schemas per context, even though both currently
  * carry the same values.
- *
- * @experimental Vehicle registration webhook events are new in the dropshipping
- *               webhooks API (3.2.0) and may change without a major version bump.
  */
 enum VehicleRegistrationXkfzEventStatus: string
 {

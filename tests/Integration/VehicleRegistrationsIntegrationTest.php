@@ -36,11 +36,11 @@ final class VehicleRegistrationsIntegrationTest extends TestCase
             static::markTestSkipped('Integration test env vars not set');
         }
 
-        // Vehicle registration only exists on a beta API version, which is never the SDK
-        // default. Run this test by opting in explicitly: DROPSHIPPING_API_VERSION=2.4.0
+        // Vehicle registration only exists from API 2.4.0, which is not the SDK default.
+        // Run this test by opting in explicitly: DROPSHIPPING_API_VERSION=2.4.0
         if (!getenv('DROPSHIPPING_API_VERSION')) {
             static::markTestSkipped(
-                'Vehicle registration needs a beta API version — set DROPSHIPPING_API_VERSION=2.4.0 to run this test',
+                'Vehicle registration needs API 2.4.0 — set DROPSHIPPING_API_VERSION=2.4.0 to run this test',
             );
         }
 

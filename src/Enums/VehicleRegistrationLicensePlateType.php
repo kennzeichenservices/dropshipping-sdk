@@ -9,9 +9,6 @@ namespace Dropshipping\Enums;
  *
  * Separate enum from {@see LicensePlateType} because the API spec defines
  * distinct license plate type schemas per context.
- *
- * @experimental Vehicle registration is a beta feature of the dropshipping API
- *               (2.4.0) and may change without a major version bump.
  */
 enum VehicleRegistrationLicensePlateType: string
 {

@@ -45,7 +45,8 @@ final readonly class DropshippingConfig
      * The version is part of the request URL, and the API answers 403 on *every*
      * endpoint when a client is not entitled to the requested version. So
      * {@code api-version} in composer.json must always name a version that is
-     * live for all clients — never a beta. Beta versions are opted into per
+     * live for every client — never one that is still being rolled out, however
+     * stable the SDK's support for it is. Newer versions are opted into per
      * integration via the $apiVersion argument or the DROPSHIPPING_API_VERSION
      * env var, which keeps a `composer update` from moving anyone onto a version
      * their client cannot use.

@@ -9,9 +9,6 @@ use Dropshipping\Support\Hydrator;
 /**
  * Identifies the vendor handling identity verification and document signing
  * for a vehicle registration.
- *
- * @experimental Vehicle registration webhook events are new in the dropshipping
- *               webhooks API (3.2.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationIdentityVerificationVendor
 {

@@ -10,9 +10,6 @@ use Dropshipping\Support\Hydrator;
 /**
  * Webhook event fired when the customer has successfully identified themselves
  * for a vehicle registration.
- *
- * @experimental Vehicle registration webhook events are new in the dropshipping
- *               webhooks API (3.2.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationIdentityVerificationSucceededEvent implements WebhookEventInterface
 {

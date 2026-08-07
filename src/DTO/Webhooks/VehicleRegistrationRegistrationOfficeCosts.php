@@ -15,9 +15,6 @@ use Dropshipping\Support\Hydrator;
  * The webhooks spec marks `total` as required. It is modelled as nullable here on
  * purpose, matching {@see VehicleDeregistrationRegistrationOfficeCosts}: an otherwise
  * usable cost breakdown should still reach the consumer if the field is absent.
- *
- * @experimental Vehicle registration webhook events are new in the dropshipping
- *               webhooks API (3.2.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationRegistrationOfficeCosts
 {

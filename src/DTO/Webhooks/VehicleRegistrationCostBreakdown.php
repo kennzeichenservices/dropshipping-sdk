@@ -10,9 +10,6 @@ use Dropshipping\Support\Hydrator;
  * Represents the complete cost breakdown in a vehicle registration webhook event.
  *
  * Contains the optional KBA cost and optional registration office costs.
- *
- * @experimental Vehicle registration webhook events are new in the dropshipping
- *               webhooks API (3.2.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationCostBreakdown
 {

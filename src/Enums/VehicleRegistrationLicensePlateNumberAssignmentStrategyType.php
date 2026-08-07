@@ -7,9 +7,6 @@ namespace Dropshipping\Enums;
 /**
  * Discriminator for the license plate number assignment strategy of a vehicle
  * registration. Serialized as the `strategyType` property of the strategy object.
- *
- * @experimental Vehicle registration is a beta feature of the dropshipping API
- *               (2.4.0) and may change without a major version bump.
  */
 enum VehicleRegistrationLicensePlateNumberAssignmentStrategyType: string
 {

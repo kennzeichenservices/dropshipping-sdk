@@ -13,9 +13,6 @@ use Dropshipping\Support\Hydrator;
  *
  * Season months are only meaningful for the `*_SEASON` plate types. They are taken
  * as sent — an inbound event is reported, not validated.
- *
- * @experimental Vehicle registration webhook events are new in the dropshipping
- *               webhooks API (3.2.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationXkfzEventLicensePlate
 {

@@ -16,9 +16,6 @@ use Dropshipping\Support\Hydrator;
  *
  * Treat that key as opaque. Its internal structure is going to change, and nothing
  * in it is meant to be parsed, validated or split by consumers.
- *
- * @experimental Vehicle registration webhook events are new in the dropshipping
- *               webhooks API (3.2.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationXkfzEventFile
 {

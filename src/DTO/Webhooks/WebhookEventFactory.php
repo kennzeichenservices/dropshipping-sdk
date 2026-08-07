@@ -22,7 +22,7 @@ final class WebhookEventFactory
      * @param array<string, mixed> $data            The raw webhook payload.
      * @param bool                 $tolerateUnknown When true, an unrecognised eventType yields an
      *                                              {@see UnknownWebhookEvent} instead of an exception.
-     *                                              Useful while the API rolls out beta events this SDK
+     *                                              Useful when the API adds event types this SDK
      *                                              version does not model yet.
      *
      * @return WebhookEventInterface

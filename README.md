@@ -4,7 +4,7 @@ A PHP SDK for the Kennzeichen Services Dropshipping API. It provides typed reque
 
 ## Features
 
-- Typed endpoints for orders, shipments, products, webhooks, GKS configurations, vehicle deregistrations, and vehicle registrations (beta)
+- Typed endpoints for orders, shipments, products, webhooks, GKS configurations, vehicle deregistrations, and vehicle registrations
 - Immutable DTOs for all requests and responses
 - Webhook processing with configurable middleware pipeline (signature validation, payload validation, deserialization)
 - Async webhook processing via queue abstraction
@@ -91,17 +91,13 @@ The client exposes seven endpoint groups as public readonly properties:
 - `$client->webhooks` -- Webhook operations
 - `$client->gksConfigurations` -- GKS configuration management (KBA interface)
 - `$client->vehicleDeregistrations` -- Vehicle deregistration operations
-- `$client->vehicleRegistrations` -- Vehicle registration operations (**beta**)
+- `$client->vehicleRegistrations` -- Vehicle registration operations (requires API 2.4.0)
 
-> **Beta notice** -- vehicle registration is modelled against dropshipping API 2.4.0 and is still
-> subject to change. Everything under `$client->vehicleRegistrations` and every class marked
-> `@experimental` may change in a minor release without being treated as a breaking change.
->
-> **2.4.0 is not the SDK default.** The API version is part of the request URL, and an API version
-> your client is not entitled to answers `403 Forbidden` on *every* endpoint -- not just the new
-> ones. `api-version` in `composer.json` therefore always names a version that is live for all
-> clients, so an SDK update never moves you onto a version you cannot use. Opt into the beta per
-> integration, once your client is enabled for it:
+> **Vehicle registration requires dropshipping API 2.4.0, which is not the SDK default.** The API
+> version is part of the request URL, and an API version your client is not entitled to answers
+> `403 Forbidden` on *every* endpoint -- not just the new ones. `api-version` in `composer.json`
+> therefore always names a version that is live for all clients, so an SDK update never moves you
+> onto a version you cannot use. Opt into 2.4.0 per integration, once your client is enabled for it:
 >
 > ```bash
 > DROPSHIPPING_API_VERSION=2.4.0
@@ -135,7 +131,7 @@ Ready-to-run PHP scripts are available in the [`examples/`](examples/) directory
 | [reserve-license-plate.php](examples/reserve-license-plate.php) · [docs](examples/reserve-license-plate.md) | Reserve a license plate |
 | [gks-configurations.php](examples/gks-configurations.php) · [docs](examples/gks-configurations.md) | Create, update, list, and get GKS configurations |
 | [vehicle-deregistration.php](examples/vehicle-deregistration.php) · [docs](examples/vehicle-deregistration.md) | Submit a vehicle deregistration and handle the XKFZ webhook with file download |
-| [vehicle-registration.php](examples/vehicle-registration.php) · [docs](examples/vehicle-registration.md) | Submit a vehicle registration (**beta**) |
+| [vehicle-registration.php](examples/vehicle-registration.php) · [docs](examples/vehicle-registration.md) | Submit a vehicle registration |
 | [webhooks.php](examples/webhooks.php) · [docs](examples/webhooks.md) | Process incoming webhooks with the middleware pipeline |
 | [async-webhooks.php](examples/async-webhooks.php) · [docs](examples/async-webhooks.md) | Enqueue and process webhooks asynchronously via a queue |
 
@@ -346,11 +342,10 @@ class DeregistrationXkfzHandler implements WebhookHandlerInterface
 }
 ```
 
-### Submitting a Vehicle Registration (Beta)
+### Submitting a Vehicle Registration
 
-> **Beta** -- modelled against dropshipping API 2.4.0. Request and response shapes may still change.
 > Requires `apiVersion: '2.4.0'` on your `DropshippingConfig` (or `DROPSHIPPING_API_VERSION=2.4.0`)
-> and a client that is enabled for that version -- see the beta notice above.
+> and a client that is enabled for that version -- see the version notice above.
 
 ```php
 use Dropshipping\DS;
@@ -538,8 +533,8 @@ The SDK follows these patterns:
 | `$client->gksConfigurations->getOverview()` | GET /gksConfigurations/overviews/{id} | Get a single GKS configuration |
 | `$client->vehicleDeregistrations->createDeregistration()` | POST /vehicleDeregistrations/deregistrations | Submit a vehicle deregistration |
 | `$client->vehicleDeregistrations->downloadFileContent()` | GET /vehicleDeregistrations/files/content/{fileAccessKey} | Download a file from a `VEHICLE_DEREGISTRATION_XKFZ_EVENT` webhook |
-| `$client->vehicleRegistrations->createRegistration()` | POST /vehicleRegistrations/registrations | Submit a vehicle registration (**beta**) |
-| `$client->vehicleRegistrations->downloadFileContent()` | GET /vehicleRegistrations/files/content/{fileAccessKey} | Download a file from a `VEHICLE_REGISTRATION_XKFZ_EVENT` webhook (**beta**) |
+| `$client->vehicleRegistrations->createRegistration()` | POST /vehicleRegistrations/registrations | Submit a vehicle registration |
+| `$client->vehicleRegistrations->downloadFileContent()` | GET /vehicleRegistrations/files/content/{fileAccessKey} | Download a file from a `VEHICLE_REGISTRATION_XKFZ_EVENT` webhook |
 
 ### Webhook Event Types
 
@@ -553,13 +548,13 @@ The SDK follows these patterns:
 | `LICENSE_PLATE_RESERVATION_REJECTION` | `LicensePlateReservationRejectionEvent` | Reservation rejected with alternatives |
 | `LICENSE_PLATE_RESERVATION_TIMEOUT` | `LicensePlateReservationTimeoutEvent` | Reservation timed out |
 | `VEHICLE_DEREGISTRATION_XKFZ_EVENT` | `VehicleDeregistrationXkfzEvent` | Vehicle deregistration XKFZ status update — includes `status`, `derivedStatus`, optional `files` (with `fileAccessKey` for download), optional `costBreakdown`, and optional `messages` |
-| `VEHICLE_REGISTRATION_XKFZ_EVENT` (**beta**) | `VehicleRegistrationXkfzEvent` | Vehicle registration XKFZ status update — same shape as the deregistration event, plus the assigned `licensePlate`. Files carry a `fileAccessKey` for `downloadFileContent()` |
-| `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED` (**beta**) | `VehicleRegistrationIdentityVerificationInitializedEvent` | Identity check started — send the customer to `identityVerificationUrl` |
-| `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_SUCCEEDED` (**beta**) | `VehicleRegistrationIdentityVerificationSucceededEvent` | Customer identified successfully |
-| `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_FAILED` (**beta**) | `VehicleRegistrationIdentityVerificationFailedEvent` | Identity check failed, with an optional `message` |
-| `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED` (**beta**) | `VehicleRegistrationDocumentSignatureInitializedEvent` | Signing started — send the customer to `documentSignatureUrl` |
-| `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED` (**beta**) | `VehicleRegistrationDocumentSignatureSucceededEvent` | Documents signed |
-| `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_FAILED` (**beta**) | `VehicleRegistrationDocumentSignatureFailedEvent` | Signing failed, with an optional `message` |
+| `VEHICLE_REGISTRATION_XKFZ_EVENT` | `VehicleRegistrationXkfzEvent` | Vehicle registration XKFZ status update — same shape as the deregistration event, plus the assigned `licensePlate`. Files carry a `fileAccessKey` for `downloadFileContent()` |
+| `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED` | `VehicleRegistrationIdentityVerificationInitializedEvent` | Identity check started — send the customer to `identityVerificationUrl` |
+| `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_SUCCEEDED` | `VehicleRegistrationIdentityVerificationSucceededEvent` | Customer identified successfully |
+| `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_FAILED` | `VehicleRegistrationIdentityVerificationFailedEvent` | Identity check failed, with an optional `message` |
+| `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED` | `VehicleRegistrationDocumentSignatureInitializedEvent` | Signing started — send the customer to `documentSignatureUrl` |
+| `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED` | `VehicleRegistrationDocumentSignatureSucceededEvent` | Documents signed |
+| `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_FAILED` | `VehicleRegistrationDocumentSignatureFailedEvent` | Signing failed, with an optional `message` |
 | _(any unrecognised type)_ | `UnknownWebhookEvent` | Only produced when the pipeline is built with `tolerateUnknownEvents: true`. Carries `rawEventType` and the full `payload` — see below |
 
 #### Unknown event types
@@ -592,12 +587,12 @@ throws, except where the SDK defines a fallback — `status` on both XKFZ events
 | `VehicleDeregistrationLicensePlateType` | `REGULAR`, `REGULAR_SEASON`, `ELECTRIC`, `ELECTRIC_SEASON`, `HISTORICAL`, `HISTORICAL_SEASON` |
 | `VehicleDeregistrationXkfzEventStatus` | `ACCEPTED`, `APPROVED`, `APPROVED_WITH_DOCUMENTS`, `FAILED`, `FORWARDED`, `PROCESSED`, `REJECTED`, `REJECTED_WITH_DOCUMENTS`, `UNKNOWN` |
 | `VehicleDeregistrationXkfzEventFilePurposeType` | `CERTIFICATE`, `RECEIPT`, `APPLICATION`, `UNSPECIFIED` |
-| `VehicleRegistrationVehicleType` (beta) | `CAR`, `MOTORCYCLE`, `TRAILER` |
-| `VehicleRegistrationLicensePlateType` (beta) | `REGULAR`, `REGULAR_SEASON`, `ELECTRIC`, `ELECTRIC_SEASON`, `HISTORICAL`, `HISTORICAL_SEASON` |
-| `VehicleRegistrationLicensePlateNumberAssignmentStrategyType` (beta) | `RANDOM`, `RESERVATION`, `RETAINMENT` |
-| `VehicleRegistrationServiceTypeCode` (beta) | `NZ`, `WZ`, `UO`, `UI`, `UM`, `WG`, `UG`, `HA` |
-| `VehicleRegistrationXkfzEventStatus` (beta) | `ACCEPTED`, `APPROVED`, `APPROVED_WITH_DOCUMENTS`, `FAILED`, `FORWARDED`, `PROCESSED`, `REJECTED`, `REJECTED_WITH_DOCUMENTS`, `UNKNOWN` |
-| `VehicleRegistrationXkfzEventFilePurposeType` (beta) | `OTHER`, `PROVISIONAL_VEHICLE_REGISTRATION_CERTIFICATE`, `VEHICLE_REGISTRATION_APPLICATION_POWER_OF_ATTORNEY`, `VEHICLE_REGISTRATION_APPROVAL_NOTICE`, `VEHICLE_REGISTRATION_CERTIFICATE_TOKEN`, `VEHICLE_REGISTRATION_CHARGES_NOTICE`, `VEHICLE_REGISTRATION_ELECTRONIC_INSURANCE_CONFIRMATION`, `VEHICLE_REGISTRATION_GDPR_CONSENT_DECLARATION`, `VEHICLE_REGISTRATION_MOTOR_VEHICLE_TAX_SEPA_DIRECT_DEBIT_MANDATE`, `VEHICLE_REGISTRATION_REJECTION_NOTICE` |
+| `VehicleRegistrationVehicleType` | `CAR`, `MOTORCYCLE`, `TRAILER` |
+| `VehicleRegistrationLicensePlateType` | `REGULAR`, `REGULAR_SEASON`, `ELECTRIC`, `ELECTRIC_SEASON`, `HISTORICAL`, `HISTORICAL_SEASON` |
+| `VehicleRegistrationLicensePlateNumberAssignmentStrategyType` | `RANDOM`, `RESERVATION`, `RETAINMENT` |
+| `VehicleRegistrationServiceTypeCode` | `NZ`, `WZ`, `UO`, `UI`, `UM`, `WG`, `UG`, `HA` |
+| `VehicleRegistrationXkfzEventStatus` | `ACCEPTED`, `APPROVED`, `APPROVED_WITH_DOCUMENTS`, `FAILED`, `FORWARDED`, `PROCESSED`, `REJECTED`, `REJECTED_WITH_DOCUMENTS`, `UNKNOWN` |
+| `VehicleRegistrationXkfzEventFilePurposeType` | `OTHER`, `PROVISIONAL_VEHICLE_REGISTRATION_CERTIFICATE`, `VEHICLE_REGISTRATION_APPLICATION_POWER_OF_ATTORNEY`, `VEHICLE_REGISTRATION_APPROVAL_NOTICE`, `VEHICLE_REGISTRATION_CERTIFICATE_TOKEN`, `VEHICLE_REGISTRATION_CHARGES_NOTICE`, `VEHICLE_REGISTRATION_ELECTRONIC_INSURANCE_CONFIRMATION`, `VEHICLE_REGISTRATION_GDPR_CONSENT_DECLARATION`, `VEHICLE_REGISTRATION_MOTOR_VEHICLE_TAX_SEPA_DIRECT_DEBIT_MANDATE`, `VEHICLE_REGISTRATION_REJECTION_NOTICE` |
 | `WebhookEventType` | see [Webhook Event Types](#webhook-event-types), plus `UNKNOWN` for unrecognised types |
 
 ## Extensibility

@@ -9,9 +9,6 @@ use Dropshipping\Support\Hydrator;
 
 /**
  * Webhook event fired when the customer has signed the documents for a vehicle registration.
- *
- * @experimental Vehicle registration webhook events are new in the dropshipping
- *               webhooks API (3.2.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationDocumentSignatureSucceededEvent implements WebhookEventInterface
 {

@@ -12,9 +12,6 @@ use Dropshipping\Enums\VehicleRegistrationLicensePlateNumberAssignmentStrategyTy
  *
  * The API discriminates the concrete strategy by the `strategyType` property,
  * so every implementation serializes its own {@see $strategyType} value.
- *
- * @experimental Vehicle registration is a beta feature of the dropshipping API
- *               (2.4.0) and may change without a major version bump.
  */
 interface VehicleRegistrationLicensePlateNumberAssignmentStrategyInterface
 {

@@ -11,9 +11,6 @@ use Dropshipping\Support\Hydrator;
  *
  * Contains the item number, optional code and name, the amount in cents,
  * and an optional note.
- *
- * @experimental Vehicle registration webhook events are new in the dropshipping
- *               webhooks API (3.2.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationCostBreakdownItem
 {

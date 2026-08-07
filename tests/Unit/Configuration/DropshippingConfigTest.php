@@ -61,7 +61,7 @@ final class DropshippingConfigTest extends TestCase
     /**
      * The API version is part of the request URL, and an unreleased version makes the API answer
      * 403 on every endpoint. composer.json must therefore declare a version that is live for all
-     * clients — a beta is opted into per integration, never shipped as the default.
+     * clients — a version still rolling out is opted into per integration, never shipped as the default.
      */
     public function test_default_api_version_comes_from_composer_json(): void
     {

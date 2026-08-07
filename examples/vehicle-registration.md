@@ -1,9 +1,10 @@
-# Example: Vehicle Registration (Beta)
+# Example: Vehicle Registration
 
 Submits a vehicle registration (Kfz-Zulassung) via `POST /vehicleRegistrations/registrations`.
 
-> **Beta** — vehicle registration is modelled against dropshipping API 2.4.0. The request and
-> response shapes may still change; treat changes to these classes as non-breaking.
+> Requires dropshipping API 2.4.0, which is not the SDK default — set
+> `DROPSHIPPING_API_VERSION=2.4.0` or pass `apiVersion: '2.4.0'` to `DropshippingConfig`, and make
+> sure your client is enabled for that version.
 
 ## What it does
 

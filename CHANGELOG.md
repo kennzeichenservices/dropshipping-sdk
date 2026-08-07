@@ -6,20 +6,24 @@ All notable changes to this project will be documented in this file.
 
 ### Features
 
+- **Vehicle registration is no longer experimental.** Every `@experimental` marker is gone and the
+  feature is covered by the usual BC guarantee from this release on. It still requires dropshipping
+  API 2.4.0, which is not the SDK default: opt in with `DROPSHIPPING_API_VERSION=2.4.0` or
+  `apiVersion: '2.4.0'`. `api-version` in `composer.json` stays at 2.3.1 so an SDK update never
+  moves a client onto a version it is not entitled to.
 - Add `$client->vehicleRegistrations->downloadFileContent()` for the
   `GET /vehicleRegistrations/files/content/{fileAccessKey}` operation introduced in dropshipping
   API 2.4.0. Takes the `fileAccessKey` from a `VEHICLE_REGISTRATION_XKFZ_EVENT` file.
 
-### Breaking (beta)
+### Breaking
 
 - `VehicleRegistrationResponse` no longer exposes `identityVerificationVendorId` and
   `customerInputFormUrl` — dropshipping API 2.4.0 removed both from the response, which now
   carries the order ID alone. The customer-facing URLs arrive as webhook events instead:
   `identityVerificationUrl` on `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED` and
-  `documentSignatureUrl` on `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED`. Vehicle
-  registration is `@experimental`, so this lands outside the BC guarantee.
-- Vehicle registration now targets API version 2.4.0 — opt in with `DROPSHIPPING_API_VERSION=2.4.0`
-  or `apiVersion: '2.4.0'` instead of 2.3.2. `api-version` in `composer.json` stays at 2.3.1.
+  `documentSignatureUrl` on `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED`. This is the last
+  change made while vehicle registration was still `@experimental`; anyone who ran the feature
+  against API 2.3.2 has to move both reads over to those handlers.
 
 ### Miscellaneous
 

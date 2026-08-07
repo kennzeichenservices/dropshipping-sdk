@@ -15,9 +15,6 @@ use Dropshipping\Support\Validator;
  *
  * Implements {@see ItemCustomizationInterface} and automatically sets the
  * product type to {@see ProductType::VehicleRegistration}.
- *
- * @experimental Vehicle registration is a beta feature of the dropshipping API
- *               (2.4.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationCustomization implements ItemCustomizationInterface
 {

@@ -14,9 +14,6 @@ use Dropshipping\Support\Hydrator;
  * VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED, the signing URL with
  * VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED, and the registration
  * office's verdict with VEHICLE_REGISTRATION_XKFZ_EVENT.
- *
- * @experimental Vehicle registration is a beta feature of the dropshipping API
- *               (2.4.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationResponse
 {

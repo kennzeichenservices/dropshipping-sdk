@@ -14,9 +14,6 @@ use Dropshipping\Support\Validator;
  * Unlike {@see LicensePlateReservationVehicleHolder}, where the birth details are
  * optional, the registration API requires both the place of birth and the birth
  * date.
- *
- * @experimental Vehicle registration is a beta feature of the dropshipping API
- *               (2.4.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationVehicleHolder
 {

@@ -10,9 +10,6 @@ namespace Dropshipping\Enums;
  * The API spec lists these codes without descriptions. Only the codes whose
  * meaning is confirmed carry a comment below; the remaining ones are passed
  * through verbatim.
- *
- * @experimental Vehicle registration is a beta feature of the dropshipping API
- *               (2.4.0) and may change without a major version bump.
  */
 enum VehicleRegistrationServiceTypeCode: string
 {

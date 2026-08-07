@@ -14,9 +14,6 @@ use Dropshipping\Support\Hydrator;
  * Contains the order reference, the current processing status, optional attached
  * files, an optional cost breakdown detailing KBA and registration office charges,
  * and — once the registration is approved — the license plate assigned to the vehicle.
- *
- * @experimental Vehicle registration webhook events are new in the dropshipping
- *               webhooks API (3.2.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationXkfzEvent implements WebhookEventInterface
 {

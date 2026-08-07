@@ -15,9 +15,6 @@ namespace Dropshipping\Enums;
  * a {@see \Dropshipping\Exceptions\DropshippingException}. That mirrors the
  * deregistration counterpart. Tolerating unknown event *types* does not help here:
  * that switch only covers the `eventType` field.
- *
- * @experimental Vehicle registration webhook events are new in the dropshipping
- *               webhooks API (3.2.0) and may change without a major version bump.
  */
 enum VehicleRegistrationXkfzEventFilePurposeType: string
 {

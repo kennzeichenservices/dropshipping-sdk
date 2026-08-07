@@ -30,6 +30,7 @@ return [
     'vehicleRegistrationResponse' =>
         'Unreleased — dropshipping API 2.4.0 dropped identityVerificationVendorId and '
         . 'customerInputFormUrl from the vehicle registration response, so the DTO dropped them '
-        . 'too. Vehicle registration is @experimental and outside the BC guarantee; the '
-        . 'customer-facing URLs now arrive as VEHICLE_REGISTRATION_*_INITIALIZED webhook events.',
+        . 'too. Made while the feature was still @experimental, in the same release that takes '
+        . 'that marker off; the customer-facing URLs now arrive as VEHICLE_REGISTRATION_*_INITIALIZED '
+        . 'webhook events.',
 ];

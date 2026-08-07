@@ -12,9 +12,6 @@ use Dropshipping\Support\Validator;
  *
  * Contains the customer email, customization details, vehicle holder
  * information, and optional external order ID and GKS configuration reference.
- *
- * @experimental Vehicle registration is a beta feature of the dropshipping API
- *               (2.4.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationRequest
 {

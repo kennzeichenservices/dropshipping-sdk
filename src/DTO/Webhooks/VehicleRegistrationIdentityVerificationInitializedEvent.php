@@ -12,9 +12,6 @@ use Dropshipping\Support\Hydrator;
  *
  * Carries the URL the customer has to visit to identify themselves. Nothing is
  * processed until they complete it.
- *
- * @experimental Vehicle registration webhook events are new in the dropshipping
- *               webhooks API (3.2.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationIdentityVerificationInitializedEvent implements WebhookEventInterface
 {

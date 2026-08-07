@@ -12,8 +12,8 @@ use Dropshipping\Enums\{
     VehicleRegistrationVehicleType,
 };
 
-// NOTE: Vehicle registration is a BETA feature of the dropshipping API (2.4.0).
-// The request and response shapes may still change.
+// NOTE: Vehicle registration requires dropshipping API 2.4.0, which is not the SDK
+// default. Set DROPSHIPPING_API_VERSION=2.4.0 or pass apiVersion to DropshippingConfig.
 
 $address = DS::address(
     firstName: 'Max',

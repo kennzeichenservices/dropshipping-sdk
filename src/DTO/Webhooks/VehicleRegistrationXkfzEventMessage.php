@@ -8,9 +8,6 @@ use Dropshipping\Support\Hydrator;
 
 /**
  * Represents a message attached to a vehicle registration XKFZ webhook event.
- *
- * @experimental Vehicle registration webhook events are new in the dropshipping
- *               webhooks API (3.2.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationXkfzEventMessage
 {

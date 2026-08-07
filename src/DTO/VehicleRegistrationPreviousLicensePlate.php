@@ -10,9 +10,6 @@ use Dropshipping\Support\Validator;
 /**
  * Data transfer object describing the license plate the vehicle carried before
  * the registration, used when the previous number is retained or handed in.
- *
- * @experimental Vehicle registration is a beta feature of the dropshipping API
- *               (2.4.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationPreviousLicensePlate
 {

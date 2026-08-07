@@ -16,9 +16,6 @@ use Dropshipping\Http\ResponseMapper;
  *
  * Provides the methods to submit a vehicle registration request and to download
  * the files the registration produces.
- *
- * @experimental Vehicle registration is a beta feature of the dropshipping API
- *               (2.4.0) and may change without a major version bump.
  */
 final class VehicleRegistrationsEndpoint
 {
