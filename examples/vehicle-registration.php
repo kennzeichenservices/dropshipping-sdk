@@ -12,7 +12,7 @@ use Dropshipping\Enums\{
     VehicleRegistrationVehicleType,
 };
 
-// NOTE: Vehicle registration is a BETA feature of the dropshipping API (2.3.2).
+// NOTE: Vehicle registration is a BETA feature of the dropshipping API (2.4.0).
 // The request and response shapes may still change.
 
 $address = DS::address(
@@ -60,16 +60,20 @@ $response = $client->vehicleRegistrations->createRegistration(
 );
 
 echo "Registration order created: {$response->orderId}\n";
-echo "Identity verification vendor: {$response->identityVerificationVendorId}\n";
 
-// The customer MUST complete this form — it collects the identification data and
-// signatures required for the registration. Nothing is processed until they do.
-echo "Send the customer to: {$response->customerInputFormUrl}\n";
-
-// Registration results arrive asynchronously via webhooks (spec 3.2.0), as typed events:
+// That order ID is all the response carries. Everything else — including the two URLs the
+// customer MUST visit before anything is processed — arrives asynchronously via webhooks
+// (spec 3.2.0), as typed events:
 //
-//   VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED / _SUCCEEDED / _FAILED
-//   VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED / _SUCCEEDED / _FAILED
+//   VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED  — send the customer to
+//                                                             $event->identityVerificationUrl
+//   VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_SUCCEEDED / _FAILED
+//   VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED     — send the customer to
+//                                                             $event->documentSignatureUrl
+//   VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED / _FAILED
 //   VEHICLE_REGISTRATION_XKFZ_EVENT  — the registration office verdict and the assigned plate
+//
+// Use $client->vehicleRegistrations->downloadFileContent($file->fileAccessKey)
+// to fetch the files attached to a VEHICLE_REGISTRATION_XKFZ_EVENT.
 //
 // See webhooks.php for the full event handling setup.

@@ -37,10 +37,10 @@ final class VehicleRegistrationsIntegrationTest extends TestCase
         }
 
         // Vehicle registration only exists on a beta API version, which is never the SDK
-        // default. Run this test by opting in explicitly: DROPSHIPPING_API_VERSION=2.3.2
+        // default. Run this test by opting in explicitly: DROPSHIPPING_API_VERSION=2.4.0
         if (!getenv('DROPSHIPPING_API_VERSION')) {
             static::markTestSkipped(
-                'Vehicle registration needs a beta API version — set DROPSHIPPING_API_VERSION=2.3.2 to run this test',
+                'Vehicle registration needs a beta API version — set DROPSHIPPING_API_VERSION=2.4.0 to run this test',
             );
         }
 
@@ -104,6 +104,5 @@ final class VehicleRegistrationsIntegrationTest extends TestCase
 
         self::assertInstanceOf(VehicleRegistrationResponse::class, $response);
         self::assertGreaterThan(0, $response->orderId);
-        self::assertNotSame('', $response->customerInputFormUrl);
     }
 }

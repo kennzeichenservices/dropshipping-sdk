@@ -12,7 +12,7 @@ use Dropshipping\Support\Validator;
  * the registration, used when the previous number is retained or handed in.
  *
  * @experimental Vehicle registration is a beta feature of the dropshipping API
- *               (2.3.2) and may change without a major version bump.
+ *               (2.4.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationPreviousLicensePlate
 {

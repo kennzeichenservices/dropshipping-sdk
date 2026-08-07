@@ -26,4 +26,10 @@ return [
 
     'availability/non-sequential' =>
         '2.3.24 — same reindexing as above for availableLicensePlateNumbers.',
+
+    'vehicleRegistrationResponse' =>
+        'Unreleased — dropshipping API 2.4.0 dropped identityVerificationVendorId and '
+        . 'customerInputFormUrl from the vehicle registration response, so the DTO dropped them '
+        . 'too. Vehicle registration is @experimental and outside the BC guarantee; the '
+        . 'customer-facing URLs now arrive as VEHICLE_REGISTRATION_*_INITIALIZED webhook events.',
 ];

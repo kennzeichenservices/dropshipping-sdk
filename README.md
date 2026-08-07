@@ -93,18 +93,18 @@ The client exposes seven endpoint groups as public readonly properties:
 - `$client->vehicleDeregistrations` -- Vehicle deregistration operations
 - `$client->vehicleRegistrations` -- Vehicle registration operations (**beta**)
 
-> **Beta notice** -- vehicle registration was introduced in dropshipping API 2.3.2 and is still
+> **Beta notice** -- vehicle registration is modelled against dropshipping API 2.4.0 and is still
 > subject to change. Everything under `$client->vehicleRegistrations` and every class marked
 > `@experimental` may change in a minor release without being treated as a breaking change.
 >
-> **2.3.2 is not the SDK default.** The API version is part of the request URL, and an API version
+> **2.4.0 is not the SDK default.** The API version is part of the request URL, and an API version
 > your client is not entitled to answers `403 Forbidden` on *every* endpoint -- not just the new
 > ones. `api-version` in `composer.json` therefore always names a version that is live for all
 > clients, so an SDK update never moves you onto a version you cannot use. Opt into the beta per
 > integration, once your client is enabled for it:
 >
 > ```bash
-> DROPSHIPPING_API_VERSION=2.3.2
+> DROPSHIPPING_API_VERSION=2.4.0
 > ```
 >
 > Or pass it directly, which takes precedence over the environment:
@@ -115,7 +115,7 @@ The client exposes seven endpoint groups as public readonly properties:
 >     dropshippingClientId: 12345,
 >     username: '...',
 >     password: '...',
->     apiVersion: '2.3.2',
+>     apiVersion: '2.4.0',
 > );
 > ```
 >
@@ -348,8 +348,8 @@ class DeregistrationXkfzHandler implements WebhookHandlerInterface
 
 ### Submitting a Vehicle Registration (Beta)
 
-> **Beta** -- introduced in dropshipping API 2.3.2. Request and response shapes may still change.
-> Requires `apiVersion: '2.3.2'` on your `DropshippingConfig` (or `DROPSHIPPING_API_VERSION=2.3.2`)
+> **Beta** -- modelled against dropshipping API 2.4.0. Request and response shapes may still change.
+> Requires `apiVersion: '2.4.0'` on your `DropshippingConfig` (or `DROPSHIPPING_API_VERSION=2.4.0`)
 > and a client that is enabled for that version -- see the beta notice above.
 
 ```php
@@ -386,11 +386,13 @@ $response = $client->vehicleRegistrations->createRegistration(
 );
 
 echo $response->orderId;
-echo $response->customerInputFormUrl; // redirect the customer here
 ```
 
-The customer **must** complete the form at `customerInputFormUrl` -- it collects the identification
-data and signatures required for the registration. Nothing is processed until they do.
+The response carries nothing but the order ID. The customer still **must** identify themselves and
+sign the documents before anything is processed -- but both URLs arrive as webhooks, not in this
+response: `identityVerificationUrl` on `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED` and
+`documentSignatureUrl` on `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED`. Send the customer
+to each as it comes in.
 
 The assignment strategy is an object, not a plain enum value -- it serializes with a
 `strategyType` discriminator and carries the plate data belonging to that strategy. Build it
@@ -537,6 +539,7 @@ The SDK follows these patterns:
 | `$client->vehicleDeregistrations->createDeregistration()` | POST /vehicleDeregistrations/deregistrations | Submit a vehicle deregistration |
 | `$client->vehicleDeregistrations->downloadFileContent()` | GET /vehicleDeregistrations/files/content/{fileAccessKey} | Download a file from a `VEHICLE_DEREGISTRATION_XKFZ_EVENT` webhook |
 | `$client->vehicleRegistrations->createRegistration()` | POST /vehicleRegistrations/registrations | Submit a vehicle registration (**beta**) |
+| `$client->vehicleRegistrations->downloadFileContent()` | GET /vehicleRegistrations/files/content/{fileAccessKey} | Download a file from a `VEHICLE_REGISTRATION_XKFZ_EVENT` webhook (**beta**) |
 
 ### Webhook Event Types
 
@@ -550,7 +553,7 @@ The SDK follows these patterns:
 | `LICENSE_PLATE_RESERVATION_REJECTION` | `LicensePlateReservationRejectionEvent` | Reservation rejected with alternatives |
 | `LICENSE_PLATE_RESERVATION_TIMEOUT` | `LicensePlateReservationTimeoutEvent` | Reservation timed out |
 | `VEHICLE_DEREGISTRATION_XKFZ_EVENT` | `VehicleDeregistrationXkfzEvent` | Vehicle deregistration XKFZ status update — includes `status`, `derivedStatus`, optional `files` (with `fileAccessKey` for download), optional `costBreakdown`, and optional `messages` |
-| `VEHICLE_REGISTRATION_XKFZ_EVENT` (**beta**) | `VehicleRegistrationXkfzEvent` | Vehicle registration XKFZ status update — same shape as the deregistration event, plus the assigned `licensePlate`. Files carry a `fileAccessKey`, but no download endpoint is exposed yet |
+| `VEHICLE_REGISTRATION_XKFZ_EVENT` (**beta**) | `VehicleRegistrationXkfzEvent` | Vehicle registration XKFZ status update — same shape as the deregistration event, plus the assigned `licensePlate`. Files carry a `fileAccessKey` for `downloadFileContent()` |
 | `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED` (**beta**) | `VehicleRegistrationIdentityVerificationInitializedEvent` | Identity check started — send the customer to `identityVerificationUrl` |
 | `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_SUCCEEDED` (**beta**) | `VehicleRegistrationIdentityVerificationSucceededEvent` | Customer identified successfully |
 | `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_FAILED` (**beta**) | `VehicleRegistrationIdentityVerificationFailedEvent` | Identity check failed, with an optional `message` |

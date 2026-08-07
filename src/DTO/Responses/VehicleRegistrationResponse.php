@@ -9,28 +9,24 @@ use Dropshipping\Support\Hydrator;
 /**
  * Response DTO for a vehicle registration request.
  *
- * Besides the created order ID this response carries the customer input form
- * URL. The customer **must** be redirected to that URL to provide the
- * identification data and signatures required for the registration — without
- * it the registration will not be processed. Registration results themselves
- * are delivered asynchronously via webhook events.
+ * Carries nothing but the created order ID. Everything the customer has to act
+ * on arrives asynchronously as webhook events: the identity check URL with
+ * VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED, the signing URL with
+ * VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED, and the registration
+ * office's verdict with VEHICLE_REGISTRATION_XKFZ_EVENT.
  *
  * @experimental Vehicle registration is a beta feature of the dropshipping API
- *               (2.3.2) and may change without a major version bump.
+ *               (2.4.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationResponse
 {
     private const CONTEXT = 'VehicleRegistrationResponse';
 
     /**
-     * @param int    $orderId                      The ID of the created order.
-     * @param int    $identityVerificationVendorId The ID of the vendor handling the identity verification.
-     * @param string $customerInputFormUrl         URL of the form for the customer to provide input for identification and signatures.
+     * @param int $orderId The ID of the created order.
      */
     public function __construct(
         public int $orderId,
-        public int $identityVerificationVendorId,
-        public string $customerInputFormUrl,
     ) {
     }
 
@@ -49,8 +45,6 @@ final readonly class VehicleRegistrationResponse
                 'id',
                 self::CONTEXT . '.order',
             ),
-            identityVerificationVendorId: Hydrator::requireInt($data, 'identityVerificationVendorId', self::CONTEXT),
-            customerInputFormUrl: Hydrator::requireString($data, 'customerInputFormUrl', self::CONTEXT),
         );
     }
 }

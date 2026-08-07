@@ -16,7 +16,7 @@ use Dropshipping\Support\Validator;
  * date.
  *
  * @experimental Vehicle registration is a beta feature of the dropshipping API
- *               (2.3.2) and may change without a major version bump.
+ *               (2.4.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationVehicleHolder
 {

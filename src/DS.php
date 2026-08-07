@@ -489,7 +489,7 @@ final class DS
      * Create a license plate number assignment strategy letting the registration
      * office pick an arbitrary available number of the given plate type.
      *
-     * @experimental Vehicle registration is a beta feature of the dropshipping API (2.3.2).
+     * @experimental Vehicle registration is a beta feature of the dropshipping API (2.4.0).
      */
     public static function randomLicensePlateNumber(
         VehicleRegistrationLicensePlateType $licensePlateType,
@@ -507,7 +507,7 @@ final class DS
      * Create a license plate number assignment strategy using a previously
      * reserved number.
      *
-     * @experimental Vehicle registration is a beta feature of the dropshipping API (2.3.2).
+     * @experimental Vehicle registration is a beta feature of the dropshipping API (2.4.0).
      */
     public static function reservedLicensePlateNumber(
         EuroLicensePlateNumberComponents $plate,
@@ -529,7 +529,7 @@ final class DS
      * Create a license plate number assignment strategy retaining the number of
      * the previous license plate.
      *
-     * @experimental Vehicle registration is a beta feature of the dropshipping API (2.3.2).
+     * @experimental Vehicle registration is a beta feature of the dropshipping API (2.4.0).
      */
     public static function retainedLicensePlateNumber(): VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained
     {
@@ -539,7 +539,7 @@ final class DS
     /**
      * Create the previous license plate for a vehicle registration.
      *
-     * @experimental Vehicle registration is a beta feature of the dropshipping API (2.3.2).
+     * @experimental Vehicle registration is a beta feature of the dropshipping API (2.4.0).
      */
     public static function previousLicensePlate(
         EuroLicensePlateNumberComponents $plate,
@@ -562,7 +562,7 @@ final class DS
     /**
      * Create a vehicle registration customization DTO.
      *
-     * @experimental Vehicle registration is a beta feature of the dropshipping API (2.3.2).
+     * @experimental Vehicle registration is a beta feature of the dropshipping API (2.4.0).
      */
     public static function registrationCustomization(
         VehicleRegistrationLicensePlateNumberAssignmentStrategyInterface $licensePlateNumberAssignmentStrategy,
@@ -600,7 +600,7 @@ final class DS
      * The vehicle holder is wrapped automatically — pass the address and birth
      * details directly. The API requires both the place of birth and the birth date.
      *
-     * @experimental Vehicle registration is a beta feature of the dropshipping API (2.3.2).
+     * @experimental Vehicle registration is a beta feature of the dropshipping API (2.4.0).
      */
     public static function vehicleRegistration(
         string $email,

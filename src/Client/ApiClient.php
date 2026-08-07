@@ -44,7 +44,7 @@ final class ApiClient
     public readonly GksConfigurationsEndpoint $gksConfigurations;
     public readonly VehicleDeregistrationsEndpoint $vehicleDeregistrations;
 
-    /** @experimental Vehicle registration is a beta feature of the dropshipping API (2.3.2). */
+    /** @experimental Vehicle registration is a beta feature of the dropshipping API (2.4.0). */
     public readonly VehicleRegistrationsEndpoint $vehicleRegistrations;
 
     public function __construct(

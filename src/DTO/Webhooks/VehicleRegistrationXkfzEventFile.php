@@ -10,10 +10,9 @@ use Dropshipping\Support\Hydrator;
 /**
  * Represents a file attached to a vehicle registration XKFZ webhook event.
  *
- * Unlike its deregistration counterpart, this SDK version exposes no method to
- * download the content — the dropshipping API spec available here describes no
- * vehicle registration file download operation yet. Keep the {@see $fileAccessKey}
- * around; it is what the operation will take once it ships.
+ * Pass the {@see $fileAccessKey} to
+ * {@see \Dropshipping\Endpoints\VehicleRegistrations\VehicleRegistrationsEndpoint::downloadFileContent()}
+ * to fetch the content, before {@see $expirationTime} passes.
  *
  * Treat that key as opaque. Its internal structure is going to change, and nothing
  * in it is meant to be parsed, validated or split by consumers.

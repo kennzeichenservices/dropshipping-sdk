@@ -13,7 +13,7 @@ use Dropshipping\Support\Validator;
  * Assignment strategy using a previously reserved license plate number.
  *
  * @experimental Vehicle registration is a beta feature of the dropshipping API
- *               (2.3.2) and may change without a major version bump.
+ *               (2.4.0) and may change without a major version bump.
  */
 final readonly class VehicleRegistrationLicensePlateNumberAssignmentStrategyReservation implements VehicleRegistrationLicensePlateNumberAssignmentStrategyInterface
 {

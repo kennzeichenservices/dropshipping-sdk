@@ -2,14 +2,14 @@
 
 Submits a vehicle registration (Kfz-Zulassung) via `POST /vehicleRegistrations/registrations`.
 
-> **Beta** — vehicle registration was introduced in dropshipping API 2.3.2. The request and
+> **Beta** — vehicle registration is modelled against dropshipping API 2.4.0. The request and
 > response shapes may still change; treat changes to these classes as non-breaking.
 
 ## What it does
 
 1. Builds the registration customization: assignment strategy, service type code, vehicle data, bank details.
-2. Sends the request and receives an order ID, an identity verification vendor ID, and the **customer input form URL**.
-3. Hands the customer that URL — the registration is only processed once they have provided their identification data and signatures there.
+2. Sends the request and receives the order ID — that is the entire response.
+3. Waits for the webhooks: the customer has to identify themselves and sign the documents, and the URL for each step is delivered by its `…_INITIALIZED` event. The registration is only processed once the customer has completed both.
 
 ## The three assignment strategies
 
@@ -44,7 +44,7 @@ licensePlateNumberAssignmentStrategy: DS::reservedLicensePlateNumber(
 | `VehicleRegistrationLicensePlateNumberAssignmentStrategyInterface` | Implemented by the `…Random`, `…Reservation` and `…Retained` strategies, each carrying its own plate fields |
 | `VehicleRegistrationPreviousLicensePlate` | The plate the vehicle carried before, if any |
 | `VehicleRegistrationVehicleHolder` | Vehicle holder address and birth details |
-| `VehicleRegistrationResponse` | `orderId`, `identityVerificationVendorId`, `customerInputFormUrl` |
+| `VehicleRegistrationResponse` | `orderId` |
 | `VehicleRegistrationLicensePlateNumberAssignmentStrategyType` | Enum: `RANDOM`, `RESERVATION`, `RETAINMENT` |
 | `VehicleRegistrationServiceTypeCode` | Enum: `NZ`, `WZ`, `UO`, `UI`, `UM`, `WG`, `UG`, `HA` |
 | `VehicleRegistrationVehicleType` | Enum: `CAR`, `MOTORCYCLE`, `TRAILER` |
@@ -96,8 +96,9 @@ typed:
 | `VEHICLE_REGISTRATION_XKFZ_EVENT` | `VehicleRegistrationXkfzEvent` |
 
 Register a handler per event type as in [webhooks.md](webhooks.md). The XKFZ event's `files`
-carry a `fileAccessKey`; unlike deregistrations there is no download method on the client yet,
-because no published API spec describes the operation.
+carry a `fileAccessKey` — pass it to
+`$client->vehicleRegistrations->downloadFileContent($file->fileAccessKey)` to fetch the content
+before the file's `expirationTime` passes.
 
 ## Run
 

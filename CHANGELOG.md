@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Features
+
+- Add `$client->vehicleRegistrations->downloadFileContent()` for the
+  `GET /vehicleRegistrations/files/content/{fileAccessKey}` operation introduced in dropshipping
+  API 2.4.0. Takes the `fileAccessKey` from a `VEHICLE_REGISTRATION_XKFZ_EVENT` file.
+
+### Breaking (beta)
+
+- `VehicleRegistrationResponse` no longer exposes `identityVerificationVendorId` and
+  `customerInputFormUrl` — dropshipping API 2.4.0 removed both from the response, which now
+  carries the order ID alone. The customer-facing URLs arrive as webhook events instead:
+  `identityVerificationUrl` on `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED` and
+  `documentSignatureUrl` on `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED`. Vehicle
+  registration is `@experimental`, so this lands outside the BC guarantee.
+- Vehicle registration now targets API version 2.4.0 — opt in with `DROPSHIPPING_API_VERSION=2.4.0`
+  or `apiVersion: '2.4.0'` instead of 2.3.2. `api-version` in `composer.json` stays at 2.3.1.
+
+### Miscellaneous
+
+- Add dropshipping API 2.4.0 spec; refresh the webhooks 3.2.0 spec (no schema changes)
+
 ## [2.3.20] — 2026-07-29
 
 ### Features

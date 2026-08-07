@@ -53,9 +53,9 @@ final class DropshippingConfigTest extends TestCase
 
     public function test_getBaseUrl_uses_explicit_api_version(): void
     {
-        $config = new DropshippingConfig('api.example.com', 42, 'user', 'pass', null, '2.3.2');
+        $config = new DropshippingConfig('api.example.com', 42, 'user', 'pass', null, '2.4.0');
 
-        self::assertSame('https://api.example.com/dropshipping-api/42/2.3.2', $config->getBaseUrl());
+        self::assertSame('https://api.example.com/dropshipping-api/42/2.4.0', $config->getBaseUrl());
     }
 
     /**
@@ -95,9 +95,9 @@ final class DropshippingConfigTest extends TestCase
         putenv('DROPSHIPPING_API_VERSION=9.9.9');
 
         try {
-            $config = new DropshippingConfig('api.example.com', 42, 'user', 'pass', null, '2.3.2');
+            $config = new DropshippingConfig('api.example.com', 42, 'user', 'pass', null, '2.4.0');
 
-            self::assertStringEndsWith('/2.3.2', $config->getBaseUrl());
+            self::assertStringEndsWith('/2.4.0', $config->getBaseUrl());
         } finally {
             self::restoreApiVersionEnv($previous);
         }

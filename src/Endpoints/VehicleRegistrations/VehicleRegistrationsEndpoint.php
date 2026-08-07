@@ -7,17 +7,18 @@ namespace Dropshipping\Endpoints\VehicleRegistrations;
 use Dropshipping\Client\Psr18HttpClient;
 use Dropshipping\DTO\Requests\VehicleRegistrationRequest;
 use Dropshipping\DTO\Responses\VehicleRegistrationResponse;
+use Dropshipping\Exceptions\ApiException;
 use Dropshipping\Http\RequestFactory;
 use Dropshipping\Http\ResponseMapper;
 
 /**
  * API endpoint for vehicle registration operations.
  *
- * Provides the method to submit a vehicle registration request
- * through the dropshipping API.
+ * Provides the methods to submit a vehicle registration request and to download
+ * the files the registration produces.
  *
  * @experimental Vehicle registration is a beta feature of the dropshipping API
- *               (2.3.2) and may change without a major version bump.
+ *               (2.4.0) and may change without a major version bump.
  */
 final class VehicleRegistrationsEndpoint
 {
@@ -38,14 +39,15 @@ final class VehicleRegistrationsEndpoint
     /**
      * Submit a vehicle registration request.
      *
-     * The returned {@see VehicleRegistrationResponse::$customerInputFormUrl} must be
-     * handed to the customer — the registration is only processed once the customer
-     * has completed that form. Results are delivered via webhook events.
+     * The response carries only the created order ID. The customer still has to
+     * identify themselves and sign the documents — the URLs for both steps are
+     * delivered as VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED and
+     * VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED webhook events, as is
+     * the registration result itself.
      *
      * @param VehicleRegistrationRequest $request The registration request data.
      *
-     * @return VehicleRegistrationResponse The registration result containing the order ID,
-     *                                     identity verification vendor ID and customer input form URL.
+     * @return VehicleRegistrationResponse The registration result containing the order ID.
      */
     public function createRegistration(
         VehicleRegistrationRequest $request,
@@ -60,5 +62,28 @@ final class VehicleRegistrationsEndpoint
         $data = $this->responseMapper->mapResponse($response);
 
         return VehicleRegistrationResponse::fromArray($data);
+    }
+
+    /**
+     * Download the binary content of a vehicle registration file.
+     *
+     * The {@see $fileAccessKey} is obtained from a {@see \Dropshipping\DTO\Webhooks\VehicleRegistrationXkfzEventFile}
+     * attached to a VEHICLE_REGISTRATION_XKFZ_EVENT webhook event.
+     *
+     * @param string $fileAccessKey The file access key from the webhook event.
+     *
+     * @return string Raw binary file content.
+     *
+     * @throws ApiException When the API responds with an unexpected status code.
+     */
+    public function downloadFileContent(string $fileAccessKey): string
+    {
+        $httpRequest = $this->requestFactory->createBinaryGetRequest(
+            $this->baseUrl . '/vehicleRegistrations/files/content/' . rawurlencode($fileAccessKey),
+        );
+
+        $response = $this->httpClient->sendRequest($httpRequest);
+
+        return $this->responseMapper->readBody($response);
     }
 }
