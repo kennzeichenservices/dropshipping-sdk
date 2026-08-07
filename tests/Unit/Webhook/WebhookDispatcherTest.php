@@ -40,7 +40,7 @@ final class WebhookDispatcherTest extends TestCase
 
         $dispatcher = new WebhookDispatcher($pipeline);
         $dispatcher->registerHandler($handler);
-        $dispatcher->dispatch(new WebhookMessage('p', 's', 1, '1.0'));
+        $dispatcher->dispatch(new WebhookMessage('p', 's', 1, '3.2.0'));
 
         self::assertTrue($spy->handled);
     }
@@ -69,7 +69,7 @@ final class WebhookDispatcherTest extends TestCase
 
         $dispatcher = new WebhookDispatcher($pipeline);
         $dispatcher->registerHandler($handler);
-        $dispatcher->dispatch(new WebhookMessage('p', 's', 1, '1.0'));
+        $dispatcher->dispatch(new WebhookMessage('p', 's', 1, '3.2.0'));
 
         self::assertFalse($spy->handled);
     }
@@ -82,7 +82,7 @@ final class WebhookDispatcherTest extends TestCase
         $this->expectException(WebhookException::class);
         $this->expectExceptionMessage('No event was deserialized');
 
-        $dispatcher->dispatch(new WebhookMessage('p', 's', 1, '1.0'));
+        $dispatcher->dispatch(new WebhookMessage('p', 's', 1, '3.2.0'));
     }
 
     private function createEventMiddleware(WebhookEventInterface $event): WebhookMiddlewareInterface

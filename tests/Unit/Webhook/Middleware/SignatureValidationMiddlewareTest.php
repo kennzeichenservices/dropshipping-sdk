@@ -20,7 +20,7 @@ final class SignatureValidationMiddlewareTest extends TestCase
 
         $verifier = new WebhookSignatureVerifier($secret);
         $middleware = new SignatureValidationMiddleware($verifier);
-        $message = new WebhookMessage($payload, $signature, 1, '1.0');
+        $message = new WebhookMessage($payload, $signature, 1, '3.2.0');
 
         $nextCalled = false;
         $result = $middleware->process($message, function (WebhookMessage $msg) use (&$nextCalled) {
@@ -36,7 +36,7 @@ final class SignatureValidationMiddlewareTest extends TestCase
     {
         $verifier = new WebhookSignatureVerifier('secret');
         $middleware = new SignatureValidationMiddleware($verifier);
-        $message = new WebhookMessage('payload', 'bad-sig', 1, '1.0');
+        $message = new WebhookMessage('payload', 'bad-sig', 1, '3.2.0');
 
         $this->expectException(WebhookException::class);
 

@@ -15,7 +15,7 @@ final class WebhookPipelineTest extends TestCase
     public function test_process_without_middleware_returns_message_unchanged(): void
     {
         $pipeline = new WebhookPipeline();
-        $message = new WebhookMessage('payload', 'sig', 1, '1.0');
+        $message = new WebhookMessage('payload', 'sig', 1, '3.2.0');
 
         $result = $pipeline->process($message);
 
@@ -51,7 +51,7 @@ final class WebhookPipelineTest extends TestCase
         $pipeline = new WebhookPipeline();
         $pipeline->pipe($first)->pipe($second);
 
-        $pipeline->process(new WebhookMessage('p', 's', 1, '1.0'));
+        $pipeline->process(new WebhookMessage('p', 's', 1, '3.2.0'));
 
         self::assertSame(['first', 'second'], $log->entries);
     }
@@ -69,7 +69,7 @@ final class WebhookPipelineTest extends TestCase
         $pipeline = new WebhookPipeline();
         $pipeline->pipe($middleware);
 
-        $result = $pipeline->process(new WebhookMessage('p', 's', 1, '1.0'));
+        $result = $pipeline->process(new WebhookMessage('p', 's', 1, '3.2.0'));
 
         self::assertNotNull($result->getEvent());
     }

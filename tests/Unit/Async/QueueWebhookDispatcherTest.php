@@ -34,7 +34,7 @@ final class QueueWebhookDispatcherTest extends TestCase
         $this->expectExceptionMessage('Invalid webhook signature');
 
         $this->dispatcher($queue)->dispatch(
-            new WebhookMessage('{"eventType":"PING"}', 'forged-signature', 1, '3.1.0'),
+            new WebhookMessage('{"eventType":"PING"}', 'forged-signature', 1, '3.2.0'),
         );
     }
 
@@ -48,7 +48,7 @@ final class QueueWebhookDispatcherTest extends TestCase
 
         try {
             $this->dispatcher($queue)->dispatch(
-                new WebhookMessage('{"eventType":"PING"}', 'forged-signature', 1, '3.1.0'),
+                new WebhookMessage('{"eventType":"PING"}', 'forged-signature', 1, '3.2.0'),
             );
         } catch (WebhookException) {
             // expected — assertion below is the point of this test
@@ -82,7 +82,7 @@ final class QueueWebhookDispatcherTest extends TestCase
 
     private function message(string $payload, string $secret): WebhookMessage
     {
-        return new WebhookMessage($payload, hash_hmac('sha256', $payload, $secret), 1, '3.1.0');
+        return new WebhookMessage($payload, hash_hmac('sha256', $payload, $secret), 1, '3.2.0');
     }
 
     private function queue(): RecordingWebhookQueue

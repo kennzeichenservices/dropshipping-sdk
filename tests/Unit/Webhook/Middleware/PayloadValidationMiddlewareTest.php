@@ -22,7 +22,7 @@ final class PayloadValidationMiddlewareTest extends TestCase
     public function test_process_passes_valid_payload(): void
     {
         $payload = json_encode(['eventType' => 'PING', 'eventTime' => '2024-01-01T00:00:00Z']);
-        $message = new WebhookMessage($payload, 'sig', 1, '1.0');
+        $message = new WebhookMessage($payload, 'sig', 1, '3.2.0');
 
         $nextCalled = false;
         $this->middleware->process($message, function (WebhookMessage $msg) use (&$nextCalled) {
@@ -35,7 +35,7 @@ final class PayloadValidationMiddlewareTest extends TestCase
 
     public function test_process_throws_on_empty_payload(): void
     {
-        $message = new WebhookMessage('', 'sig', 1, '1.0');
+        $message = new WebhookMessage('', 'sig', 1, '3.2.0');
 
         $this->expectException(WebhookException::class);
         $this->expectExceptionMessage('must not be empty');
@@ -46,7 +46,7 @@ final class PayloadValidationMiddlewareTest extends TestCase
     public function test_process_throws_when_eventType_missing(): void
     {
         $payload = json_encode(['eventTime' => '2024-01-01T00:00:00Z']);
-        $message = new WebhookMessage($payload, 'sig', 1, '1.0');
+        $message = new WebhookMessage($payload, 'sig', 1, '3.2.0');
 
         $this->expectException(WebhookException::class);
         $this->expectExceptionMessage('eventType');
@@ -57,7 +57,7 @@ final class PayloadValidationMiddlewareTest extends TestCase
     public function test_process_throws_when_eventTime_missing(): void
     {
         $payload = json_encode(['eventType' => 'PING']);
-        $message = new WebhookMessage($payload, 'sig', 1, '1.0');
+        $message = new WebhookMessage($payload, 'sig', 1, '3.2.0');
 
         $this->expectException(WebhookException::class);
         $this->expectExceptionMessage('eventTime');
