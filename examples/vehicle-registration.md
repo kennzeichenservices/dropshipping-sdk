@@ -124,10 +124,15 @@ typed:
 | `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_FAILED` | `VehicleRegistrationDocumentSignatureFailedEvent` |
 | `VEHICLE_REGISTRATION_XKFZ_EVENT` | `VehicleRegistrationXkfzEvent` |
 
-Register a handler per event type as in [webhooks.md](webhooks.md). The XKFZ event's `files`
-carry a `fileAccessKey` — pass it to
-`$client->vehicleRegistrations->downloadFileContent($file->fileAccessKey)` to fetch the content
-before the file's `expirationTime` passes.
+Register a handler per event type as in [webhooks.md](webhooks.md).
+
+Two of those events carry files, and each has its own download operation. The XKFZ event's
+`files` — the documents the registration office issues — go to
+`$client->vehicleRegistrations->downloadFileContent($file->fileAccessKey)`. The document
+signature success event's `applicationFiles` — the power of attorney, the GDPR consent
+declaration and the motor vehicle tax SEPA mandate, as the customer just signed them — go to
+`$client->vehicleRegistrations->downloadApplicationFileContent($file->fileAccessKey)`. The two
+key namespaces are not interchangeable. Fetch either before the file's `expirationTime` passes.
 
 ## Run
 

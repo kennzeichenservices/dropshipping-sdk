@@ -83,4 +83,29 @@ final class VehicleRegistrationsEndpoint
 
         return $this->responseMapper->readBody($response);
     }
+
+    /**
+     * Download the binary content of a signed vehicle registration application file.
+     *
+     * The {@see $fileAccessKey} is obtained from a {@see \Dropshipping\DTO\Webhooks\VehicleRegistrationApplicationFile}
+     * attached to a VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED webhook event.
+     * Keys from a VEHICLE_REGISTRATION_XKFZ_EVENT belong to {@see downloadFileContent()}
+     * instead — the two operations do not serve each other's keys.
+     *
+     * @param string $fileAccessKey The file access key from the webhook event.
+     *
+     * @return string Raw binary file content.
+     *
+     * @throws ApiException When the API responds with an unexpected status code.
+     */
+    public function downloadApplicationFileContent(string $fileAccessKey): string
+    {
+        $httpRequest = $this->requestFactory->createBinaryGetRequest(
+            $this->baseUrl . '/vehicleRegistrations/applicationFiles/content/' . rawurlencode($fileAccessKey),
+        );
+
+        $response = $this->httpClient->sendRequest($httpRequest);
+
+        return $this->responseMapper->readBody($response);
+    }
 }

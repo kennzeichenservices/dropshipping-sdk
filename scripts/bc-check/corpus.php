@@ -227,6 +227,21 @@ return [
     ['documentSignatureSucceeded', 'Dropshipping\DTO\Webhooks\VehicleRegistrationDocumentSignatureSucceededEvent', [
         'eventTime' => '2026-01-01T10:00:00', 'order' => $order, 'identityVerificationVendor' => ['id' => 1],
     ]],
+    ['documentSignatureSucceeded/with-application-files', 'Dropshipping\DTO\Webhooks\VehicleRegistrationDocumentSignatureSucceededEvent', [
+        'eventTime' => '2026-01-01T10:00:00', 'order' => $order, 'identityVerificationVendor' => ['id' => 1],
+        'applicationFiles' => [
+            [
+                'purposeType' => 'VEHICLE_REGISTRATION_APPLICATION_POWER_OF_ATTORNEY',
+                'mediaType' => 'application/pdf', 'fileAccessKey' => 'K1',
+                'expirationTime' => '2026-01-01T11:00:00',
+            ],
+            [
+                'purposeType' => 'VEHICLE_REGISTRATION_GDPR_CONSENT_DECLARATION',
+                'mediaType' => 'application/pdf', 'fileAccessKey' => 'K2',
+                'expirationTime' => '2026-01-01T11:00:00',
+            ],
+        ],
+    ]],
     ['documentSignatureFailed/with-message', 'Dropshipping\DTO\Webhooks\VehicleRegistrationDocumentSignatureFailedEvent', [
         'eventTime' => '2026-01-01T10:00:00', 'order' => $order, 'identityVerificationVendor' => ['id' => 1],
         'message' => 'M',

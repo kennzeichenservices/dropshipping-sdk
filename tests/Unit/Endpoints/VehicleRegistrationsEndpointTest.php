@@ -134,6 +134,40 @@ final class VehicleRegistrationsEndpointTest extends TestCase
         $endpoint->downloadFileContent('some-key');
     }
 
+    public function test_downloadApplicationFileContent_hits_the_applicationFiles_path(): void
+    {
+        $binary = "%PDF-1.4\n\x00\x01binary\xff";
+
+        $endpoint = $this->endpointReturning(
+            new Response(200, [], $binary),
+            function (RequestInterface $request): void {
+                self::assertSame('GET', $request->getMethod());
+                self::assertStringEndsWith(
+                    '/vehicleRegistrations/applicationFiles/content/key%2Fwith%20chars',
+                    (string) $request->getUri(),
+                );
+            },
+        );
+
+        self::assertSame($binary, $endpoint->downloadApplicationFileContent('key/with chars'));
+    }
+
+    public function test_downloadApplicationFileContent_throws_api_exception_with_the_error_message(): void
+    {
+        $endpoint = $this->endpointReturning(
+            new Response(404, ['X-Trace-Id' => 'trace-11'], '{"error":"File access key expired"}'),
+        );
+
+        try {
+            $endpoint->downloadApplicationFileContent('expired-key');
+            self::fail('Expected ApiException');
+        } catch (ApiException $e) {
+            self::assertSame('File access key expired', $e->getMessage());
+            self::assertSame(404, $e->getStatusCode());
+            self::assertSame('trace-11', $e->getTraceId());
+        }
+    }
+
     /**
      * @param (callable(RequestInterface): void)|null $assertRequest
      */

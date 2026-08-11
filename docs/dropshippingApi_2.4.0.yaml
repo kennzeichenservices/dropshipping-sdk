@@ -7,7 +7,7 @@ servers:
     - url: https://{host}/dropshipping-api/{dropshippingClientId}/2.4.0
       variables:
           host:
-              default: api.kennzeichen.dev
+              default: PLACEHOLDER_DROPSHIPPING_API_HOST_DEFAULT
               description: API host
           dropshippingClientId:
               default: 0
@@ -628,6 +628,32 @@ paths:
                       format: password
                   required: true
                   description: Obtained from a VEHICLE_REGISTRATION_XKFZ_EVENT webhook event.
+            responses:
+                "200":
+                    description: File content
+                    content:
+                        "application/octet-stream":
+                            schema:
+                                type: string
+                                format: binary
+                default:
+                    description: Unexpected error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /vehicleRegistrations/applicationFiles/content/{fileAccessKey}:
+        get:
+            summary: Download vehicle registration application file content.
+            operationId: VehicleRegistrationApplicationFileContentDownload
+            parameters:
+                - in: path
+                  name: fileAccessKey
+                  schema:
+                      type: string
+                      format: password
+                  required: true
+                  description: Obtained from a VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED webhook event.
             responses:
                 "200":
                     description: File content

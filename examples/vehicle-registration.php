@@ -74,9 +74,17 @@ echo "Registration order created: {$response->orderId}\n";
 //   VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED     — send the customer to
 //                                                             $event->documentSignatureUrl
 //   VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED / _FAILED
+//                                                           — _SUCCEEDED carries the signed
+//                                                             documents in $event->applicationFiles
 //   VEHICLE_REGISTRATION_XKFZ_EVENT  — the registration office verdict and the assigned plate
 //
-// Use $client->vehicleRegistrations->downloadFileContent($file->fileAccessKey)
-// to fetch the files attached to a VEHICLE_REGISTRATION_XKFZ_EVENT.
+// Both kinds of file carry a fileAccessKey, but each has its own download operation:
+//
+//   $client->vehicleRegistrations->downloadFileContent($file->fileAccessKey)
+//       for the files on a VEHICLE_REGISTRATION_XKFZ_EVENT
+//   $client->vehicleRegistrations->downloadApplicationFileContent($file->fileAccessKey)
+//       for the applicationFiles on a VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED
+//
+// Fetch either before the file's expirationTime passes.
 //
 // See webhooks.php for the full event handling setup.

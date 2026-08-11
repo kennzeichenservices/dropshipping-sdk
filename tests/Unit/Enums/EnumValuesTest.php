@@ -10,6 +10,7 @@ use Dropshipping\Enums\LicensePlateUsageType;
 use Dropshipping\Enums\ProductType;
 use Dropshipping\Enums\VehicleDeregistrationLicensePlateType;
 use Dropshipping\Enums\VehicleDeregistrationVehicleType;
+use Dropshipping\Enums\VehicleRegistrationApplicationFilePurposeType;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateNumberAssignmentStrategyType;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
 use Dropshipping\Enums\VehicleRegistrationServiceTypeCode;
@@ -177,6 +178,19 @@ final class EnumValuesTest extends TestCase
         self::assertSame('VEHICLE_REGISTRATION_MOTOR_VEHICLE_TAX_SEPA_DIRECT_DEBIT_MANDATE', VehicleRegistrationXkfzEventFilePurposeType::VehicleRegistrationMotorVehicleTaxSepaDirectDebitMandate->value);
         self::assertSame('VEHICLE_REGISTRATION_REJECTION_NOTICE', VehicleRegistrationXkfzEventFilePurposeType::VehicleRegistrationRejectionNotice->value);
         self::assertCount(10, VehicleRegistrationXkfzEventFilePurposeType::cases());
+    }
+
+    public function test_vehicle_registration_application_file_purpose_type_values(): void
+    {
+        self::assertSame('OTHER', VehicleRegistrationApplicationFilePurposeType::Other->value);
+        self::assertSame('VEHICLE_REGISTRATION_APPLICATION_POWER_OF_ATTORNEY', VehicleRegistrationApplicationFilePurposeType::VehicleRegistrationApplicationPowerOfAttorney->value);
+        self::assertSame('VEHICLE_REGISTRATION_GDPR_CONSENT_DECLARATION', VehicleRegistrationApplicationFilePurposeType::VehicleRegistrationGdprConsentDeclaration->value);
+        self::assertSame('VEHICLE_REGISTRATION_MOTOR_VEHICLE_TAX_SEPA_DIRECT_DEBIT_MANDATE', VehicleRegistrationApplicationFilePurposeType::VehicleRegistrationMotorVehicleTaxSepaDirectDebitMandate->value);
+        self::assertCount(4, VehicleRegistrationApplicationFilePurposeType::cases());
+
+        // The signed-application set is a strict subset of the XKFZ one; nothing outside it
+        // may leak in, or downloads would be routed to the wrong operation.
+        self::assertNull(VehicleRegistrationApplicationFilePurposeType::tryFrom('VEHICLE_REGISTRATION_APPROVAL_NOTICE'));
     }
 
     public function test_from_invalid_value_throws(): void

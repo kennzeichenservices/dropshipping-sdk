@@ -11,14 +11,17 @@ use Dropshipping\DTO\Webhooks\VehicleRegistrationIdentityVerificationFailedEvent
 use Dropshipping\DTO\Webhooks\VehicleRegistrationIdentityVerificationInitializedEvent;
 use Dropshipping\DTO\Webhooks\VehicleRegistrationIdentityVerificationSucceededEvent;
 use Dropshipping\DTO\Webhooks\VehicleRegistrationIdentityVerificationVendor;
+use Dropshipping\Enums\VehicleRegistrationApplicationFilePurposeType;
 use Dropshipping\Enums\WebhookEventType;
+use Dropshipping\Exceptions\DropshippingException;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Covers the six flat vehicle registration lifecycle events.
+ * Covers the six vehicle registration lifecycle events that precede the XKFZ verdict.
  *
  * The factory test proves each eventType maps to the right class; this one covers
- * what it does not: the optional failure message, and the vendor value object.
+ * what it does not: the optional failure message, the vendor value object, and the
+ * signed application files on the document signature success.
  */
 final class VehicleRegistrationLifecycleEventsTest extends TestCase
 {
@@ -97,11 +100,74 @@ final class VehicleRegistrationLifecycleEventsTest extends TestCase
             'eventTime' => '2023-10-31T12:34:56',
             'order' => ['id' => 2],
             'identityVerificationVendor' => ['id' => 1],
+            'applicationFiles' => [
+                [
+                    'purposeType' => 'VEHICLE_REGISTRATION_APPLICATION_POWER_OF_ATTORNEY',
+                    'mediaType' => 'application/pdf',
+                    'fileAccessKey' => '2_11111111-1111-1111-1111-111111111111_78_1234',
+                    'expirationTime' => '2000-10-31T01:30:44',
+                ],
+                [
+                    'purposeType' => 'VEHICLE_REGISTRATION_MOTOR_VEHICLE_TAX_SEPA_DIRECT_DEBIT_MANDATE',
+                    'mediaType' => 'application/pdf',
+                    'fileAccessKey' => '2_11111111-1111-1111-1111-111111111111_78_123456',
+                    'expirationTime' => '2000-10-31T01:30:46',
+                ],
+            ],
         ]);
 
         self::assertSame(WebhookEventType::VehicleRegistrationDocumentSignatureSucceeded, $event->getEventType());
         self::assertSame(2, $event->order->id);
         self::assertSame(1, $event->identityVerificationVendor->id);
+
+        self::assertCount(2, $event->applicationFiles);
+        self::assertSame(
+            VehicleRegistrationApplicationFilePurposeType::VehicleRegistrationApplicationPowerOfAttorney,
+            $event->applicationFiles[0]->purposeType,
+        );
+        self::assertSame('application/pdf', $event->applicationFiles[0]->mediaType);
+        self::assertSame('2_11111111-1111-1111-1111-111111111111_78_1234', $event->applicationFiles[0]->fileAccessKey);
+        self::assertSame('2000-10-31T01:30:44', $event->applicationFiles[0]->expirationTime);
+        self::assertSame(
+            VehicleRegistrationApplicationFilePurposeType::VehicleRegistrationMotorVehicleTaxSepaDirectDebitMandate,
+            $event->applicationFiles[1]->purposeType,
+        );
+    }
+
+    /**
+     * `applicationFiles` is required as of webhooks 3.2.0, but an event without it is
+     * still delivered rather than throwing — the handler just sees an empty list.
+     */
+    public function test_document_signature_succeeded_fromArray_without_application_files(): void
+    {
+        $event = VehicleRegistrationDocumentSignatureSucceededEvent::fromArray([
+            'eventTime' => '2023-10-31T12:34:56',
+            'order' => ['id' => 2],
+            'identityVerificationVendor' => ['id' => 1],
+        ]);
+
+        self::assertSame([], $event->applicationFiles);
+    }
+
+    public function test_document_signature_succeeded_fromArray_rejects_an_unmodelled_purpose_type(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage('Unsupported value string("VEHICLE_REGISTRATION_APPROVAL_NOTICE")');
+
+        VehicleRegistrationDocumentSignatureSucceededEvent::fromArray([
+            'eventTime' => '2023-10-31T12:34:56',
+            'order' => ['id' => 2],
+            'identityVerificationVendor' => ['id' => 1],
+            'applicationFiles' => [
+                [
+                    // Valid for an XKFZ event file, but not for a signed application file.
+                    'purposeType' => 'VEHICLE_REGISTRATION_APPROVAL_NOTICE',
+                    'mediaType' => 'application/pdf',
+                    'fileAccessKey' => 'key',
+                    'expirationTime' => '2000-10-31T01:30:44',
+                ],
+            ],
+        ]);
     }
 
     public function test_document_signature_failed_fromArray_with_message(): void

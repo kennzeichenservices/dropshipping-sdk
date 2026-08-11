@@ -27,6 +27,16 @@ return [
     'availability/non-sequential' =>
         '2.3.24 — same reindexing as above for availableLicensePlateNumbers.',
 
+    'documentSignatureSucceeded' =>
+        'Unreleased — webhooks 3.2.0 added applicationFiles to the document signature success '
+        . 'event, so the DTO gained the property. The difference is the new empty list on a '
+        . 'payload that predates the field; every field the old DTO carried is unchanged.',
+
+    'documentSignatureSucceeded/with-application-files' =>
+        'Unreleased — same addition, seen from the corpus entry that feeds the new field. The '
+        . 'baseline DTO drops applicationFiles on the floor, so a difference here is the point '
+        . 'of the entry. Both entries can go once the compared-against tag carries the field.',
+
     'vehicleRegistrationResponse' =>
         'Unreleased — dropshipping API 2.4.0 dropped identityVerificationVendorId and '
         . 'customerInputFormUrl from the vehicle registration response, so the DTO dropped them '

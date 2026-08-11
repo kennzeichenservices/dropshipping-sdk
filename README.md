@@ -552,6 +552,7 @@ The SDK follows these patterns:
 | `$client->vehicleDeregistrations->downloadFileContent()` | GET /vehicleDeregistrations/files/content/{fileAccessKey} | Download a file from a `VEHICLE_DEREGISTRATION_XKFZ_EVENT` webhook |
 | `$client->vehicleRegistrations->createRegistration()` | POST /vehicleRegistrations/registrations | Submit a vehicle registration |
 | `$client->vehicleRegistrations->downloadFileContent()` | GET /vehicleRegistrations/files/content/{fileAccessKey} | Download a file from a `VEHICLE_REGISTRATION_XKFZ_EVENT` webhook |
+| `$client->vehicleRegistrations->downloadApplicationFileContent()` | GET /vehicleRegistrations/applicationFiles/content/{fileAccessKey} | Download a signed document from a `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED` webhook |
 
 ### Webhook Event Types
 
@@ -570,7 +571,7 @@ The SDK follows these patterns:
 | `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_SUCCEEDED` | `VehicleRegistrationIdentityVerificationSucceededEvent` | Customer identified successfully |
 | `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_FAILED` | `VehicleRegistrationIdentityVerificationFailedEvent` | Identity check failed, with an optional `message` |
 | `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED` | `VehicleRegistrationDocumentSignatureInitializedEvent` | Signing started — send the customer to `documentSignatureUrl` |
-| `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED` | `VehicleRegistrationDocumentSignatureSucceededEvent` | Documents signed |
+| `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED` | `VehicleRegistrationDocumentSignatureSucceededEvent` | Documents signed — `applicationFiles` carries them, each with a `fileAccessKey` for `downloadApplicationFileContent()` |
 | `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_FAILED` | `VehicleRegistrationDocumentSignatureFailedEvent` | Signing failed, with an optional `message` |
 | _(any unrecognised type)_ | `UnknownWebhookEvent` | Only produced when the pipeline is built with `tolerateUnknownEvents: true`. Carries `rawEventType` and the full `payload` — see below |
 

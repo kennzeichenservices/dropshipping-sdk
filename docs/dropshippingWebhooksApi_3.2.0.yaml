@@ -881,6 +881,34 @@ components:
                     "eventTime": "2023-10-31T12:34:56",
                 }
 
+        VehicleRegistrationDocumentSignatureSucceededWebhookEventApplicationFilePurposeType:
+            type: string
+            enum:
+                - OTHER
+                - VEHICLE_REGISTRATION_APPLICATION_POWER_OF_ATTORNEY
+                - VEHICLE_REGISTRATION_GDPR_CONSENT_DECLARATION
+                - VEHICLE_REGISTRATION_MOTOR_VEHICLE_TAX_SEPA_DIRECT_DEBIT_MANDATE
+
+        VehicleRegistrationDocumentSignatureSucceededWebhookEventApplicationFile:
+            type: object
+            nullable: true
+            required:
+                - purposeType
+                - mediaType
+                - fileAccessKey
+                - expirationTime
+            properties:
+                purposeType:
+                    $ref: "#/components/schemas/VehicleRegistrationDocumentSignatureSucceededWebhookEventApplicationFilePurposeType"
+                mediaType:
+                    type: string
+                fileAccessKey:
+                    type: string
+                    format: password
+                    description: Necessary for downloading application file content via Dropshipping-API (since 2.4.0) VehicleRegistrationApplicationFileContentDownload operation.
+                expirationTime:
+                    $ref: "#/components/schemas/LocalDateTime"
+
         VehicleRegistrationDocumentSignatureSucceededWebhookEvent:
             type: object
             allOf:
@@ -888,16 +916,42 @@ components:
             required:
                 - identityVerificationVendor
                 - order
+                - applicationFiles
             properties:
                 identityVerificationVendor:
                     $ref: "#/components/schemas/VehicleRegistrationWebhookEventIdentityVerificationVendor"
                 order:
                     $ref: "#/components/schemas/VehicleRegistrationWebhookEventOrder"
+                applicationFiles:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/VehicleRegistrationDocumentSignatureSucceededWebhookEventApplicationFile"
             example:
                 {
                     "eventType": "VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED",
                     "identityVerificationVendor": { "id": 1 },
                     "order": { "id": 2, "externalId": null },
+                    "applicationFiles":
+                        [
+                            {
+                                "purposeType": "VEHICLE_REGISTRATION_APPLICATION_POWER_OF_ATTORNEY",
+                                "mediaType": "application/pdf",
+                                "fileAccessKey": "2_11111111-1111-1111-1111-111111111111_78_1234",
+                                "expirationTime": "2000-10-31T01:30:44",
+                            },
+                            {
+                                "purposeType": "VEHICLE_REGISTRATION_GDPR_CONSENT_DECLARATION",
+                                "mediaType": "application/pdf",
+                                "fileAccessKey": "2_11111111-1111-1111-1111-111111111111_78_12345",
+                                "expirationTime": "2000-10-31T01:30:45",
+                            },
+                            {
+                                "purposeType": "VEHICLE_REGISTRATION_MOTOR_VEHICLE_TAX_SEPA_DIRECT_DEBIT_MANDATE",
+                                "mediaType": "application/pdf",
+                                "fileAccessKey": "2_11111111-1111-1111-1111-111111111111_78_123456",
+                                "expirationTime": "2000-10-31T01:30:46",
+                            },
+                        ],
                     "eventTime": "2023-10-31T12:34:56",
                 }
 

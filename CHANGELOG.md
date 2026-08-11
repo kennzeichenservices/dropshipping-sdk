@@ -18,6 +18,17 @@ All notable changes to this project will be documented in this file.
 - Add `$client->vehicleRegistrations->downloadFileContent()` for the
   `GET /vehicleRegistrations/files/content/{fileAccessKey}` operation introduced in dropshipping
   API 2.4.0. Takes the `fileAccessKey` from a `VEHICLE_REGISTRATION_XKFZ_EVENT` file.
+- `VehicleRegistrationDocumentSignatureSucceededEvent` now carries `applicationFiles`: the
+  documents the customer just signed — power of attorney, GDPR consent declaration and the motor
+  vehicle tax SEPA mandate — as a `list<VehicleRegistrationApplicationFile>` typed by the new
+  `VehicleRegistrationApplicationFilePurposeType`. Added to the event in webhooks spec 3.2.0,
+  which declares the field required; the SDK reads it leniently and yields an empty list when it
+  is absent, so an event without it still reaches the handler.
+- Add `$client->vehicleRegistrations->downloadApplicationFileContent()` for the
+  `GET /vehicleRegistrations/applicationFiles/content/{fileAccessKey}` operation added to
+  dropshipping API 2.4.0. It serves the keys from those `applicationFiles` only —
+  `downloadFileContent()` remains the one for `VEHICLE_REGISTRATION_XKFZ_EVENT` files, and the two
+  key namespaces are not interchangeable.
 
 ### Breaking
 
@@ -51,7 +62,9 @@ All notable changes to this project will be documented in this file.
 
 ### Miscellaneous
 
-- Add dropshipping API 2.4.0 spec; refresh the webhooks 3.2.0 spec (no schema changes)
+- Add dropshipping API 2.4.0 spec and refresh the webhooks 3.2.0 spec. The latest refresh of both
+  adds the `VehicleRegistrationApplicationFileContentDownload` operation and the `applicationFiles`
+  on the document signature success event; everything else in them was already implemented.
 
 ## [2.3.20] — 2026-07-29
 
