@@ -46,7 +46,9 @@ $response = $client->vehicleRegistrations->createRegistration(
             vehicleTitleSecurityCode: 'ABCDEF123456',                // ZB II security code, exactly 12 chars
             iban: 'DE89370400440532013000',
             bic: 'COBADEFFXXX',
-            vehicleRegistrationCertificateSecurityCode: 'SEC1234',   // optional, ZB I, exactly 7 chars
+            // ZB I code and previousLicensePlate belong to a vehicle that was registered
+            // before. NZ is a first registration, so both must stay null — passing them
+            // throws. See the class docblock of VehicleRegistrationCustomization.
             vehicleTitleNumber: 'AB123456',                          // optional, exactly 8 chars
         ),
         vehicleHolderAddress: $address,

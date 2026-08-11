@@ -53,7 +53,10 @@ final class VehicleRegistrationCustomizationTest extends TestCase
             rearLicensePlateSecurityCode: 'R34',
         );
 
-        $array = $this->create(['previousLicensePlate' => $previous])->toArray();
+        $array = $this->create([
+            'vehicleRegistrationServiceTypeCode' => VehicleRegistrationServiceTypeCode::WZ,
+            'previousLicensePlate' => $previous,
+        ])->toArray();
 
         self::assertSame('HISTORICAL', $array['previousLicensePlate']['licensePlateType']);
         self::assertSame('F12', $array['previousLicensePlate']['frontLicensePlateSecurityCode']);
@@ -177,8 +180,65 @@ final class VehicleRegistrationCustomizationTest extends TestCase
     public function test_constructor_rejects_vehicleRegistrationCertificateSecurityCode_of_wrong_length(): void
     {
         $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage('must be between 7 and 7 characters');
 
-        $this->create(['vehicleRegistrationCertificateSecurityCode' => 'SEC12345']);
+        $this->create([
+            'vehicleRegistrationServiceTypeCode' => VehicleRegistrationServiceTypeCode::WZ,
+            'vehicleRegistrationCertificateSecurityCode' => 'SEC12345',
+        ]);
+    }
+
+    public function test_constructor_rejects_vehicleRegistrationCertificateSecurityCode_for_nz(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage(
+            'Field "vehicleRegistrationCertificateSecurityCode" must be null for vehicleRegistrationServiceTypeCode NZ',
+        );
+
+        $this->create([
+            'vehicleRegistrationServiceTypeCode' => VehicleRegistrationServiceTypeCode::NZ,
+            'vehicleRegistrationCertificateSecurityCode' => 'SEC1234',
+        ]);
+    }
+
+    public function test_constructor_rejects_previousLicensePlate_for_nz(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage(
+            'Field "previousLicensePlate" must be null for vehicleRegistrationServiceTypeCode NZ',
+        );
+
+        $this->create([
+            'vehicleRegistrationServiceTypeCode' => VehicleRegistrationServiceTypeCode::NZ,
+            'previousLicensePlate' => $this->previousLicensePlate(),
+        ]);
+    }
+
+    public function test_constructor_allows_previous_vehicle_fields_for_other_service_type_codes(): void
+    {
+        foreach (VehicleRegistrationServiceTypeCode::cases() as $code) {
+            if ($code === VehicleRegistrationServiceTypeCode::NZ) {
+                continue;
+            }
+
+            $array = $this->create([
+                'vehicleRegistrationServiceTypeCode' => $code,
+                'vehicleRegistrationCertificateSecurityCode' => 'SEC1234',
+                'previousLicensePlate' => $this->previousLicensePlate(),
+            ])->toArray();
+
+            self::assertSame('SEC1234', $array['vehicleRegistrationCertificateSecurityCode'], $code->value);
+            self::assertArrayHasKey('previousLicensePlate', $array, $code->value);
+        }
+    }
+
+    public function test_nz_stays_valid_without_the_forbidden_fields(): void
+    {
+        $array = $this->create(['vehicleRegistrationServiceTypeCode' => VehicleRegistrationServiceTypeCode::NZ])->toArray();
+
+        self::assertSame('NZ', $array['vehicleRegistrationServiceTypeCode']);
+        self::assertArrayNotHasKey('vehicleRegistrationCertificateSecurityCode', $array);
+        self::assertArrayNotHasKey('previousLicensePlate', $array);
     }
 
     public function test_constructor_rejects_too_short_iban(): void
@@ -193,6 +253,14 @@ final class VehicleRegistrationCustomizationTest extends TestCase
         $this->expectException(DropshippingException::class);
 
         $this->create(['bic' => 'COBADEFFXXXX']);
+    }
+
+    private function previousLicensePlate(): VehicleRegistrationPreviousLicensePlate
+    {
+        return new VehicleRegistrationPreviousLicensePlate(
+            licensePlateNumberComponents: new EuroLicensePlateNumberComponents('M', 'KG', '6988'),
+            licensePlateType: VehicleRegistrationLicensePlateType::Regular,
+        );
     }
 
     /**

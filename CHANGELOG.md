@@ -17,6 +17,15 @@ All notable changes to this project will be documented in this file.
 
 ### Breaking
 
+- `VehicleRegistrationCustomization` now rejects `vehicleRegistrationCertificateSecurityCode` and
+  `previousLicensePlate` when the service type code is `NZ`. A Neuzulassung is a vehicle's first
+  registration, so it has neither a ZB I nor a plate it carried before; the API rejects both — the
+  first one as `verificationCode must be null`, which is its internal name for the field the spec
+  calls `vehicleRegistrationCertificateSecurityCode`. Neither rule is published in any spec up to
+  2.4.0, and the rejection only arrives *after* identification and QES have run, so the SDK now
+  throws at construction time instead. Code that passed either field with `NZ` was already being
+  rejected by the API and has to drop it.
+
 - `VehicleRegistrationResponse` no longer exposes `identityVerificationVendorId` and
   `customerInputFormUrl` — dropshipping API 2.4.0 removed both from the response, which now
   carries the order ID alone. The customer-facing URLs arrive as webhook events instead:

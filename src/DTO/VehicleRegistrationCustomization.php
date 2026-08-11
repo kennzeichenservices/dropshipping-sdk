@@ -15,6 +15,26 @@ use Dropshipping\Support\Validator;
  *
  * Implements {@see ItemCustomizationInterface} and automatically sets the
  * product type to {@see ProductType::VehicleRegistration}.
+ *
+ * ## Rules the API enforces but does not publish
+ *
+ * Which fields a `vehicleRegistrationServiceTypeCode` allows is not part of any
+ * spec up to 2.4.0 — `VehicleRegistrationServiceTypeCode` is a bare enum block
+ * there, and both fields below are declared plainly `nullable`. The API still
+ * rejects them, and only after identification and QES have already run, which
+ * makes learning these rules by rejection expensive. The ones we know are
+ * therefore enforced here, at construction time:
+ *
+ * - `NZ` (Neuzulassung) forbids `vehicleRegistrationCertificateSecurityCode`.
+ *   A factory-new vehicle has no Zulassungsbescheinigung Teil I yet — it is
+ *   issued by this very registration. The API reports this as
+ *   `verificationCode must be null`; `verificationCode` is its internal name
+ *   for the field the spec calls `vehicleRegistrationCertificateSecurityCode`.
+ * - `NZ` forbids `previousLicensePlate`, for the same reason: there is no
+ *   plate the vehicle carried before.
+ *
+ * Both rules are confirmed by API rejections, not by documentation. Should the
+ * API ever accept these combinations, the guard here has to go with it.
  */
 final readonly class VehicleRegistrationCustomization implements ItemCustomizationInterface
 {
@@ -31,9 +51,9 @@ final readonly class VehicleRegistrationCustomization implements ItemCustomizati
      * @param string                                                           $vehicleTitleSecurityCode              Security code from Fahrzeugbrief / Zulassungsbescheinigung Teil II, exactly 12 characters.
      * @param string                                                           $iban                                  IBAN for the recurring vehicle tax debit.
      * @param string                                                           $bic                                   BIC belonging to the IBAN.
-     * @param string|null                                                      $vehicleRegistrationCertificateSecurityCode Security code from Fahrzeugschein / Zulassungsbescheinigung Teil I, exactly 7 characters.
+     * @param string|null                                                      $vehicleRegistrationCertificateSecurityCode Security code from Fahrzeugschein / Zulassungsbescheinigung Teil I, exactly 7 characters. Must be null for service type code NZ.
      * @param string|null                                                      $vehicleTitleNumber                    Number from Fahrzeugbrief / Zulassungsbescheinigung Teil II (Fahrzeugbriefnummer), exactly 8 characters.
-     * @param VehicleRegistrationPreviousLicensePlate|null                     $previousLicensePlate                  The license plate the vehicle carried before, if any.
+     * @param VehicleRegistrationPreviousLicensePlate|null                     $previousLicensePlate                  The license plate the vehicle carried before, if any. Must be null for service type code NZ.
      *
      * @throws DropshippingException When a value violates the API constraints.
      */
@@ -60,6 +80,13 @@ final readonly class VehicleRegistrationCustomization implements ItemCustomizati
         Validator::requireStringLength($bic, 'bic', 8, 11);
         Validator::requireNullableStringLength($vehicleRegistrationCertificateSecurityCode, 'vehicleRegistrationCertificateSecurityCode', 7, 7);
         Validator::requireNullableStringLength($vehicleTitleNumber, 'vehicleTitleNumber', 8, 8);
+
+        if ($vehicleRegistrationServiceTypeCode === VehicleRegistrationServiceTypeCode::NZ) {
+            $reason = 'for vehicleRegistrationServiceTypeCode NZ';
+
+            Validator::requireNull($vehicleRegistrationCertificateSecurityCode, 'vehicleRegistrationCertificateSecurityCode', $reason);
+            Validator::requireNull($previousLicensePlate, 'previousLicensePlate', $reason);
+        }
     }
 
     /**

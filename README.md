@@ -408,6 +408,14 @@ licensePlateNumberAssignmentStrategy: DS::reservedLicensePlateNumber(
 to choose, so it takes a `licensePlateType` too. `RETAINMENT` carries nothing; pair it with
 `DS::previousLicensePlate(...)` on the customization to keep an existing number.
 
+**`NZ` forbids everything belonging to a previous registration.** A Neuzulassung is a vehicle's
+first registration, so `vehicleRegistrationCertificateSecurityCode` (ZB I) and
+`previousLicensePlate` must both stay `null` -- the customization throws otherwise, and
+`RETAINMENT` is out for the same reason. The API reports the first one as
+`verificationCode must be null`, its internal name for that field. Neither rule appears in any
+spec up to 2.4.0, and the API only rejects the request *after* the customer has identified
+themselves and signed, which is why the SDK catches it up front.
+
 Everything after the order creation arrives as `VEHICLE_REGISTRATION_*` webhooks: the identity
 check and signing steps report their start and outcome, and `VEHICLE_REGISTRATION_XKFZ_EVENT`
 carries the registration office's verdict along with the assigned plate. See

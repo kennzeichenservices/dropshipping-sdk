@@ -81,6 +81,26 @@ before any HTTP call:
 | `birthName` | 1–100 |
 | front/rear plate security codes on `previousLicensePlate` | exactly 3 |
 
+## Fields forbidden for service type code NZ
+
+`NZ` (Neuzulassung) is the first registration of a vehicle, so there is nothing that came
+before it. Two otherwise optional fields must therefore stay `null`, and
+`VehicleRegistrationCustomization` throws when they do not:
+
+| Field | API rejects with |
+|-------|------------------|
+| `vehicleRegistrationCertificateSecurityCode` (ZB I) | `verificationCode must be null` |
+| `previousLicensePlate` | `previousLicensePlate must be null` |
+
+`verificationCode` is the API's internal name for the field the spec calls
+`vehicleRegistrationCertificateSecurityCode` — a ZB I only exists once this registration has
+issued it. This also rules out `DS::retainedLicensePlateNumber()` for `NZ`, since RETAINMENT has
+no number to keep without a previous plate.
+
+Neither rule is published in any spec up to 2.4.0, where `VehicleRegistrationServiceTypeCode` is
+a bare enum without descriptions and both fields are declared plainly nullable. They are enforced
+here because the API only rejects them *after* identification and QES have run.
+
 ## Webhooks
 
 Everything after the order creation is announced via webhook events (webhooks spec 3.2.0), all

@@ -97,6 +97,26 @@ final class Validator
     }
 
     /**
+     * Ensure that a value is null.
+     *
+     * Used for fields the API forbids in a specific context rather than in
+     * general — the field itself is nullable, but carrying a value makes the
+     * request invalid.
+     *
+     * @param mixed  $value  The value to validate.
+     * @param string $field  The field name used in the exception message.
+     * @param string $reason Why the field has to be null, appended to the message.
+     *
+     * @throws DropshippingException If the value is not null.
+     */
+    public static function requireNull(mixed $value, string $field, string $reason): void
+    {
+        if ($value !== null) {
+            throw new DropshippingException(sprintf('Field "%s" must be null %s', $field, $reason));
+        }
+    }
+
+    /**
      * Validate a nullable string length. Skips validation if the value is null.
      *
      * @param string|null $value The value to validate.
