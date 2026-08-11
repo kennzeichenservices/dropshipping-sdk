@@ -9,10 +9,12 @@ use Dropshipping\Enums\VehicleRegistrationLicensePlateNumberAssignmentStrategyTy
 /**
  * Assignment strategy retaining the number of the previous license plate.
  *
- * Pair this with {@see VehicleRegistrationCustomization::$previousLicensePlate}
- * so the API knows which number to carry over. That rules the strategy out for
- * service type code NZ, which forbids the previous plate — see the "Rules the
- * API enforces but does not publish" section on {@see VehicleRegistrationCustomization}.
+ * The strategy carries no data of its own; the number to carry over comes from
+ * {@see VehicleRegistrationCustomization::$previousLicensePlate}, which the
+ * customization therefore insists on — without its seals, which stay unread on
+ * a plate that is not handed in. Both rules, and why NZ cannot use this
+ * strategy at all, are in the "Rules the API enforces but does not publish"
+ * section on {@see VehicleRegistrationCustomization}.
  */
 final readonly class VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained implements VehicleRegistrationLicensePlateNumberAssignmentStrategyInterface
 {

@@ -20,21 +20,33 @@ use Dropshipping\Support\Validator;
  *
  * Which fields a `vehicleRegistrationServiceTypeCode` allows is not part of any
  * spec up to 2.4.0 — `VehicleRegistrationServiceTypeCode` is a bare enum block
- * there, and both fields below are declared plainly `nullable`. The API still
- * rejects them, and only after identification and QES have already run, which
- * makes learning these rules by rejection expensive. The ones we know are
+ * there, and every field below is declared plainly `nullable`. The API still
+ * rejects violations, and only after identification and QES have already run,
+ * which makes learning these rules by rejection expensive. The ones we know are
  * therefore enforced here, at construction time:
  *
- * - `NZ` (Neuzulassung) forbids `vehicleRegistrationCertificateSecurityCode`.
- *   A factory-new vehicle has no Zulassungsbescheinigung Teil I yet — it is
- *   issued by this very registration. The API reports this as
- *   `verificationCode must be null`; `verificationCode` is its internal name
- *   for the field the spec calls `vehicleRegistrationCertificateSecurityCode`.
- * - `NZ` forbids `previousLicensePlate`, for the same reason: there is no
- *   plate the vehicle carried before.
+ * - `NZ` (Neuzulassung) forbids `vehicleRegistrationCertificateSecurityCode`
+ *   and `previousLicensePlate`. A factory-new vehicle has no
+ *   Zulassungsbescheinigung Teil I yet — it is issued by this very
+ *   registration — and no plate it carried before. The API reports the first
+ *   one as `verificationCode must be null`; `verificationCode` is its internal
+ *   name for the field the spec calls
+ *   `vehicleRegistrationCertificateSecurityCode`.
+ * - Every other code *requires* both, for the mirror image of that reason: they
+ *   all continue an existing registration, which the ZB I security code and the
+ *   previous plate identify. See
+ *   {@see VehicleRegistrationServiceTypeCode::requiresPreviousRegistration()}.
+ * - `NZ`, `WZ` and `WG` require `deregistered` to be true — none of them can run
+ *   on a vehicle that is currently registered. See
+ *   {@see VehicleRegistrationServiceTypeCode::requiresDeregisteredVehicle()}.
+ * - The `RETAINMENT` strategy needs a `previousLicensePlate` to take the number
+ *   from, and forbids the two security codes on it: the plates stay on the
+ *   vehicle, so nobody scratches their seals off to read a code.
  *
- * Both rules are confirmed by API rejections, not by documentation. Should the
- * API ever accept these combinations, the guard here has to go with it.
+ * The sources are API rejections and the field requirement table of the
+ * registration request the platform builds from these values, neither of which
+ * is part of the published spec. Should the API ever accept these combinations,
+ * the guards here have to go with them.
  */
 final readonly class VehicleRegistrationCustomization implements ItemCustomizationInterface
 {
@@ -44,16 +56,16 @@ final readonly class VehicleRegistrationCustomization implements ItemCustomizati
     /**
      * @param VehicleRegistrationLicensePlateNumberAssignmentStrategyInterface $licensePlateNumberAssignmentStrategy How the license plate number is assigned. Carries the plate itself for the RESERVATION strategy.
      * @param VehicleRegistrationServiceTypeCode                               $vehicleRegistrationServiceTypeCode   The kind of registration procedure (Zulassungsvorgang).
-     * @param bool                                                             $deregistered                          True if the vehicle is already deregistered, false otherwise.
+     * @param bool                                                             $deregistered                          True if the vehicle is already deregistered, false otherwise. Must be true for service type codes NZ, WZ and WG.
      * @param VehicleRegistrationVehicleType                                   $vehicleType                           Type of vehicle being registered.
      * @param string                                                           $electronicInsuranceConfirmationNumber Electronic insurance confirmation number (eVB-Nummer), exactly 7 characters.
      * @param string                                                           $vehicleIdentificationNumber           Vehicle identification number (VIN / FIN).
      * @param string                                                           $vehicleTitleSecurityCode              Security code from Fahrzeugbrief / Zulassungsbescheinigung Teil II, exactly 12 characters.
      * @param string                                                           $iban                                  IBAN for the recurring vehicle tax debit.
      * @param string                                                           $bic                                   BIC belonging to the IBAN.
-     * @param string|null                                                      $vehicleRegistrationCertificateSecurityCode Security code from Fahrzeugschein / Zulassungsbescheinigung Teil I, exactly 7 characters. Must be null for service type code NZ.
+     * @param string|null                                                      $vehicleRegistrationCertificateSecurityCode Security code from Fahrzeugschein / Zulassungsbescheinigung Teil I, exactly 7 characters. Required for every service type code but NZ, which forbids it.
      * @param string|null                                                      $vehicleTitleNumber                    Number from Fahrzeugbrief / Zulassungsbescheinigung Teil II (Fahrzeugbriefnummer), exactly 8 characters.
-     * @param VehicleRegistrationPreviousLicensePlate|null                     $previousLicensePlate                  The license plate the vehicle carried before, if any. Must be null for service type code NZ.
+     * @param VehicleRegistrationPreviousLicensePlate|null                     $previousLicensePlate                  The license plate the vehicle carried before. Required for every service type code but NZ, which forbids it, and by the RETAINMENT strategy.
      *
      * @throws DropshippingException When a value violates the API constraints.
      */
@@ -81,11 +93,26 @@ final readonly class VehicleRegistrationCustomization implements ItemCustomizati
         Validator::requireNullableStringLength($vehicleRegistrationCertificateSecurityCode, 'vehicleRegistrationCertificateSecurityCode', 7, 7);
         Validator::requireNullableStringLength($vehicleTitleNumber, 'vehicleTitleNumber', 8, 8);
 
-        if ($vehicleRegistrationServiceTypeCode === VehicleRegistrationServiceTypeCode::NZ) {
-            $reason = 'for vehicleRegistrationServiceTypeCode NZ';
+        $forCode = sprintf('for vehicleRegistrationServiceTypeCode %s', $vehicleRegistrationServiceTypeCode->value);
 
-            Validator::requireNull($vehicleRegistrationCertificateSecurityCode, 'vehicleRegistrationCertificateSecurityCode', $reason);
-            Validator::requireNull($previousLicensePlate, 'previousLicensePlate', $reason);
+        if ($vehicleRegistrationServiceTypeCode->requiresPreviousRegistration()) {
+            Validator::requireNotNull($vehicleRegistrationCertificateSecurityCode, 'vehicleRegistrationCertificateSecurityCode', $forCode);
+            Validator::requireNotNull($previousLicensePlate, 'previousLicensePlate', $forCode);
+        } else {
+            Validator::requireNull($vehicleRegistrationCertificateSecurityCode, 'vehicleRegistrationCertificateSecurityCode', $forCode);
+            Validator::requireNull($previousLicensePlate, 'previousLicensePlate', $forCode);
+        }
+
+        if ($vehicleRegistrationServiceTypeCode->requiresDeregisteredVehicle()) {
+            Validator::requireTrue($deregistered, 'deregistered', $forCode);
+        }
+
+        if ($licensePlateNumberAssignmentStrategy instanceof VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained) {
+            $whenRetained = 'when the previous license plate number is retained';
+
+            Validator::requireNotNull($previousLicensePlate, 'previousLicensePlate', $whenRetained);
+            Validator::requireNull($previousLicensePlate?->frontLicensePlateSecurityCode, 'previousLicensePlate.frontLicensePlateSecurityCode', $whenRetained);
+            Validator::requireNull($previousLicensePlate?->rearLicensePlateSecurityCode, 'previousLicensePlate.rearLicensePlateSecurityCode', $whenRetained);
         }
     }
 

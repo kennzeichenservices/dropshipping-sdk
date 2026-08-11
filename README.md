@@ -363,7 +363,7 @@ $response = $client->vehicleRegistrations->createRegistration(
                 licensePlateType: VehicleRegistrationLicensePlateType::Regular,
             ),
             vehicleRegistrationServiceTypeCode: VehicleRegistrationServiceTypeCode::NZ,
-            deregistered: false,
+            deregistered: true,                                 // must be true for NZ, WZ and WG
             vehicleType: VehicleRegistrationVehicleType::Car,
             electronicInsuranceConfirmationNumber: 'ABC1234',   // eVB-Nummer, exactly 7 chars
             vehicleIdentificationNumber: 'WBA12345678901234',
@@ -405,16 +405,25 @@ licensePlateNumberAssignmentStrategy: DS::reservedLicensePlateNumber(
 ```
 
 `RANDOM` leaves only the *number* to the registration office -- the plate type is still yours
-to choose, so it takes a `licensePlateType` too. `RETAINMENT` carries nothing; pair it with
-`DS::previousLicensePlate(...)` on the customization to keep an existing number.
+to choose, so it takes a `licensePlateType` too. `RETAINMENT` carries nothing; it takes the
+number from the `DS::previousLicensePlate(...)` on the customization, which it therefore
+requires -- and it requires that plate to come without its two security codes, since the plates
+are never handed in.
 
-**`NZ` forbids everything belonging to a previous registration.** A Neuzulassung is a vehicle's
-first registration, so `vehicleRegistrationCertificateSecurityCode` (ZB I) and
-`previousLicensePlate` must both stay `null` -- the customization throws otherwise, and
-`RETAINMENT` is out for the same reason. The API reports the first one as
-`verificationCode must be null`, its internal name for that field. Neither rule appears in any
-spec up to 2.4.0, and the API only rejects the request *after* the customer has identified
-themselves and signed, which is why the SDK catches it up front.
+**The service type code decides what a previous registration contributes.** A Neuzulassung has
+none, every other code continues one, and the customization throws either way round:
+
+| Field | `NZ` | every other code |
+|-------|------|------------------|
+| `vehicleRegistrationCertificateSecurityCode` (ZB I) | must be `null` | required |
+| `previousLicensePlate` | must be `null` | required |
+| `deregistered` | must be `true` | `true` for `WZ` and `WG`, free otherwise |
+
+`RETAINMENT` is out for `NZ` as a consequence -- it has no previous plate to keep the number of.
+The API reports the ZB I violation as `verificationCode must be null`, its internal name for
+that field. None of these rules appear in any spec up to 2.4.0, and the API only rejects the
+request *after* the customer has identified themselves and signed, which is why the SDK catches
+them up front.
 
 Everything after the order creation arrives as `VEHICLE_REGISTRATION_*` webhooks: the identity
 check and signing steps report their start and outcome, and `VEHICLE_REGISTRATION_XKFZ_EVENT`

@@ -117,6 +117,45 @@ final class Validator
     }
 
     /**
+     * Ensure that a value is not null.
+     *
+     * The counterpart to {@see self::requireNull()}: the field is nullable in
+     * general, but leaving it out makes the request invalid in this particular
+     * context.
+     *
+     * @param mixed  $value  The value to validate.
+     * @param string $field  The field name used in the exception message.
+     * @param string $reason Why the field is required, appended to the message.
+     *
+     * @throws DropshippingException If the value is null.
+     */
+    public static function requireNotNull(mixed $value, string $field, string $reason): void
+    {
+        if ($value === null) {
+            throw new DropshippingException(sprintf('Field "%s" is required %s', $field, $reason));
+        }
+    }
+
+    /**
+     * Ensure that a boolean value is true.
+     *
+     * Used for flags the API accepts in both states in general, but only in one
+     * of them in a specific context.
+     *
+     * @param bool   $value  The value to validate.
+     * @param string $field  The field name used in the exception message.
+     * @param string $reason Why the field has to be true, appended to the message.
+     *
+     * @throws DropshippingException If the value is false.
+     */
+    public static function requireTrue(bool $value, string $field, string $reason): void
+    {
+        if ($value === false) {
+            throw new DropshippingException(sprintf('Field "%s" must be true %s', $field, $reason));
+        }
+    }
+
+    /**
      * Validate a nullable string length. Skips validation if the value is null.
      *
      * @param string|null $value The value to validate.

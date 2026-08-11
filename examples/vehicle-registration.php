@@ -39,7 +39,7 @@ $response = $client->vehicleRegistrations->createRegistration(
                 // seasonStartMonth: 4, seasonEndMonth: 10,  // for *_SEASON plate types
             ),
             vehicleRegistrationServiceTypeCode: VehicleRegistrationServiceTypeCode::NZ, // Neuzulassung
-            deregistered: false,
+            deregistered: true,                                      // must be true for NZ, WZ and WG
             vehicleType: VehicleRegistrationVehicleType::Car,
             electronicInsuranceConfirmationNumber: 'ABC1234',        // eVB-Nummer, exactly 7 chars
             vehicleIdentificationNumber: 'WBA12345678901234',        // VIN / FIN
@@ -48,7 +48,8 @@ $response = $client->vehicleRegistrations->createRegistration(
             bic: 'COBADEFFXXX',
             // ZB I code and previousLicensePlate belong to a vehicle that was registered
             // before. NZ is a first registration, so both must stay null — passing them
-            // throws. See the class docblock of VehicleRegistrationCustomization.
+            // throws. Every other service type code turns that around and *requires*
+            // both. See the class docblock of VehicleRegistrationCustomization.
             vehicleTitleNumber: 'AB123456',                          // optional, exactly 8 chars
         ),
         vehicleHolderAddress: $address,

@@ -11,6 +11,10 @@ All notable changes to this project will be documented in this file.
   API 2.4.0, which is not the SDK default: opt in with `DROPSHIPPING_API_VERSION=2.4.0` or
   `apiVersion: '2.4.0'`. `api-version` in `composer.json` stays at 2.3.1 so an SDK update never
   moves a client onto a version it is not entitled to.
+- `VehicleRegistrationServiceTypeCode` gained `requiresPreviousRegistration()` and
+  `requiresDeregisteredVehicle()`, which say what a service type code demands of a request, plus a
+  comment per case naming the procedure it stands for. Neither is in the spec, which lists the
+  codes bare.
 - Add `$client->vehicleRegistrations->downloadFileContent()` for the
   `GET /vehicleRegistrations/files/content/{fileAccessKey}` operation introduced in dropshipping
   API 2.4.0. Takes the `fileAccessKey` from a `VEHICLE_REGISTRATION_XKFZ_EVENT` file.
@@ -25,6 +29,17 @@ All notable changes to this project will be documented in this file.
   2.4.0, and the rejection only arrives *after* identification and QES have run, so the SDK now
   throws at construction time instead. Code that passed either field with `NZ` was already being
   rejected by the API and has to drop it.
+
+- `VehicleRegistrationCustomization` now enforces the mirror image of that rule, plus two more
+  constraints the service type code puts on the request. Every code other than `NZ` continues a
+  registration the vehicle already had, and now *requires* `vehicleRegistrationCertificateSecurityCode`
+  and `previousLicensePlate` to identify it. `NZ`, `WZ` and `WG` require `deregistered` to be
+  `true` — none of them can run on a vehicle that is currently registered. And the `RETAINMENT`
+  strategy requires a `previousLicensePlate` to take the number from, without the two security
+  codes on it, since plates that stay on the vehicle keep their seals. The rules come from the
+  field requirement table of the registration request the platform builds from these values;
+  requests violating them were being rejected by the API already, and only after identification
+  and QES had run.
 
 - `VehicleRegistrationResponse` no longer exposes `identityVerificationVendorId` and
   `customerInputFormUrl` — dropshipping API 2.4.0 removed both from the response, which now

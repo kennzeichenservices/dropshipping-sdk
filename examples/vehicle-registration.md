@@ -21,7 +21,7 @@ discriminator and carries the plate data belonging to that strategy:
 |---------|----------------|---------|---------|
 | `DS::randomLicensePlateNumber(...)` | `RANDOM` | The registration office assigns an arbitrary available number | `licensePlateType` + optional season months |
 | `DS::reservedLicensePlateNumber(...)` | `RESERVATION` | A previously reserved number is used | the plate number, `licensePlateType`, `reservationPin` + optional season months |
-| `DS::retainedLicensePlateNumber()` | `RETAINMENT` | The number of the previous plate is kept | — (set `previousLicensePlate` on the customization) |
+| `DS::retainedLicensePlateNumber()` | `RETAINMENT` | The number of the previous plate is kept | — (the number comes from the required `previousLicensePlate` on the customization) |
 
 `RANDOM` leaves only the *number* to the office -- the plate type is still yours to choose.
 `RETAINMENT` carries nothing, since it keeps the previous plate as-is.
@@ -81,25 +81,33 @@ before any HTTP call:
 | `birthName` | 1–100 |
 | front/rear plate security codes on `previousLicensePlate` | exactly 3 |
 
-## Fields forbidden for service type code NZ
+## What each service type code requires
 
-`NZ` (Neuzulassung) is the first registration of a vehicle, so there is nothing that came
-before it. Two otherwise optional fields must therefore stay `null`, and
-`VehicleRegistrationCustomization` throws when they do not:
+`NZ` (Neuzulassung) is the first registration of a vehicle, so there is nothing that came before
+it. Every other code continues a registration the vehicle already had, and needs it identified.
+`VehicleRegistrationCustomization` throws on both sides of that line:
 
-| Field | API rejects with |
-|-------|------------------|
-| `vehicleRegistrationCertificateSecurityCode` (ZB I) | `verificationCode must be null` |
-| `previousLicensePlate` | `previousLicensePlate must be null` |
+| Field | `NZ` | `WZ`, `WG`, `UG`, `UM`, `UO`, `UI`, `HA` |
+|-------|------|------------------------------------------|
+| `vehicleRegistrationCertificateSecurityCode` (ZB I) | must be `null` | required |
+| `previousLicensePlate` | must be `null` | required |
+| `deregistered` | must be `true` | `true` for `WZ` and `WG`, unconstrained otherwise |
 
-`verificationCode` is the API's internal name for the field the spec calls
-`vehicleRegistrationCertificateSecurityCode` — a ZB I only exists once this registration has
-issued it. This also rules out `DS::retainedLicensePlateNumber()` for `NZ`, since RETAINMENT has
-no number to keep without a previous plate.
+The API rejects a ZB I code on an `NZ` with `verificationCode must be null` — `verificationCode`
+is its internal name for the field the spec calls `vehicleRegistrationCertificateSecurityCode`,
+and a ZB I only exists once this registration has issued it. That also rules out
+`DS::retainedLicensePlateNumber()` for `NZ`: RETAINMENT has no number to keep without a previous
+plate, so it insists on one.
 
-Neither rule is published in any spec up to 2.4.0, where `VehicleRegistrationServiceTypeCode` is
-a bare enum without descriptions and both fields are declared plainly nullable. They are enforced
-here because the API only rejects them *after* identification and QES have run.
+Two more rules apply to the plate the vehicle keeps under RETAINMENT. The plates stay screwed
+on and their seals unbroken, so nobody can read the codes off them —
+`frontLicensePlateSecurityCode` and `rearLicensePlateSecurityCode` on `previousLicensePlate`
+must stay `null` there. The other two strategies take them.
+
+None of these rules is published in any spec up to 2.4.0, where
+`VehicleRegistrationServiceTypeCode` is a bare enum without descriptions and the fields are
+declared plainly nullable. They are enforced here because the API only rejects them *after*
+identification and QES have run.
 
 ## Webhooks
 

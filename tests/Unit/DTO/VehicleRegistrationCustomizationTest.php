@@ -29,7 +29,7 @@ final class VehicleRegistrationCustomizationTest extends TestCase
 
     public function test_toArray_keeps_deregistered_false(): void
     {
-        $array = $this->create(['deregistered' => false])->toArray();
+        $array = $this->createContinuation(['deregistered' => false])->toArray();
 
         self::assertArrayHasKey('deregistered', $array);
         self::assertFalse($array['deregistered']);
@@ -53,10 +53,7 @@ final class VehicleRegistrationCustomizationTest extends TestCase
             rearLicensePlateSecurityCode: 'R34',
         );
 
-        $array = $this->create([
-            'vehicleRegistrationServiceTypeCode' => VehicleRegistrationServiceTypeCode::WZ,
-            'previousLicensePlate' => $previous,
-        ])->toArray();
+        $array = $this->createContinuation(['previousLicensePlate' => $previous])->toArray();
 
         self::assertSame('HISTORICAL', $array['previousLicensePlate']['licensePlateType']);
         self::assertSame('F12', $array['previousLicensePlate']['frontLicensePlateSecurityCode']);
@@ -94,11 +91,62 @@ final class VehicleRegistrationCustomizationTest extends TestCase
 
     public function test_retained_strategy_serializes_to_discriminator_only(): void
     {
-        $array = $this->create([
+        $array = $this->createContinuation([
             'licensePlateNumberAssignmentStrategy' => new VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained(),
         ])->toArray();
 
         self::assertSame(['strategyType' => 'RETAINMENT'], $array['licensePlateNumberAssignmentStrategy']);
+    }
+
+    public function test_retained_strategy_requires_previousLicensePlate(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage(
+            'Field "previousLicensePlate" is required when the previous license plate number is retained',
+        );
+
+        $this->create([
+            'licensePlateNumberAssignmentStrategy' => new VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained(),
+        ]);
+    }
+
+    public function test_retained_strategy_rejects_front_plate_security_code(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage(
+            'Field "previousLicensePlate.frontLicensePlateSecurityCode" must be null when the previous license plate number is retained',
+        );
+
+        $this->createContinuation([
+            'licensePlateNumberAssignmentStrategy' => new VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained(),
+            'previousLicensePlate' => $this->previousLicensePlate(frontLicensePlateSecurityCode: 'F12'),
+        ]);
+    }
+
+    public function test_retained_strategy_rejects_rear_plate_security_code(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage(
+            'Field "previousLicensePlate.rearLicensePlateSecurityCode" must be null when the previous license plate number is retained',
+        );
+
+        $this->createContinuation([
+            'licensePlateNumberAssignmentStrategy' => new VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained(),
+            'previousLicensePlate' => $this->previousLicensePlate(rearLicensePlateSecurityCode: 'R34'),
+        ]);
+    }
+
+    public function test_plate_security_codes_survive_the_other_strategies(): void
+    {
+        $array = $this->createContinuation([
+            'previousLicensePlate' => $this->previousLicensePlate(
+                frontLicensePlateSecurityCode: 'F12',
+                rearLicensePlateSecurityCode: 'R34',
+            ),
+        ])->toArray();
+
+        self::assertSame('F12', $array['previousLicensePlate']['frontLicensePlateSecurityCode']);
+        self::assertSame('R34', $array['previousLicensePlate']['rearLicensePlateSecurityCode']);
     }
 
     public function test_reservation_strategy_serializes_plate_and_pin(): void
@@ -182,10 +230,7 @@ final class VehicleRegistrationCustomizationTest extends TestCase
         $this->expectException(DropshippingException::class);
         $this->expectExceptionMessage('must be between 7 and 7 characters');
 
-        $this->create([
-            'vehicleRegistrationServiceTypeCode' => VehicleRegistrationServiceTypeCode::WZ,
-            'vehicleRegistrationCertificateSecurityCode' => 'SEC12345',
-        ]);
+        $this->createContinuation(['vehicleRegistrationCertificateSecurityCode' => 'SEC12345']);
     }
 
     public function test_constructor_rejects_vehicleRegistrationCertificateSecurityCode_for_nz(): void
@@ -216,11 +261,7 @@ final class VehicleRegistrationCustomizationTest extends TestCase
 
     public function test_constructor_allows_previous_vehicle_fields_for_other_service_type_codes(): void
     {
-        foreach (VehicleRegistrationServiceTypeCode::cases() as $code) {
-            if ($code === VehicleRegistrationServiceTypeCode::NZ) {
-                continue;
-            }
-
+        foreach (self::continuingServiceTypeCodes() as $code) {
             $array = $this->create([
                 'vehicleRegistrationServiceTypeCode' => $code,
                 'vehicleRegistrationCertificateSecurityCode' => 'SEC1234',
@@ -229,6 +270,99 @@ final class VehicleRegistrationCustomizationTest extends TestCase
 
             self::assertSame('SEC1234', $array['vehicleRegistrationCertificateSecurityCode'], $code->value);
             self::assertArrayHasKey('previousLicensePlate', $array, $code->value);
+        }
+    }
+
+    public function test_constructor_requires_vehicleRegistrationCertificateSecurityCode_for_other_service_type_codes(): void
+    {
+        foreach (self::continuingServiceTypeCodes() as $code) {
+            try {
+                $this->create([
+                    'vehicleRegistrationServiceTypeCode' => $code,
+                    'previousLicensePlate' => $this->previousLicensePlate(),
+                ]);
+
+                self::fail(sprintf('Expected %s to require vehicleRegistrationCertificateSecurityCode', $code->value));
+            } catch (DropshippingException $exception) {
+                self::assertSame(
+                    sprintf(
+                        'Field "vehicleRegistrationCertificateSecurityCode" is required for vehicleRegistrationServiceTypeCode %s',
+                        $code->value,
+                    ),
+                    $exception->getMessage(),
+                );
+            }
+        }
+    }
+
+    public function test_constructor_requires_previousLicensePlate_for_other_service_type_codes(): void
+    {
+        foreach (self::continuingServiceTypeCodes() as $code) {
+            try {
+                $this->create([
+                    'vehicleRegistrationServiceTypeCode' => $code,
+                    'vehicleRegistrationCertificateSecurityCode' => 'SEC1234',
+                ]);
+
+                self::fail(sprintf('Expected %s to require previousLicensePlate', $code->value));
+            } catch (DropshippingException $exception) {
+                self::assertSame(
+                    sprintf(
+                        'Field "previousLicensePlate" is required for vehicleRegistrationServiceTypeCode %s',
+                        $code->value,
+                    ),
+                    $exception->getMessage(),
+                );
+            }
+        }
+    }
+
+    public function test_constructor_requires_a_deregistered_vehicle_for_nz_wz_and_wg(): void
+    {
+        $codes = [
+            VehicleRegistrationServiceTypeCode::NZ,
+            VehicleRegistrationServiceTypeCode::WZ,
+            VehicleRegistrationServiceTypeCode::WG,
+        ];
+
+        foreach ($codes as $code) {
+            $overrides = ['vehicleRegistrationServiceTypeCode' => $code, 'deregistered' => false];
+
+            if ($code->requiresPreviousRegistration()) {
+                $overrides['vehicleRegistrationCertificateSecurityCode'] = 'SEC1234';
+                $overrides['previousLicensePlate'] = $this->previousLicensePlate();
+            }
+
+            try {
+                $this->create($overrides);
+
+                self::fail(sprintf('Expected %s to require a deregistered vehicle', $code->value));
+            } catch (DropshippingException $exception) {
+                self::assertSame(
+                    sprintf('Field "deregistered" must be true for vehicleRegistrationServiceTypeCode %s', $code->value),
+                    $exception->getMessage(),
+                );
+            }
+        }
+    }
+
+    public function test_constructor_leaves_deregistered_free_for_the_remaining_codes(): void
+    {
+        $codes = [
+            VehicleRegistrationServiceTypeCode::UG,
+            VehicleRegistrationServiceTypeCode::UM,
+            VehicleRegistrationServiceTypeCode::UO,
+            VehicleRegistrationServiceTypeCode::UI,
+            VehicleRegistrationServiceTypeCode::HA,
+        ];
+
+        foreach ($codes as $code) {
+            $array = $this->createContinuation([
+                'vehicleRegistrationServiceTypeCode' => $code,
+                'deregistered' => false,
+            ])->toArray();
+
+            self::assertFalse($array['deregistered'], $code->value);
         }
     }
 
@@ -255,12 +389,45 @@ final class VehicleRegistrationCustomizationTest extends TestCase
         $this->create(['bic' => 'COBADEFFXXXX']);
     }
 
-    private function previousLicensePlate(): VehicleRegistrationPreviousLicensePlate
+    /**
+     * The service type codes that continue an existing registration — every one
+     * but NZ.
+     *
+     * @return list<VehicleRegistrationServiceTypeCode>
+     */
+    private static function continuingServiceTypeCodes(): array
     {
+        return array_values(array_filter(
+            VehicleRegistrationServiceTypeCode::cases(),
+            static fn (VehicleRegistrationServiceTypeCode $code): bool => $code !== VehicleRegistrationServiceTypeCode::NZ,
+        ));
+    }
+
+    private function previousLicensePlate(
+        ?string $frontLicensePlateSecurityCode = null,
+        ?string $rearLicensePlateSecurityCode = null,
+    ): VehicleRegistrationPreviousLicensePlate {
         return new VehicleRegistrationPreviousLicensePlate(
             licensePlateNumberComponents: new EuroLicensePlateNumberComponents('M', 'KG', '6988'),
             licensePlateType: VehicleRegistrationLicensePlateType::Regular,
+            frontLicensePlateSecurityCode: $frontLicensePlateSecurityCode,
+            rearLicensePlateSecurityCode: $rearLicensePlateSecurityCode,
         );
+    }
+
+    /**
+     * A customization for a service type code that continues an existing
+     * registration, carrying the two fields those codes require.
+     *
+     * @param array<string, mixed> $overrides
+     */
+    private function createContinuation(array $overrides = []): VehicleRegistrationCustomization
+    {
+        return $this->create(array_merge([
+            'vehicleRegistrationServiceTypeCode' => VehicleRegistrationServiceTypeCode::UG,
+            'vehicleRegistrationCertificateSecurityCode' => 'SEC1234',
+            'previousLicensePlate' => $this->previousLicensePlate(),
+        ], $overrides));
     }
 
     /**
@@ -273,7 +440,7 @@ final class VehicleRegistrationCustomizationTest extends TestCase
                 licensePlateType: VehicleRegistrationLicensePlateType::Regular,
             ),
             'vehicleRegistrationServiceTypeCode' => VehicleRegistrationServiceTypeCode::NZ,
-            'deregistered' => false,
+            'deregistered' => true,
             'vehicleType' => VehicleRegistrationVehicleType::Car,
             'electronicInsuranceConfirmationNumber' => 'ABC1234',
             'vehicleIdentificationNumber' => 'WBA12345678901234',

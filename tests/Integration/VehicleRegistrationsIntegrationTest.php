@@ -68,7 +68,7 @@ final class VehicleRegistrationsIntegrationTest extends TestCase
                 licensePlateType: VehicleRegistrationLicensePlateType::Regular,
             ),
             vehicleRegistrationServiceTypeCode: VehicleRegistrationServiceTypeCode::NZ,
-            deregistered: false,
+            deregistered: true,
             vehicleType: VehicleRegistrationVehicleType::Car,
             electronicInsuranceConfirmationNumber: 'EVB1234',
             vehicleIdentificationNumber: 'W0L000051T2123456',

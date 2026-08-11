@@ -60,7 +60,7 @@ final class VehicleRegistrationsEndpointTest extends TestCase
                 licensePlateType: VehicleRegistrationLicensePlateType::Regular,
             ),
             vehicleRegistrationServiceTypeCode: VehicleRegistrationServiceTypeCode::NZ,
-            deregistered: false,
+            deregistered: true,
             vehicleType: VehicleRegistrationVehicleType::Car,
             electronicInsuranceConfirmationNumber: 'ABC1234',
             vehicleIdentificationNumber: 'WBA12345678901234',
