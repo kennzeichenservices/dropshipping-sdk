@@ -1,8 +1,8 @@
 {
     "name": "kennzeichenservices/dropshipping-sdk",
     "description": "Production-ready PHP SDK for the Dropshipping API",
-    "version": "2.4.4",
-    "api-version": "2.3.1",
+    "version": "2.4.5",
+    "api-version": "2.4.0",
     "type": "library",
     "license": "proprietary",
     "authors": [
