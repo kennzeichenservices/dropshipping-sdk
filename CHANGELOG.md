@@ -1,82 +1,89 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
-
-## [Unreleased]
+## [2.4.6] — 2026-09-07
 
 ### Features
 
-- GKS configurations carry a `gksClientVersionNumber`, which dropshipping API 2.4.0 made a
-  required field of `GksConfigurationWriteRequest` (NUM-1064). It defaults to `'2.0'` — the
-  version the API assumed before the field existed — so existing create and update calls keep
-  the behaviour they had, and the SDK now always sends it. Pass another version to move a
-  configuration; `OverviewGksConfiguration` reports the one in effect, `null` on API versions
-  whose responses predate the field.
-- Add `$client->gksConfigurations->getEnabledClientVersions()` for the `EnabledGksClientVersionsGet`
-  operation (`GET /gksClientVersions/enabled`) added in 2.4.0. It returns the versions a
-  configuration may reference — the spec constrains `gksClientVersionNumber` to a non-empty
-  string only, so this endpoint is the authority on which values the API accepts, and the SDK
-  validates nothing beyond the length. `EnabledGksClientVersionsResponse::versionNumbers()`
-  reduces it to a `list<string>` for a check before sending.
-- **Vehicle registration is no longer experimental.** Every `@experimental` marker is gone and the
-  feature is covered by the usual BC guarantee from this release on. It still requires dropshipping
-  API 2.4.0, which is not the SDK default: opt in with `DROPSHIPPING_API_VERSION=2.4.0` or
-  `apiVersion: '2.4.0'`. `api-version` in `composer.json` stays at 2.3.1 so an SDK update never
-  moves a client onto a version it is not entitled to.
-- `VehicleRegistrationServiceTypeCode` gained `requiresPreviousRegistration()` and
-  `requiresDeregisteredVehicle()`, which say what a service type code demands of a request, plus a
-  comment per case naming the procedure it stands for. Neither is in the spec, which lists the
-  codes bare.
-- Add `$client->vehicleRegistrations->downloadFileContent()` for the
-  `GET /vehicleRegistrations/files/content/{fileAccessKey}` operation introduced in dropshipping
-  API 2.4.0. Takes the `fileAccessKey` from a `VEHICLE_REGISTRATION_XKFZ_EVENT` file.
-- `VehicleRegistrationDocumentSignatureSucceededEvent` now carries `applicationFiles`: the
-  documents the customer just signed — power of attorney, GDPR consent declaration and the motor
-  vehicle tax SEPA mandate — as a `list<VehicleRegistrationApplicationFile>` typed by the new
-  `VehicleRegistrationApplicationFilePurposeType`. Added to the event in webhooks spec 3.2.0,
-  which declares the field required; the SDK reads it leniently and yields an empty list when it
-  is absent, so an event without it still reaches the handler.
-- Add `$client->vehicleRegistrations->downloadApplicationFileContent()` for the
-  `GET /vehicleRegistrations/applicationFiles/content/{fileAccessKey}` operation added to
-  dropshipping API 2.4.0. It serves the keys from those `applicationFiles` only —
-  `downloadFileContent()` remains the one for `VEHICLE_REGISTRATION_XKFZ_EVENT` files, and the two
-  key namespaces are not interchangeable.
-
-### Breaking
-
-- `VehicleRegistrationCustomization` now rejects `vehicleRegistrationCertificateSecurityCode` and
-  `previousLicensePlate` when the service type code is `NZ`. A Neuzulassung is a vehicle's first
-  registration, so it has neither a ZB I nor a plate it carried before; the API rejects both — the
-  first one as `verificationCode must be null`, which is its internal name for the field the spec
-  calls `vehicleRegistrationCertificateSecurityCode`. Neither rule is published in any spec up to
-  2.4.0, and the rejection only arrives *after* identification and QES have run, so the SDK now
-  throws at construction time instead. Code that passed either field with `NZ` was already being
-  rejected by the API and has to drop it.
-
-- `VehicleRegistrationCustomization` now enforces the mirror image of that rule, plus two more
-  constraints the service type code puts on the request. Every code other than `NZ` continues a
-  registration the vehicle already had, and now *requires* `vehicleRegistrationCertificateSecurityCode`
-  and `previousLicensePlate` to identify it. `NZ`, `WZ` and `WG` require `deregistered` to be
-  `true` — none of them can run on a vehicle that is currently registered. And the `RETAINMENT`
-  strategy requires a `previousLicensePlate` to take the number from, without the two security
-  codes on it, since plates that stay on the vehicle keep their seals. The rules come from the
-  field requirement table of the registration request the platform builds from these values;
-  requests violating them were being rejected by the API already, and only after identification
-  and QES had run.
-
-- `VehicleRegistrationResponse` no longer exposes `identityVerificationVendorId` and
-  `customerInputFormUrl` — dropshipping API 2.4.0 removed both from the response, which now
-  carries the order ID alone. The customer-facing URLs arrive as webhook events instead:
-  `identityVerificationUrl` on `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED` and
-  `documentSignatureUrl` on `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED`. This is the last
-  change made while vehicle registration was still `@experimental`; anyone who ran the feature
-  against API 2.3.2 has to move both reads over to those handlers.
+- Add gksClientVersionNumber support
 
 ### Miscellaneous
 
-- Add dropshipping API 2.4.0 spec and refresh the webhooks 3.2.0 spec. The latest refresh of both
-  adds the `VehicleRegistrationApplicationFileContentDownload` operation and the `applicationFiles`
-  on the document signature success event; everything else in them was already implemented.
+- Bump version to 2.4.6
+
+## [2.4.4] — 2026-08-11
+
+### Features
+
+- Add application file downloads to signature events
+
+## [2.4.3] — 2026-08-11
+
+### Features
+
+- Validate service type code requirements
+
+## [2.4.2] — 2026-08-11
+
+### Features
+
+- Add NZ validation for prior registration fields
+
+### Miscellaneous
+
+- Bump version to 2.4.2
+- Configure VS Code color theme
+
+## [2.4.1] — 2026-08-07
+
+### Features
+
+- Graduate vehicle registration to stable
+
+## [2.4.0] — 2026-08-07
+
+### Features
+
+- Add file download support for vehicle registrations
+
+## [2.3.24] — 2026-08-06
+
+### Documentation
+
+- Add dropshipping webhooks API v3.2.0 spec
+
+### Features
+
+- Add seven vehicle registration webhook events from spec 3.2.0
+- Deprecate unused vehicle deregistration parameters
+
+### Miscellaneous
+
+- Bump version to 2.3.24
+- Add code quality tooling and linting
+
+### Refactoring
+
+- Extract DTO hydration to Hydrator utility
+- Improve type safety and static analysis strictness
+- Extract API response handling to ResponseMapper
+
+## [2.3.23] — 2026-08-05
+
+### Features
+
+- Verify webhook signatures at enqueue time
+
+## [2.3.22] — 2026-07-31
+
+### Bug Fixes
+
+- Correct duplicate changelog entry
+
+### Features
+
+- Support license plate type in random strategy
+- Make license plate assignment strategy object-based
 
 ## [2.3.20] — 2026-07-29
 
@@ -86,6 +93,7 @@ All notable changes to this project will be documented in this file.
 
 ### Miscellaneous
 
+- Release v2.3.20
 - Bump version to 2.3.20
 
 ## [2.3.11] — 2026-07-22
@@ -211,3 +219,5 @@ All notable changes to this project will be documented in this file.
 ### Features
 
 - Add initial project files including README, .gitignore, and GitHub Actions workflow
+
+
