@@ -14,9 +14,21 @@ final class OverviewGksConfigurationTest extends TestCase
         $overview = OverviewGksConfiguration::fromArray([
             'id' => '550e8400-e29b-41d4-a716-446655440000',
             'name' => 'My GKS Config',
+            'gksClientVersionNumber' => '3.0',
         ]);
 
         self::assertSame('550e8400-e29b-41d4-a716-446655440000', $overview->id);
         self::assertSame('My GKS Config', $overview->name);
+        self::assertSame('3.0', $overview->gksClientVersionNumber);
+    }
+
+    public function test_fromArray_tolerates_absent_gksClientVersionNumber(): void
+    {
+        $overview = OverviewGksConfiguration::fromArray([
+            'id' => '550e8400-e29b-41d4-a716-446655440000',
+            'name' => 'My GKS Config',
+        ]);
+
+        self::assertNull($overview->gksClientVersionNumber);
     }
 }

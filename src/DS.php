@@ -310,6 +310,9 @@ final class DS
 
     /**
      * Create a GKS configuration write request (used for create and update).
+     *
+     * The GKS client version defaults to the one the API assumed before the field existed;
+     * $client->gksConfigurations->getEnabledClientVersions() lists the values it accepts.
      */
     public static function gksConfiguration(
         string $name,
@@ -319,6 +322,7 @@ final class DS
         string $publicKeyCertificate,
         string $privateKey,
         GksConfigurationCompany $company,
+        string $gksClientVersionNumber = GksConfigurationWriteRequest::DEFAULT_CLIENT_VERSION_NUMBER,
     ): GksConfigurationWriteRequest {
         return new GksConfigurationWriteRequest(
             name: $name,
@@ -328,6 +332,7 @@ final class DS
             publicKeyCertificate: $publicKeyCertificate,
             privateKey: $privateKey,
             company: $company,
+            gksClientVersionNumber: $gksClientVersionNumber,
         );
     }
 

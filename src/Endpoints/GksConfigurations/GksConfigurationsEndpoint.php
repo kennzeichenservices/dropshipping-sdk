@@ -6,6 +6,7 @@ namespace Dropshipping\Endpoints\GksConfigurations;
 
 use Dropshipping\Client\Psr18HttpClient;
 use Dropshipping\DTO\Requests\GksConfigurationWriteRequest;
+use Dropshipping\DTO\Responses\EnabledGksClientVersionsResponse;
 use Dropshipping\DTO\Responses\GksConfigurationOverviewsResponse;
 use Dropshipping\DTO\Responses\OverviewGksConfiguration;
 use Dropshipping\Http\RequestFactory;
@@ -112,5 +113,24 @@ final class GksConfigurationsEndpoint
         $data = $this->responseMapper->mapResponse($response);
 
         return OverviewGksConfiguration::fromArray($data);
+    }
+
+    /**
+     * Get the GKS client versions a configuration may currently reference.
+     *
+     * @return EnabledGksClientVersionsResponse The list of enabled GKS client versions.
+     */
+    public function getEnabledClientVersions(): EnabledGksClientVersionsResponse
+    {
+        $httpRequest = $this->requestFactory->createJsonRequest(
+            'GET',
+            $this->baseUrl . '/gksClientVersions/enabled',
+            [],
+        );
+
+        $response = $this->httpClient->sendRequest($httpRequest);
+        $data = $this->responseMapper->mapResponse($response);
+
+        return EnabledGksClientVersionsResponse::fromArray($data);
     }
 }

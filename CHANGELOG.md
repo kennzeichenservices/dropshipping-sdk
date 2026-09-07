@@ -6,6 +6,18 @@ All notable changes to this project will be documented in this file.
 
 ### Features
 
+- GKS configurations carry a `gksClientVersionNumber`, which dropshipping API 2.4.0 made a
+  required field of `GksConfigurationWriteRequest` (NUM-1064). It defaults to `'2.0'` — the
+  version the API assumed before the field existed — so existing create and update calls keep
+  the behaviour they had, and the SDK now always sends it. Pass another version to move a
+  configuration; `OverviewGksConfiguration` reports the one in effect, `null` on API versions
+  whose responses predate the field.
+- Add `$client->gksConfigurations->getEnabledClientVersions()` for the `EnabledGksClientVersionsGet`
+  operation (`GET /gksClientVersions/enabled`) added in 2.4.0. It returns the versions a
+  configuration may reference — the spec constrains `gksClientVersionNumber` to a non-empty
+  string only, so this endpoint is the authority on which values the API accepts, and the SDK
+  validates nothing beyond the length. `EnabledGksClientVersionsResponse::versionNumbers()`
+  reduces it to a `list<string>` for a check before sending.
 - **Vehicle registration is no longer experimental.** Every `@experimental` marker is gone and the
   feature is covered by the usual BC guarantee from this release on. It still requires dropshipping
   API 2.4.0, which is not the SDK default: opt in with `DROPSHIPPING_API_VERSION=2.4.0` or

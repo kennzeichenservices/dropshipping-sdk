@@ -31,6 +31,11 @@ final class GksConfigurationsEndpointTest extends TestCase
             ->willReturnCallback(function (RequestInterface $request) use ($responseBody) {
                 self::assertSame('POST', $request->getMethod());
                 self::assertStringEndsWith('/gksConfigurations', (string) $request->getUri());
+
+                $body = json_decode((string) $request->getBody(), true);
+                self::assertIsArray($body);
+                self::assertSame('2.0', $body['gksClientVersionNumber']);
+
                 return new Response(201, [], $responseBody);
             });
 
@@ -106,6 +111,32 @@ final class GksConfigurationsEndpointTest extends TestCase
         $result = $endpoint->getOverview('uuid-1');
 
         self::assertSame('uuid-1', $result->id);
+    }
+
+    public function test_getEnabledClientVersions_sends_get_and_returns_versions(): void
+    {
+        $responseBody = json_encode([
+            'gksClientVersions' => [
+                ['versionNumber' => '2.0'],
+                ['versionNumber' => '3.0'],
+            ],
+        ]);
+
+        $mockClient = $this->createMock(ClientInterface::class);
+        $mockClient
+            ->expects($this->once())
+            ->method('sendRequest')
+            ->willReturnCallback(function (RequestInterface $request) use ($responseBody) {
+                self::assertSame('GET', $request->getMethod());
+                self::assertStringEndsWith('/gksClientVersions/enabled', (string) $request->getUri());
+                return new Response(200, [], $responseBody);
+            });
+
+        $endpoint = $this->createEndpoint($mockClient);
+
+        $result = $endpoint->getEnabledClientVersions();
+
+        self::assertSame(['2.0', '3.0'], $result->versionNumbers());
     }
 
     private function createEndpoint(ClientInterface $mockClient): GksConfigurationsEndpoint

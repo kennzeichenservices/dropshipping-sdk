@@ -79,10 +79,18 @@ return [
         'order' => ['id' => 88], 'identityVerificationVendorId' => 3, 'customerInputFormUrl' => 'https://x/y',
     ]],
     ['gksOverview', 'Dropshipping\DTO\Responses\OverviewGksConfiguration', ['id' => 'uuid-1', 'name' => 'Cfg']],
+    ['gksOverview/with-client-version', 'Dropshipping\DTO\Responses\OverviewGksConfiguration', [
+        'id' => 'uuid-1', 'name' => 'Cfg', 'gksClientVersionNumber' => '3.0',
+    ]],
     ['gksOverviews/list', 'Dropshipping\DTO\Responses\GksConfigurationOverviewsResponse', [
         'overviewGksConfigurations' => [['id' => 'u1', 'name' => 'A'], ['id' => 'u2', 'name' => 'B']],
     ]],
     ['gksOverviews/empty', 'Dropshipping\DTO\Responses\GksConfigurationOverviewsResponse', ['overviewGksConfigurations' => []]],
+    ['gksClientVersion', 'Dropshipping\DTO\Responses\GksClientVersion', ['versionNumber' => '2.0']],
+    ['gksClientVersions/list', 'Dropshipping\DTO\Responses\EnabledGksClientVersionsResponse', [
+        'gksClientVersions' => [['versionNumber' => '2.0'], ['versionNumber' => '3.0']],
+    ]],
+    ['gksClientVersions/empty', 'Dropshipping\DTO\Responses\EnabledGksClientVersionsResponse', ['gksClientVersions' => []]],
 
     // --- webhooks --------------------------------------------------------------
     ['webhookOrder/full', 'Dropshipping\DTO\Webhooks\WebhookOrder', $order],

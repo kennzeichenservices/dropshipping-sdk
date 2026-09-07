@@ -46,6 +46,44 @@ final class GksConfigurationWriteRequestTest extends TestCase
         self::assertSame('10115', $array['company']['zipCode']);
         self::assertSame('Berlin', $array['company']['cityName']);
         self::assertSame('DE', $array['company']['countryCode']);
+        self::assertSame('2.0', $array['gksClientVersionNumber']);
+    }
+
+    public function test_gksClientVersionNumber_can_be_set_explicitly(): void
+    {
+        $company = new GksConfigurationCompany('Co', 'St', '1', '1', 'City', 'DE');
+
+        $request = new GksConfigurationWriteRequest(
+            name: 'Config',
+            kopaKey: 'key',
+            username: 'user',
+            password: 'pass',
+            publicKeyCertificate: 'cert',
+            privateKey: 'key',
+            company: $company,
+            gksClientVersionNumber: '3.0',
+        );
+
+        self::assertSame('3.0', $request->gksClientVersionNumber);
+        self::assertSame('3.0', $request->toArray()['gksClientVersionNumber']);
+    }
+
+    public function test_validates_empty_gksClientVersionNumber(): void
+    {
+        $this->expectException(DropshippingException::class);
+
+        $company = new GksConfigurationCompany('Co', 'St', '1', '1', 'City', 'DE');
+
+        new GksConfigurationWriteRequest(
+            name: 'Config',
+            kopaKey: 'key',
+            username: 'user',
+            password: 'pass',
+            publicKeyCertificate: 'cert',
+            privateKey: 'key',
+            company: $company,
+            gksClientVersionNumber: '',
+        );
     }
 
     public function test_validates_name_length(): void

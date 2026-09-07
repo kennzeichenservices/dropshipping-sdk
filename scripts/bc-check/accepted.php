@@ -37,6 +37,19 @@ return [
         . 'baseline DTO drops applicationFiles on the floor, so a difference here is the point '
         . 'of the entry. Both entries can go once the compared-against tag carries the field.',
 
+    'gksOverview/with-client-version' =>
+        'Unreleased — dropshipping API 2.4.0 added gksClientVersionNumber to OverviewGksConfiguration, '
+        . 'so the DTO gained the property. The baseline DTO drops the field on the floor, so a '
+        . 'difference here is the point of the entry.',
+
+    'gksOverview' =>
+        'Unreleased — same addition, seen from a payload that predates the field: the new property '
+        . 'reads null instead of being absent. Every field the old DTO carried is unchanged.',
+
+    'gksOverviews/list' =>
+        'Unreleased — same addition, reached through the overviews list. All three entries can go '
+        . 'once the compared-against tag carries the field.',
+
     'vehicleRegistrationResponse' =>
         'Unreleased — dropshipping API 2.4.0 dropped identityVerificationVendorId and '
         . 'customerInputFormUrl from the vehicle registration response, so the DTO dropped them '

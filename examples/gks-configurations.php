@@ -21,6 +21,8 @@ $request = DS::gksConfiguration(
         cityName: 'Berlin',
         countryCode: 'DE',
     ),
+    // Optional; defaults to '2.0', the version the API assumed before the field existed.
+    gksClientVersionNumber: '2.0',
 );
 
 // Create
@@ -39,4 +41,8 @@ foreach ($overviews->overviewGksConfigurations as $cfg) {
 
 // Get single
 $single = $client->gksConfigurations->getOverview($created->id);
-echo "Fetched: {$single->id} ({$single->name})\n";
+echo "Fetched: {$single->id} ({$single->name}) on GKS client {$single->gksClientVersionNumber}\n";
+
+// Which versions may a configuration reference?
+$versions = $client->gksConfigurations->getEnabledClientVersions();
+echo 'Enabled GKS client versions: ' . implode(', ', $versions->versionNumbers()) . "\n";

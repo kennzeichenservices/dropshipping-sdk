@@ -277,6 +277,22 @@ foreach ($client->gksConfigurations->getOverviews()->overviewGksConfigurations a
 
 // Get single
 $single = $client->gksConfigurations->getOverview($cfg->id);
+echo $single->gksClientVersionNumber;   // "2.0"
+
+// Which GKS client versions may a configuration reference?
+$versions = $client->gksConfigurations->getEnabledClientVersions();
+print_r($versions->versionNumbers());   // ["2.0", "3.0"]
+```
+
+`gksClientVersionNumber` is required by dropshipping API 2.4.0 and defaults to `2.0`, the
+version the API assumed before the field existed. Pass another one to move a configuration:
+
+```php
+$request = DS::gksConfiguration(
+    // ... same fields as above ...
+    company: $company,
+    gksClientVersionNumber: '3.0',
+);
 ```
 
 ### Submitting a Vehicle Deregistration
@@ -548,6 +564,7 @@ The SDK follows these patterns:
 | `$client->gksConfigurations->update()` | PUT /gksConfigurations/{id} | Update a GKS configuration |
 | `$client->gksConfigurations->getOverviews()` | GET /gksConfigurations/overviews | List all GKS configurations |
 | `$client->gksConfigurations->getOverview()` | GET /gksConfigurations/overviews/{id} | Get a single GKS configuration |
+| `$client->gksConfigurations->getEnabledClientVersions()` | GET /gksClientVersions/enabled | List the GKS client versions a configuration may reference |
 | `$client->vehicleDeregistrations->createDeregistration()` | POST /vehicleDeregistrations/deregistrations | Submit a vehicle deregistration |
 | `$client->vehicleDeregistrations->downloadFileContent()` | GET /vehicleDeregistrations/files/content/{fileAccessKey} | Download a file from a `VEHICLE_DEREGISTRATION_XKFZ_EVENT` webhook |
 | `$client->vehicleRegistrations->createRegistration()` | POST /vehicleRegistrations/registrations | Submit a vehicle registration |

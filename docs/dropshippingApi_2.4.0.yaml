@@ -7,12 +7,37 @@ servers:
     - url: https://{host}/dropshipping-api/{dropshippingClientId}/2.4.0
       variables:
           host:
-              default: PLACEHOLDER_DROPSHIPPING_API_HOST_DEFAULT
+              default: api.kennzeichen.dev
               description: API host
           dropshippingClientId:
               default: 0
               description: The ID assigned to the dropshippingClientId upon granting access to API documentation.
 paths:
+    /gksClientVersions/enabled:
+        get:
+            summary: Get enabled GKS client versions.
+            operationId: EnabledGksClientVersionsGet
+            responses:
+                "200":
+                    description: GKS client version representations
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/EnabledGksClientVersionsGetResponse"
+                            example:
+                                {
+                                    "gksClientVersions":
+                                        [
+                                            { "versionNumber": "2.0" },
+                                            { "versionNumber": "3.0" },
+                                        ],
+                                }
+                default:
+                    description: Unexpected error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Error"
     /gksConfigurations:
         post:
             summary: Create a GKS configuration
@@ -40,6 +65,7 @@ paths:
                                         "cityName": "City X",
                                         "countryCode": "D",
                                     },
+                                "gksClientVersionNumber": "3.0",
                             }
             responses:
                 "201":
@@ -52,6 +78,7 @@ paths:
                                 {
                                     "id": "11111111-1111-1111-1111-111111111111",
                                     "name": "Name X",
+                                    "gksClientVersionNumber": "3.0",
                                 }
                 default:
                     description: Unexpected error
@@ -93,6 +120,7 @@ paths:
                                         "cityName": "City X Edited",
                                         "countryCode": "D",
                                     },
+                                "gksClientVersionNumber": "2.0",
                             }
             responses:
                 "204":
@@ -121,10 +149,12 @@ paths:
                                             {
                                                 "id": "11111111-1111-1111-1111-111111111111",
                                                 "name": "Name 1",
+                                                "gksClientVersionNumber": "2.0",
                                             },
                                             {
                                                 "id": "22222222-2222-2222-2222-222222222222",
                                                 "name": "Name 2",
+                                                "gksClientVersionNumber": "2.0",
                                             },
                                         ],
                                 }
@@ -156,6 +186,7 @@ paths:
                                 {
                                     "id": "11111111-1111-1111-1111-111111111111",
                                     "name": "Name 1",
+                                    "gksClientVersionNumber": "2.0",
                                 }
                 default:
                     description: Unexpected error
@@ -603,6 +634,79 @@ paths:
                     application/json:
                         schema:
                             $ref: "#/components/schemas/VehicleRegistrationRequest"
+                        example:
+                            {
+                                "gksConfigurationId": "11111111-1111-1111-1111-111111111111",
+                                "contractPartnerKopaKey": "K123X",
+                                "externalOrderId": "dropshipping-api-vehicle-registration",
+                                "email": "dropshipping-api-end-customer@localhost.test",
+                                "customization":
+                                    {
+                                        "vehicleRegistrationServiceTypeCode": "UM",
+                                        "licensePlateNumberAssignmentStrategy":
+                                            {
+                                                "strategyType": "RESERVATION",
+                                                "licensePlateNumberComponents":
+                                                    {
+                                                        "usageType": "EURO",
+                                                        "city": "BO",
+                                                        "middle": "CD",
+                                                        "end": "123",
+                                                    },
+                                                "licensePlateType": "REGULAR_SEASON",
+                                                "seasonEndMonth": 10,
+                                                "seasonStartMonth": 4,
+                                                "reservationPin": "1234",
+                                            },
+                                        "productType": "VEHICLE_REGISTRATION",
+                                        "deregistered": false,
+                                        "vehicleType": "CAR",
+                                        "electronicInsuranceConfirmationNumber": "EVB1234",
+                                        "vehicleIdentificationNumber": "VIN12345678901234",
+                                        "vehicleRegistrationCertificateSecurityCode": "VRCS123",
+                                        "vehicleTitleNumber": "VT123456",
+                                        "vehicleTitleSecurityCode": "B12345678900",
+                                        "iban": "DE0123456789000",
+                                        "bic": "BYLADEM1001",
+                                        "previousLicensePlate":
+                                            {
+                                                "licensePlateNumberComponents":
+                                                    {
+                                                        "usageType": "EURO",
+                                                        "city": "BO",
+                                                        "middle": "EF",
+                                                        "end": "456",
+                                                    },
+                                                "licensePlateType": "ELECTRIC_SEASON",
+                                                "seasonEndMonth": 11,
+                                                "seasonStartMonth": 5,
+                                                "frontLicensePlateSecurityCode": "F12",
+                                                "rearLicensePlateSecurityCode": "R12",
+                                            },
+                                    },
+                                "vehicleHolder":
+                                    {
+                                        "address":
+                                            {
+                                                "additionalField": "Iadditional",
+                                                "firstName": "Ifirst",
+                                                "lastName": "Ilast",
+                                                "gender": "FEMALE",
+                                                "streetName": "Istreet",
+                                                "houseNumber": "1I",
+                                                "zipCode": "22222",
+                                                "cityName": "Icity",
+                                                "taxNumber": "Itax",
+                                                "companyName": "Icompany",
+                                                "phoneNumber": "+41222222222222",
+                                                "countryCode": "DE",
+                                            },
+                                        "birthDate": "2000-01-31",
+                                        "placeOfBirth": "Bcity",
+                                        "birthName": "Bname",
+                                    },
+                            }
+
             responses:
                 "200":
                     description: Information about the objects created for processing of the vehicle registration request. Registration results are communicated via webhook events.
@@ -610,6 +714,7 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/VehicleRegistrationResponse"
+                            example: { "order": { "id": 1 } }
                 default:
                     description: Unexpected error
                     content:
@@ -900,11 +1005,30 @@ components:
             required:
                 - id
                 - name
+                - gksClientVersionNumber
             properties:
                 id:
                     $ref: "#/components/schemas/GksConfigurationId"
                 name:
                     $ref: "#/components/schemas/GksConfigurationName"
+                gksClientVersionNumber:
+                    $ref: "#/components/schemas/GksClientVersionNumber"
+        EnabledGksClientVersionsGetResponse:
+            type: object
+            required:
+                - gksClientVersions
+            properties:
+                gksClientVersions:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/GksClientVersion"
+        GksClientVersion:
+            type: object
+            required:
+                - versionNumber
+            properties:
+                versionNumber:
+                    $ref: "#/components/schemas/GksClientVersionNumber"
         GksConfigurationOverviewsResponse:
             type: object
             required:
@@ -924,6 +1048,7 @@ components:
                 - publicKeyCertificate
                 - privateKey
                 - company
+                - gksClientVersionNumber
             properties:
                 name:
                     $ref: "#/components/schemas/GksConfigurationName"
@@ -945,6 +1070,8 @@ components:
                     format: password
                 company:
                     $ref: "#/components/schemas/GksConfigurationCompany"
+                gksClientVersionNumber:
+                    $ref: "#/components/schemas/GksClientVersionNumber"
         GksConfigurationId:
             type: string
             format: uuid
@@ -952,6 +1079,11 @@ components:
         GksConfigurationName:
             type: string
             description: User-given name for the GKS configuration.
+            minLength: 1
+            maxLength: 255
+        GksClientVersionNumber:
+            type: string
+            description: See operation EnabledGksClientVersionsGet for a list of enabled versions.
             minLength: 1
             maxLength: 255
         NullableGksConfigurationId:
@@ -1557,6 +1689,7 @@ components:
                     nullable: true
                     minLength: 3
                     maxLength: 3
+            description: Must be omitted or null for vehicleRegistrationServiceTypeCode NZ.
         VehicleRegistrationCustomization:
             type: object
             allOf:
@@ -1577,7 +1710,7 @@ components:
                 vehicleRegistrationServiceTypeCode:
                     $ref: "#/components/schemas/VehicleRegistrationServiceTypeCode"
                 deregistered:
-                    description: True if already deregistered, false otherwise.
+                    description: True if already deregistered, false otherwise. Must be true for vehicleRegistrationServiceTypeCode NZ.
                     type: boolean
                 vehicleType:
                     $ref: "#/components/schemas/VehicleRegistrationVehicleType"
@@ -1596,7 +1729,7 @@ components:
                     nullable: true
                     minLength: 7
                     maxLength: 7
-                    description: Security code from Fahrzeugschein / Zulassungsbescheinigung Teil I.
+                    description: Security code from Fahrzeugschein / Zulassungsbescheinigung Teil I. Must be omitted or null for vehicleRegistrationServiceTypeCode NZ.
                 vehicleTitleNumber:
                     type: string
                     nullable: true
