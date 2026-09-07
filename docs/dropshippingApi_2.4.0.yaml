@@ -7,7 +7,7 @@ servers:
     - url: https://{host}/dropshipping-api/{dropshippingClientId}/2.4.0
       variables:
           host:
-              default: api.kennzeichen.dev
+              default: PLACEHOLDER_DROPSHIPPING_API_HOST_DEFAULT
               description: API host
           dropshippingClientId:
               default: 0
