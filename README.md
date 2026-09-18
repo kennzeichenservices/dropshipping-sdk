@@ -441,6 +441,52 @@ that field. None of these rules appear in any spec up to 2.4.0, and the API only
 request *after* the customer has identified themselves and signed, which is why the SDK catches
 them up front.
 
+**A deviating delivery address for the registration documents.** By default the registration
+office posts both the Zulassungsbescheinigung Teil I (Fahrzeugschein) and Teil II (Fahrzeugbrief)
+to the vehicle holder. Pass `deliveryConfigurations` to send either of them somewhere else -- to a
+dealership taking the Teil II, say:
+
+```php
+$dealer = DS::registrationDocumentCompany(
+    address: DS::registrationDeliveryAddress(
+        streetName: 'Autohausstraße',
+        houseNumber: '7a',
+        zipCode: '80331',
+        cityName: 'München',
+    ),
+    name: 'Autohaus Muster GmbH',
+);
+
+customization: DS::registrationCustomization(
+    // ...
+    deliveryConfigurations: DS::registrationDeliveryConfigurations(
+        vehicleRegistrationCertificate: DS::deliverToVehicleHolder(),
+        vehicleTitle: DS::deliverToThirdParty($dealer),
+    ),
+),
+```
+
+Both documents have to be configured together -- there is no way to redirect one and leave the
+other unmentioned, so the one that stays with the holder gets `DS::deliverToVehicleHolder()`.
+Omitting `deliveryConfigurations` altogether keeps the default for both.
+
+Each document takes one of three options:
+
+| Factory | What happens |
+|---------|--------------|
+| `DS::deliverToVehicleHolder()` | Posted to the vehicle holder. Carries no recipient. |
+| `DS::deliverToThirdParty($recipient)` | Posted to the third party at its own address. |
+| `DS::pickupByThirdParty($recipient)` | Left at the registration office for the third party to collect. |
+
+A recipient is either a company (`DS::registrationDocumentCompany(...)`, taking a name) or a
+private individual (`DS::registrationDocumentPerson(...)`, taking first and last name, gender and
+birth date). Both carry the address, built with `DS::registrationDeliveryAddress(...)` -- street,
+house number, postal code and city only. It is deliberately not `DS::address(...)`: the office
+gets the name from the recipient and delivers within Germany, so there is no country code.
+
+`PICKUP_BY_THIRD_PARTY` posts nothing, but still wants the address -- the office records who is
+entitled to collect the document and identifies them by it.
+
 Everything after the order creation arrives as `VEHICLE_REGISTRATION_*` webhooks: the identity
 check and signing steps report their start and outcome, and `VEHICLE_REGISTRATION_XKFZ_EVENT`
 carries the registration office's verdict along with the assigned plate. See
@@ -625,6 +671,8 @@ throws, except where the SDK defines a fallback — `status` on both XKFZ events
 | `VehicleRegistrationVehicleType` | `CAR`, `MOTORCYCLE`, `TRAILER` |
 | `VehicleRegistrationLicensePlateType` | `REGULAR`, `REGULAR_SEASON`, `ELECTRIC`, `ELECTRIC_SEASON`, `HISTORICAL`, `HISTORICAL_SEASON` |
 | `VehicleRegistrationLicensePlateNumberAssignmentStrategyType` | `RANDOM`, `RESERVATION`, `RETAINMENT` |
+| `VehicleRegistrationDeliveryConfigurationDeliveryOption` | `DELIVERY_TO_OWNER`, `DELIVERY_TO_THIRD_PARTY`, `PICKUP_BY_THIRD_PARTY` |
+| `VehicleRegistrationDeliveryConfigurationRecipientType` | `NATURAL_PERSON`, `LEGAL_PERSON` |
 | `VehicleRegistrationServiceTypeCode` | `NZ`, `WZ`, `UO`, `UI`, `UM`, `WG`, `UG`, `HA` |
 | `VehicleRegistrationXkfzEventStatus` | `ACCEPTED`, `APPROVED`, `APPROVED_WITH_DOCUMENTS`, `FAILED`, `FORWARDED`, `PROCESSED`, `REJECTED`, `REJECTED_WITH_DOCUMENTS`, `UNKNOWN` |
 | `VehicleRegistrationXkfzEventFilePurposeType` | `OTHER`, `PROVISIONAL_VEHICLE_REGISTRATION_CERTIFICATE`, `VEHICLE_REGISTRATION_APPLICATION_POWER_OF_ATTORNEY`, `VEHICLE_REGISTRATION_APPROVAL_NOTICE`, `VEHICLE_REGISTRATION_CERTIFICATE_TOKEN`, `VEHICLE_REGISTRATION_CHARGES_NOTICE`, `VEHICLE_REGISTRATION_ELECTRONIC_INSURANCE_CONFIRMATION`, `VEHICLE_REGISTRATION_GDPR_CONSENT_DECLARATION`, `VEHICLE_REGISTRATION_MOTOR_VEHICLE_TAX_SEPA_DIRECT_DEBIT_MANDATE`, `VEHICLE_REGISTRATION_REJECTION_NOTICE` |

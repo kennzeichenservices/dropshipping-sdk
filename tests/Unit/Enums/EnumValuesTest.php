@@ -11,6 +11,8 @@ use Dropshipping\Enums\ProductType;
 use Dropshipping\Enums\VehicleDeregistrationLicensePlateType;
 use Dropshipping\Enums\VehicleDeregistrationVehicleType;
 use Dropshipping\Enums\VehicleRegistrationApplicationFilePurposeType;
+use Dropshipping\Enums\VehicleRegistrationDeliveryConfigurationDeliveryOption;
+use Dropshipping\Enums\VehicleRegistrationDeliveryConfigurationRecipientType;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateNumberAssignmentStrategyType;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
 use Dropshipping\Enums\VehicleRegistrationServiceTypeCode;
@@ -136,6 +138,21 @@ final class EnumValuesTest extends TestCase
         self::assertSame('RESERVATION', VehicleRegistrationLicensePlateNumberAssignmentStrategyType::Reservation->value);
         self::assertSame('RETAINMENT', VehicleRegistrationLicensePlateNumberAssignmentStrategyType::Retainment->value);
         self::assertCount(3, VehicleRegistrationLicensePlateNumberAssignmentStrategyType::cases());
+    }
+
+    public function test_vehicle_registration_delivery_option_values(): void
+    {
+        self::assertSame('DELIVERY_TO_OWNER', VehicleRegistrationDeliveryConfigurationDeliveryOption::DeliveryToOwner->value);
+        self::assertSame('DELIVERY_TO_THIRD_PARTY', VehicleRegistrationDeliveryConfigurationDeliveryOption::DeliveryToThirdParty->value);
+        self::assertSame('PICKUP_BY_THIRD_PARTY', VehicleRegistrationDeliveryConfigurationDeliveryOption::PickupByThirdParty->value);
+        self::assertCount(3, VehicleRegistrationDeliveryConfigurationDeliveryOption::cases());
+    }
+
+    public function test_vehicle_registration_delivery_recipient_type_values(): void
+    {
+        self::assertSame('NATURAL_PERSON', VehicleRegistrationDeliveryConfigurationRecipientType::NaturalPerson->value);
+        self::assertSame('LEGAL_PERSON', VehicleRegistrationDeliveryConfigurationRecipientType::LegalPerson->value);
+        self::assertCount(2, VehicleRegistrationDeliveryConfigurationRecipientType::cases());
     }
 
     public function test_vehicle_registration_service_type_code_values(): void

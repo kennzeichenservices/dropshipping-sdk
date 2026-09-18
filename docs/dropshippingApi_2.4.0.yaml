@@ -1751,6 +1751,156 @@ components:
                     maxLength: 11
                 previousLicensePlate:
                     $ref: "#/components/schemas/VehicleRegistrationPreviousLicensePlate"
+                deliveryConfigurations:
+                    $ref: "#/components/schemas/VehicleRegistrationDeliveryConfigurations"
+
+        VehicleRegistrationDeliveryConfigurations:
+            type: object
+            nullable: true
+            required:
+                - vehicleRegistrationCertificate
+                - vehicleTitle
+            properties:
+                vehicleRegistrationCertificate:
+                    $ref: "#/components/schemas/VehicleRegistrationDeliveryConfiguration"
+                vehicleTitle:
+                    $ref: "#/components/schemas/VehicleRegistrationDeliveryConfiguration"
+
+        VehicleRegistrationDeliveryConfigurationDeliveryOption:
+            type: string
+            enum:
+                - DELIVERY_TO_OWNER
+                - DELIVERY_TO_THIRD_PARTY
+                - PICKUP_BY_THIRD_PARTY
+
+        VehicleRegistrationDeliveryConfiguration:
+            type: object
+            anyOf:
+                - $ref: "#/components/schemas/VehicleRegistrationDeliveryToOwnerDeliveryConfiguration"
+                - $ref: "#/components/schemas/VehicleRegistrationDeliveryToThirdPartyDeliveryConfiguration"
+                - $ref: "#/components/schemas/VehicleRegistrationPickupByThirdPartyDeliveryConfiguration"
+            discriminator:
+                propertyName: deliveryOption
+                mapping:
+                    DELIVERY_TO_OWNER: "#/components/schemas/VehicleRegistrationDeliveryToOwnerDeliveryConfiguration"
+                    DELIVERY_TO_THIRD_PARTY: "#/components/schemas/VehicleRegistrationDeliveryToThirdPartyDeliveryConfiguration"
+                    PICKUP_BY_THIRD_PARTY: "#/components/schemas/VehicleRegistrationPickupByThirdPartyDeliveryConfiguration"
+            required:
+                - deliveryOption
+            properties:
+                deliveryOption:
+                    $ref: "#/components/schemas/VehicleRegistrationDeliveryConfigurationDeliveryOption"
+
+        VehicleRegistrationDeliveryToOwnerDeliveryConfiguration:
+            type: object
+            allOf:
+                - $ref: "#/components/schemas/VehicleRegistrationDeliveryConfiguration"
+
+        VehicleRegistrationDeliveryToThirdPartyDeliveryConfiguration:
+            type: object
+            allOf:
+                - $ref: "#/components/schemas/VehicleRegistrationDeliveryConfiguration"
+            required:
+                - recipient
+            properties:
+                recipient:
+                    $ref: "#/components/schemas/VehicleRegistrationDeliveryConfigurationRecipient"
+
+        VehicleRegistrationPickupByThirdPartyDeliveryConfiguration:
+            type: object
+            allOf:
+                - $ref: "#/components/schemas/VehicleRegistrationDeliveryConfiguration"
+            required:
+                - recipient
+            properties:
+                recipient:
+                    $ref: "#/components/schemas/VehicleRegistrationDeliveryConfigurationRecipient"
+
+        VehicleRegistrationDeliveryConfigurationAddress:
+            type: object
+            required:
+                - streetName
+                - houseNumber
+                - zipCode
+                - cityName
+            properties:
+                streetName:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                houseNumber:
+                    type: string
+                    minLength: 1
+                    maxLength: 10
+                zipCode:
+                    type: string
+                    minLength: 1
+                    maxLength: 12
+                cityName:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+
+        VehicleRegistrationDeliveryConfigurationRecipientType:
+            type: string
+            enum:
+                - NATURAL_PERSON
+                - LEGAL_PERSON
+
+        VehicleRegistrationDeliveryConfigurationRecipient:
+            type: object
+            anyOf:
+                - $ref: "#/components/schemas/VehicleRegistrationDeliveryConfigurationNaturalPersonRecipient"
+                - $ref: "#/components/schemas/VehicleRegistrationDeliveryConfigurationLegalPersonRecipient"
+            discriminator:
+                propertyName: type
+                mapping:
+                    NATURAL_PERSON: "#/components/schemas/VehicleRegistrationDeliveryConfigurationNaturalPersonRecipient"
+                    LEGAL_PERSON: "#/components/schemas/VehicleRegistrationDeliveryConfigurationLegalPersonRecipient"
+            required:
+                - type
+                - address
+            properties:
+                type:
+                    $ref: "#/components/schemas/VehicleRegistrationDeliveryConfigurationRecipientType"
+                address:
+                    $ref: "#/components/schemas/VehicleRegistrationDeliveryConfigurationAddress"
+
+        VehicleRegistrationDeliveryConfigurationNaturalPersonRecipient:
+            type: object
+            allOf:
+                - $ref: "#/components/schemas/VehicleRegistrationDeliveryConfigurationRecipient"
+            required:
+                - firstName
+                - lastName
+                - gender
+                - birthDate
+            properties:
+                firstName:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                lastName:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                gender:
+                    $ref: "#/components/schemas/Gender"
+                birthDate:
+                    $ref: "#/components/schemas/LocalDate"
+
+        VehicleRegistrationDeliveryConfigurationLegalPersonRecipient:
+            type: object
+            allOf:
+                - $ref: "#/components/schemas/VehicleRegistrationDeliveryConfigurationRecipient"
+            required:
+                - name
+            properties:
+                name:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+
         VehicleRegistrationRequest:
             type: object
             required:
@@ -1782,6 +1932,16 @@ components:
                     nullable: true
                 vehicleHolder:
                     $ref: "#/components/schemas/VehicleRegistrationRequestVehicleHolder"
+                recycledVehicleRegistration:
+                    type: object
+                    nullable: true
+                    required:
+                        - orderId
+                    properties:
+                        orderId:
+                            type: integer
+                            format: int64
+
         VehicleRegistrationRequestVehicleHolder:
             type: object
             required:

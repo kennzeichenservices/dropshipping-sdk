@@ -6,6 +6,11 @@ namespace Dropshipping\Tests\Unit\DTO;
 
 use Dropshipping\DTO\EuroLicensePlateNumberComponents;
 use Dropshipping\DTO\VehicleRegistrationCustomization;
+use Dropshipping\DTO\VehicleRegistrationDeliveryConfigurationAddress;
+use Dropshipping\DTO\VehicleRegistrationDeliveryConfigurationLegalPersonRecipient;
+use Dropshipping\DTO\VehicleRegistrationDeliveryConfigurations;
+use Dropshipping\DTO\VehicleRegistrationDeliveryToOwnerDeliveryConfiguration;
+use Dropshipping\DTO\VehicleRegistrationDeliveryToThirdPartyDeliveryConfiguration;
 use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom;
 use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyReservation;
 use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained;
@@ -42,6 +47,46 @@ final class VehicleRegistrationCustomizationTest extends TestCase
         self::assertArrayNotHasKey('vehicleRegistrationCertificateSecurityCode', $array);
         self::assertArrayNotHasKey('vehicleTitleNumber', $array);
         self::assertArrayNotHasKey('previousLicensePlate', $array);
+        self::assertArrayNotHasKey('deliveryConfigurations', $array);
+    }
+
+    public function test_toArray_includes_deliveryConfigurations_when_set(): void
+    {
+        $array = $this->create([
+            'deliveryConfigurations' => new VehicleRegistrationDeliveryConfigurations(
+                vehicleRegistrationCertificate: new VehicleRegistrationDeliveryToOwnerDeliveryConfiguration(),
+                vehicleTitle: new VehicleRegistrationDeliveryToThirdPartyDeliveryConfiguration(
+                    new VehicleRegistrationDeliveryConfigurationLegalPersonRecipient(
+                        address: new VehicleRegistrationDeliveryConfigurationAddress(
+                            streetName: 'Autohausstraße',
+                            houseNumber: '7a',
+                            zipCode: '80331',
+                            cityName: 'München',
+                        ),
+                        name: 'Autohaus Muster GmbH',
+                    ),
+                ),
+            ),
+        ])->toArray();
+
+        self::assertSame([
+            'vehicleRegistrationCertificate' => [
+                'deliveryOption' => 'DELIVERY_TO_OWNER',
+            ],
+            'vehicleTitle' => [
+                'deliveryOption' => 'DELIVERY_TO_THIRD_PARTY',
+                'recipient' => [
+                    'type' => 'LEGAL_PERSON',
+                    'address' => [
+                        'streetName' => 'Autohausstraße',
+                        'houseNumber' => '7a',
+                        'zipCode' => '80331',
+                        'cityName' => 'München',
+                    ],
+                    'name' => 'Autohaus Muster GmbH',
+                ],
+            ],
+        ], $array['deliveryConfigurations']);
     }
 
     public function test_toArray_includes_previousLicensePlate_when_set(): void
@@ -450,6 +495,7 @@ final class VehicleRegistrationCustomizationTest extends TestCase
             'vehicleRegistrationCertificateSecurityCode' => null,
             'vehicleTitleNumber' => null,
             'previousLicensePlate' => null,
+            'deliveryConfigurations' => null,
         ];
 
         /** @var array<string, mixed> $args */

@@ -26,6 +26,23 @@ $address = DS::address(
     countryCode: 'DE',
 );
 
+// Optional recipient for a deviating delivery address of the registration documents.
+// A private individual instead of a company: DS::registrationDocumentPerson(
+//     address: ..., firstName: 'Erika', lastName: 'Mustermann',
+//     gender: Gender::Female, birthDate: '1985-07-14',
+// )
+$dealer = DS::registrationDocumentCompany(
+    // Street, house number, postal code and city only — the office takes the name from the
+    // recipient and delivers within Germany, so this is not the full DS::address(...).
+    address: DS::registrationDeliveryAddress(
+        streetName: 'Autohausstraße',
+        houseNumber: '7a',
+        zipCode: '80331',
+        cityName: 'München',
+    ),
+    name: 'Autohaus Muster GmbH',
+);
+
 $response = $client->vehicleRegistrations->createRegistration(
     DS::vehicleRegistration(
         email: 'max@example.com',
@@ -51,6 +68,17 @@ $response = $client->vehicleRegistrations->createRegistration(
             // throws. Every other service type code turns that around and *requires*
             // both. See the class docblock of VehicleRegistrationCustomization.
             vehicleTitleNumber: 'AB123456',                          // optional, exactly 8 chars
+            // Optional: where the two registration documents go once the office has issued
+            // them. Omitted, both are posted to the vehicle holder. Passed, both have to be
+            // configured — so the one that keeps the default says so explicitly.
+            deliveryConfigurations: DS::registrationDeliveryConfigurations(
+                // ZB I (Fahrzeugschein) stays with the holder.
+                vehicleRegistrationCertificate: DS::deliverToVehicleHolder(),
+                // ZB II (Fahrzeugbrief) goes to the dealership instead.
+                // Alternative: DS::pickupByThirdParty($dealer) — the office keeps the
+                // document and the third party collects it there.
+                vehicleTitle: DS::deliverToThirdParty($dealer),
+            ),
         ),
         vehicleHolderAddress: $address,
         vehicleHolderPlaceOfBirth: 'Berlin',   // required

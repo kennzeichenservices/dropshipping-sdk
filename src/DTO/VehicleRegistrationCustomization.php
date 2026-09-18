@@ -66,6 +66,7 @@ final readonly class VehicleRegistrationCustomization implements ItemCustomizati
      * @param string|null                                                      $vehicleRegistrationCertificateSecurityCode Security code from Fahrzeugschein / Zulassungsbescheinigung Teil I, exactly 7 characters. Required for every service type code but NZ, which forbids it.
      * @param string|null                                                      $vehicleTitleNumber                    Number from Fahrzeugbrief / Zulassungsbescheinigung Teil II (Fahrzeugbriefnummer), exactly 8 characters.
      * @param VehicleRegistrationPreviousLicensePlate|null                     $previousLicensePlate                  The license plate the vehicle carried before. Required for every service type code but NZ, which forbids it, and by the RETAINMENT strategy.
+     * @param VehicleRegistrationDeliveryConfigurations|null                   $deliveryConfigurations                Where the two registration documents are delivered. Omitted, both go to the vehicle holder.
      *
      * @throws DropshippingException When a value violates the API constraints.
      */
@@ -82,6 +83,7 @@ final readonly class VehicleRegistrationCustomization implements ItemCustomizati
         public ?string $vehicleRegistrationCertificateSecurityCode = null,
         public ?string $vehicleTitleNumber = null,
         public ?VehicleRegistrationPreviousLicensePlate $previousLicensePlate = null,
+        public ?VehicleRegistrationDeliveryConfigurations $deliveryConfigurations = null,
     ) {
         $this->productType = ProductType::VehicleRegistration;
 
@@ -137,6 +139,7 @@ final readonly class VehicleRegistrationCustomization implements ItemCustomizati
             'iban' => $this->iban,
             'bic' => $this->bic,
             'previousLicensePlate' => $this->previousLicensePlate?->toArray(),
+            'deliveryConfigurations' => $this->deliveryConfigurations?->toArray(),
         ], static fn (mixed $value): bool => $value !== null);
     }
 }

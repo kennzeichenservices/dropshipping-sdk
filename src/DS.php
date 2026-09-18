@@ -25,10 +25,19 @@ use Dropshipping\DTO\Requests\VehicleRegistrationRequest;
 use Dropshipping\DTO\Requests\VehicleRegistrationVehicleHolder;
 use Dropshipping\DTO\VehicleDeregistrationCustomization;
 use Dropshipping\DTO\VehicleRegistrationCustomization;
+use Dropshipping\DTO\VehicleRegistrationDeliveryConfigurationAddress;
+use Dropshipping\DTO\VehicleRegistrationDeliveryConfigurationInterface;
+use Dropshipping\DTO\VehicleRegistrationDeliveryConfigurationLegalPersonRecipient;
+use Dropshipping\DTO\VehicleRegistrationDeliveryConfigurationNaturalPersonRecipient;
+use Dropshipping\DTO\VehicleRegistrationDeliveryConfigurationRecipientInterface;
+use Dropshipping\DTO\VehicleRegistrationDeliveryConfigurations;
+use Dropshipping\DTO\VehicleRegistrationDeliveryToOwnerDeliveryConfiguration;
+use Dropshipping\DTO\VehicleRegistrationDeliveryToThirdPartyDeliveryConfiguration;
 use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyInterface;
 use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom;
 use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyReservation;
 use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained;
+use Dropshipping\DTO\VehicleRegistrationPickupByThirdPartyDeliveryConfiguration;
 use Dropshipping\DTO\VehicleRegistrationPreviousLicensePlate;
 use Dropshipping\Enums\Gender;
 use Dropshipping\Enums\LicensePlateType;
@@ -557,6 +566,104 @@ final class DS
     }
 
     /**
+     * Create an address a vehicle registration document is delivered to.
+     *
+     * Deliberately narrower than {@see self::address()}: the registration office
+     * takes street, house number, postal code and city, and gets the name from
+     * the recipient the address belongs to.
+     */
+    public static function registrationDeliveryAddress(
+        string $streetName,
+        string $houseNumber,
+        string $zipCode,
+        string $cityName,
+    ): VehicleRegistrationDeliveryConfigurationAddress {
+        return new VehicleRegistrationDeliveryConfigurationAddress(
+            streetName: $streetName,
+            houseNumber: $houseNumber,
+            zipCode: $zipCode,
+            cityName: $cityName,
+        );
+    }
+
+    /**
+     * Create a private individual as the recipient of a registration document.
+     */
+    public static function registrationDocumentPerson(
+        VehicleRegistrationDeliveryConfigurationAddress $address,
+        string $firstName,
+        string $lastName,
+        Gender $gender,
+        string $birthDate,
+    ): VehicleRegistrationDeliveryConfigurationNaturalPersonRecipient {
+        return new VehicleRegistrationDeliveryConfigurationNaturalPersonRecipient(
+            address: $address,
+            firstName: $firstName,
+            lastName: $lastName,
+            gender: $gender,
+            birthDate: $birthDate,
+        );
+    }
+
+    /**
+     * Create a company or other legal entity as the recipient of a registration
+     * document.
+     */
+    public static function registrationDocumentCompany(
+        VehicleRegistrationDeliveryConfigurationAddress $address,
+        string $name,
+    ): VehicleRegistrationDeliveryConfigurationLegalPersonRecipient {
+        return new VehicleRegistrationDeliveryConfigurationLegalPersonRecipient(
+            address: $address,
+            name: $name,
+        );
+    }
+
+    /**
+     * Send a registration document to the vehicle holder — the default, needed
+     * explicitly only for the document that keeps it while the other deviates.
+     */
+    public static function deliverToVehicleHolder(): VehicleRegistrationDeliveryToOwnerDeliveryConfiguration
+    {
+        return new VehicleRegistrationDeliveryToOwnerDeliveryConfiguration();
+    }
+
+    /**
+     * Post a registration document to a third party at its own address.
+     */
+    public static function deliverToThirdParty(
+        VehicleRegistrationDeliveryConfigurationRecipientInterface $recipient,
+    ): VehicleRegistrationDeliveryToThirdPartyDeliveryConfiguration {
+        return new VehicleRegistrationDeliveryToThirdPartyDeliveryConfiguration(recipient: $recipient);
+    }
+
+    /**
+     * Leave a registration document at the registration office for a third party
+     * to collect.
+     */
+    public static function pickupByThirdParty(
+        VehicleRegistrationDeliveryConfigurationRecipientInterface $recipient,
+    ): VehicleRegistrationPickupByThirdPartyDeliveryConfiguration {
+        return new VehicleRegistrationPickupByThirdPartyDeliveryConfiguration(recipient: $recipient);
+    }
+
+    /**
+     * Pair the delivery configurations of the two registration documents.
+     *
+     * The API requires both together, so pass {@see self::deliverToVehicleHolder()}
+     * for the one that stays with the holder.
+     */
+    public static function registrationDeliveryConfigurations(
+        VehicleRegistrationDeliveryConfigurationInterface $vehicleRegistrationCertificate,
+        VehicleRegistrationDeliveryConfigurationInterface $vehicleTitle,
+    ): VehicleRegistrationDeliveryConfigurations {
+        return new VehicleRegistrationDeliveryConfigurations(
+            vehicleRegistrationCertificate: $vehicleRegistrationCertificate,
+            vehicleTitle: $vehicleTitle,
+        );
+    }
+
+    /**
      * Create a vehicle registration customization DTO.
      */
     public static function registrationCustomization(
@@ -572,6 +679,7 @@ final class DS
         ?string $vehicleRegistrationCertificateSecurityCode = null,
         ?string $vehicleTitleNumber = null,
         ?VehicleRegistrationPreviousLicensePlate $previousLicensePlate = null,
+        ?VehicleRegistrationDeliveryConfigurations $deliveryConfigurations = null,
     ): VehicleRegistrationCustomization {
         return new VehicleRegistrationCustomization(
             licensePlateNumberAssignmentStrategy: $licensePlateNumberAssignmentStrategy,
@@ -586,6 +694,7 @@ final class DS
             vehicleRegistrationCertificateSecurityCode: $vehicleRegistrationCertificateSecurityCode,
             vehicleTitleNumber: $vehicleTitleNumber,
             previousLicensePlate: $previousLicensePlate,
+            deliveryConfigurations: $deliveryConfigurations,
         );
     }
 
