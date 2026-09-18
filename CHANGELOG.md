@@ -1,6 +1,16 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [2.4.7] — 2026-09-18
+
+### Features
+
+- Add delivery configurations for vehicle registration documents
+
+### Miscellaneous
+
+- Replace hardcoded API host with placeholder
+
 ## [2.4.6] — 2026-09-07
 
 ### Features
@@ -9,6 +19,7 @@ All notable changes to this project will be documented in this file.
 
 ### Miscellaneous
 
+- Release v2.4.6
 - Bump version to 2.4.6
 
 ## [2.4.4] — 2026-08-11
