@@ -93,14 +93,15 @@ The client exposes seven endpoint groups as public readonly properties:
 - `$client->vehicleDeregistrations` -- Vehicle deregistration operations
 - `$client->vehicleRegistrations` -- Vehicle registration operations (requires API 2.4.0 or later)
 
-> **The SDK talks to dropshipping API 2.5.0 by default.** The API version is part of the request
-> URL, and an API version your client is not entitled to answers `403 Forbidden` on *every*
-> endpoint -- not just the new ones. `api-version` in `composer.json` therefore always names a
-> version that is live for all clients, so an SDK update never moves you onto a version you cannot
-> use. To stay on, or move to, another version per integration:
+> **The SDK talks to dropshipping API 2.4.0 by default and supports 2.5.0.** The API version is
+> part of the request URL, and an API version your client is not entitled to answers
+> `403 Forbidden` on *every* endpoint -- not just the new ones. `api-version` in `composer.json`
+> therefore always names a version that is live for all clients, so an SDK update never moves you
+> onto a version you cannot use. Opt into 2.5.0 per integration, once your client is enabled for
+> it:
 >
 > ```bash
-> DROPSHIPPING_API_VERSION=2.4.0
+> DROPSHIPPING_API_VERSION=2.5.0
 > ```
 >
 > Or pass it directly, which takes precedence over the environment:
@@ -111,12 +112,13 @@ The client exposes seven endpoint groups as public readonly properties:
 >     dropshippingClientId: 12345,
 >     username: '...',
 >     password: '...',
->     apiVersion: '2.4.0',
+>     apiVersion: '2.5.0',
 > );
 > ```
 >
-> Vehicle registration does not exist before 2.4.0, and a Halteränderung (`HA`) without eVB, IBAN
-> and BIC needs 2.5.0 -- 2.4.0 still requires them for every service type code.
+> Vehicle registration works on the default, except for a Halteränderung (`HA`): it needs 2.5.0.
+> 2.4.0 requires the ZB II security code for every service type code, while 2.5.0 forbids it for
+> `HA` -- and the SDK follows 2.5.0.
 
 ## Examples
 
@@ -360,8 +362,8 @@ class DeregistrationXkfzHandler implements WebhookHandlerInterface
 
 ### Submitting a Vehicle Registration
 
-> Requires dropshipping API 2.4.0 or later -- 2.5.0 for a Halteränderung, see below -- and a client
-> that is enabled for that version. See the version notice above.
+> Works on the default API version 2.4.0, except for a Halteränderung, which needs 2.5.0 -- see
+> below and the version notice above.
 
 ```php
 use Dropshipping\DS;

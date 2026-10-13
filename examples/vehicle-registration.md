@@ -2,8 +2,9 @@
 
 Submits a vehicle registration (Kfz-Zulassung) via `POST /vehicleRegistrations/registrations`.
 
-> Requires dropshipping API 2.4.0 or later — 2.5.0, the SDK default, for a Halteränderung without
-> eVB and bank details. Make sure your client is enabled for the version you use.
+> Works on dropshipping API 2.4.0, the SDK default, except for a Halteränderung (`HA`), which needs
+> 2.5.0 — set `DROPSHIPPING_API_VERSION=2.5.0` or pass `apiVersion: '2.5.0'` to
+> `DropshippingConfig`, and make sure your client is enabled for that version.
 
 ## What it does
 
@@ -123,7 +124,8 @@ Zulassungsbescheinigung Teil II is not involved. Spec 2.5.0 publishes what follo
 
 The ZB I security code and `previousLicensePlate` stay required, as for every code but `NZ`. As
 `RETAINMENT` keeps the plate on the vehicle, its two security codes stay `null`. Leaving out eVB,
-IBAN and BIC needs API 2.5.0 — 2.4.0 still requires them for every code.
+IBAN and BIC is new in 2.5.0, and so is the ban on the ZB II security code — 2.4.0 requires both
+for every code. An `HA` built by the SDK is therefore rejected by 2.4.0: use 2.5.0 for it.
 
 ## Webhooks
 
