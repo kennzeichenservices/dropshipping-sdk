@@ -1,6 +1,24 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [2.5.1] — 2026-10-13
+
+### Bug Fixes
+
+- Restore 2.4.0 as default API version; holder change (HA) requires API 2.5.0, RETAINMENT and no ZB II fields
+
+## [2.5.0] — 2026-10-13
+
+### Features
+
+- Add Dropshipping Webhooks API v3.3.0 specification
+
+## [2.4.8] — 2026-09-18
+
+### Miscellaneous
+
+- Release v2.4.7
+
 ## [2.4.7] — 2026-09-18
 
 ### Features
