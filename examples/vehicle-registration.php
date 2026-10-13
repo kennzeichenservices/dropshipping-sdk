@@ -12,8 +12,8 @@ use Dropshipping\Enums\{
     VehicleRegistrationVehicleType,
 };
 
-// NOTE: Vehicle registration requires dropshipping API 2.4.0, which is not the SDK
-// default. Set DROPSHIPPING_API_VERSION=2.4.0 or pass apiVersion to DropshippingConfig.
+// NOTE: Vehicle registration requires dropshipping API 2.4.0 or later. The SDK default is
+// 2.5.0; set DROPSHIPPING_API_VERSION or pass apiVersion to DropshippingConfig to change it.
 
 $address = DS::address(
     firstName: 'Max',
@@ -60,7 +60,7 @@ $response = $client->vehicleRegistrations->createRegistration(
             vehicleType: VehicleRegistrationVehicleType::Car,
             electronicInsuranceConfirmationNumber: 'ABC1234',        // eVB-Nummer, exactly 7 chars
             vehicleIdentificationNumber: 'WBA12345678901234',        // VIN / FIN
-            vehicleTitleSecurityCode: 'ABCDEF123456',                // ZB II security code, exactly 12 chars
+            vehicleTitleSecurityCode: 'B12345678900',                // ZB II security code, exactly 12 chars
             iban: 'DE89370400440532013000',
             bic: 'COBADEFFXXX',
             // ZB I code and previousLicensePlate belong to a vehicle that was registered
@@ -94,7 +94,7 @@ echo "Registration order created: {$response->orderId}\n";
 
 // That order ID is all the response carries. Everything else — including the two URLs the
 // customer MUST visit before anything is processed — arrives asynchronously via webhooks
-// (spec 3.2.0), as typed events:
+// (spec 3.3.0), as typed events:
 //
 //   VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED  — send the customer to
 //                                                             $event->identityVerificationUrl

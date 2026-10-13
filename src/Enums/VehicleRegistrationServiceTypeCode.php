@@ -7,12 +7,13 @@ namespace Dropshipping\Enums;
 /**
  * Identifies the kind of registration procedure (Zulassungsvorgang) to perform.
  *
- * The API spec lists these codes without descriptions, and without a word on
- * which fields each one requires or forbids. The comments and the two
- * predicates below carry what is known from outside the spec — see the "Rules
- * the API enforces but does not publish" section on
- * {@see \Dropshipping\DTO\VehicleRegistrationCustomization} for where that
- * knowledge comes from and what is done with it.
+ * The API spec lists these codes without descriptions. Up to 2.4.0 it said
+ * nothing about which fields each one requires or forbids; 2.5.0 spells out the
+ * rules for `HA` in the field descriptions, the rest is still known only from
+ * outside the spec. The predicates below carry both — see the "Rules per
+ * service type code" section on
+ * {@see \Dropshipping\DTO\VehicleRegistrationCustomization} for where each
+ * rule comes from and what is done with it.
  *
  * The codes fall into four groups. What distinguishes the members of a group
  * from one another is not documented anywhere we have access to; their field
@@ -41,7 +42,10 @@ enum VehicleRegistrationServiceTypeCode: string
     /** Umschreibung. */
     case UG = 'UG';
 
-    /** Halteränderung — the plate stays with the vehicle. */
+    /**
+     * Halteränderung — only the holder changes. The vehicle stays registered,
+     * keeps its plate, and its Zulassungsbescheinigung Teil II is not involved.
+     */
     case HA = 'HA';
 
     /**
@@ -72,6 +76,65 @@ enum VehicleRegistrationServiceTypeCode: string
         return match ($this) {
             self::NZ, self::WZ, self::WG => true,
             self::UG, self::UM, self::UO, self::UI, self::HA => false,
+        };
+    }
+
+    /**
+     * Whether the procedure requires the vehicle to still be registered.
+     *
+     * Only a Halteränderung: it hands a running registration to a new holder,
+     * so `deregistered` must be false (spec 2.5.0).
+     */
+    public function requiresRegisteredVehicle(): bool
+    {
+        return match ($this) {
+            self::HA => true,
+            self::NZ, self::WZ, self::WG, self::UG, self::UM, self::UO, self::UI => false,
+        };
+    }
+
+    /**
+     * Whether the procedure keeps the plate the vehicle already carries.
+     *
+     * Only a Halteränderung, which must use the RETAINMENT strategy (spec
+     * 2.5.0). The other codes may still choose RETAINMENT — every one but `NZ`,
+     * which has no plate to keep.
+     */
+    public function retainsLicensePlate(): bool
+    {
+        return match ($this) {
+            self::HA => true,
+            self::NZ, self::WZ, self::WG, self::UG, self::UM, self::UO, self::UI => false,
+        };
+    }
+
+    /**
+     * Whether the procedure involves the Zulassungsbescheinigung Teil II.
+     *
+     * True for every code but `HA`. Where true, `vehicleTitleSecurityCode` is
+     * required; where false, both `vehicleTitleSecurityCode` and
+     * `vehicleTitleNumber` must be null (spec 2.5.0).
+     */
+    public function involvesVehicleTitle(): bool
+    {
+        return match ($this) {
+            self::HA => false,
+            self::NZ, self::WZ, self::WG, self::UG, self::UM, self::UO, self::UI => true,
+        };
+    }
+
+    /**
+     * Whether the procedure requires the insurance and vehicle tax details.
+     *
+     * True for every code but `HA`: the eVB number, IBAN and BIC are required
+     * then. For `HA` the spec (2.5.0) only drops the requirement — it does not
+     * forbid the fields, so they are passed on when given.
+     */
+    public function requiresInsuranceAndTaxDetails(): bool
+    {
+        return match ($this) {
+            self::HA => false,
+            self::NZ, self::WZ, self::WG, self::UG, self::UM, self::UO, self::UI => true,
         };
     }
 }

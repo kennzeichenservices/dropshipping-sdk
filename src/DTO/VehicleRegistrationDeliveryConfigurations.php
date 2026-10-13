@@ -21,7 +21,7 @@ use Dropshipping\Exceptions\DropshippingException;
  *
  * ## The pickup rule the API enforces but does not publish
  *
- * The two configurations look independent in the 2.4.0 spec — `deliveryOption`
+ * The two configurations look independent in the spec (2.4.0 and 2.5.0) — `deliveryOption`
  * is a bare enum and each document carries its own object — but
  * `PICKUP_BY_THIRD_PARTY` is all or nothing:
  *

@@ -91,13 +91,13 @@ The client exposes seven endpoint groups as public readonly properties:
 - `$client->webhooks` -- Webhook operations
 - `$client->gksConfigurations` -- GKS configuration management (KBA interface)
 - `$client->vehicleDeregistrations` -- Vehicle deregistration operations
-- `$client->vehicleRegistrations` -- Vehicle registration operations (requires API 2.4.0)
+- `$client->vehicleRegistrations` -- Vehicle registration operations (requires API 2.4.0 or later)
 
-> **Vehicle registration requires dropshipping API 2.4.0, which is not the SDK default.** The API
-> version is part of the request URL, and an API version your client is not entitled to answers
-> `403 Forbidden` on *every* endpoint -- not just the new ones. `api-version` in `composer.json`
-> therefore always names a version that is live for all clients, so an SDK update never moves you
-> onto a version you cannot use. Opt into 2.4.0 per integration, once your client is enabled for it:
+> **The SDK talks to dropshipping API 2.5.0 by default.** The API version is part of the request
+> URL, and an API version your client is not entitled to answers `403 Forbidden` on *every*
+> endpoint -- not just the new ones. `api-version` in `composer.json` therefore always names a
+> version that is live for all clients, so an SDK update never moves you onto a version you cannot
+> use. To stay on, or move to, another version per integration:
 >
 > ```bash
 > DROPSHIPPING_API_VERSION=2.4.0
@@ -115,8 +115,8 @@ The client exposes seven endpoint groups as public readonly properties:
 > );
 > ```
 >
-> Without this, calls to `$client->vehicleRegistrations` return a 404 -- while every other endpoint
-> keeps working.
+> Vehicle registration does not exist before 2.4.0, and a Halteränderung (`HA`) without eVB, IBAN
+> and BIC needs 2.5.0 -- 2.4.0 still requires them for every service type code.
 
 ## Examples
 
@@ -360,8 +360,8 @@ class DeregistrationXkfzHandler implements WebhookHandlerInterface
 
 ### Submitting a Vehicle Registration
 
-> Requires `apiVersion: '2.4.0'` on your `DropshippingConfig` (or `DROPSHIPPING_API_VERSION=2.4.0`)
-> and a client that is enabled for that version -- see the version notice above.
+> Requires dropshipping API 2.4.0 or later -- 2.5.0 for a Halteränderung, see below -- and a client
+> that is enabled for that version. See the version notice above.
 
 ```php
 use Dropshipping\DS;
@@ -383,7 +383,7 @@ $response = $client->vehicleRegistrations->createRegistration(
             vehicleType: VehicleRegistrationVehicleType::Car,
             electronicInsuranceConfirmationNumber: 'ABC1234',   // eVB-Nummer, exactly 7 chars
             vehicleIdentificationNumber: 'WBA12345678901234',
-            vehicleTitleSecurityCode: 'ABCDEF123456',           // ZB II code, exactly 12 chars
+            vehicleTitleSecurityCode: 'B12345678900',           // ZB II code, exactly 12 chars
             iban: 'DE89370400440532013000',
             bic: 'COBADEFFXXX',
         ),
@@ -437,9 +437,40 @@ none, every other code continues one, and the customization throws either way ro
 
 `RETAINMENT` is out for `NZ` as a consequence -- it has no previous plate to keep the number of.
 The API reports the ZB I violation as `verificationCode must be null`, its internal name for
-that field. None of these rules appear in any spec up to 2.4.0, and the API only rejects the
-request *after* the customer has identified themselves and signed, which is why the SDK catches
-them up front.
+that field. The spec's field descriptions only name the `NZ` side; that the other codes require
+both fields, and that `WZ` and `WG` need a deregistered vehicle, is known from API rejections
+alone. The API only rejects the request *after* the customer has identified themselves and
+signed, which is why the SDK catches all of it up front.
+
+**A Halteränderung (`HA`) only changes the holder.** The vehicle stays registered and keeps its
+plate, and the Fahrzeugbrief is not involved. Spec 2.5.0 publishes what follows from that, and the
+customization enforces it:
+
+| Field | `HA` | every other code |
+|-------|------|------------------|
+| `deregistered` | must be `false` | see above |
+| `licensePlateNumberAssignmentStrategy` | must be `RETAINMENT` | free (but not `RETAINMENT` for `NZ`) |
+| `vehicleTitleSecurityCode`, `vehicleTitleNumber` (ZB II) | must be `null` | security code required |
+| `electronicInsuranceConfirmationNumber`, `iban`, `bic` | optional | required |
+
+```php
+customization: DS::registrationCustomization(
+    licensePlateNumberAssignmentStrategy: DS::retainedLicensePlateNumber(),
+    vehicleRegistrationServiceTypeCode: VehicleRegistrationServiceTypeCode::HA,
+    deregistered: false,
+    vehicleType: VehicleRegistrationVehicleType::Car,
+    electronicInsuranceConfirmationNumber: null,
+    vehicleIdentificationNumber: 'WBA12345678901234',
+    vehicleTitleSecurityCode: null,
+    iban: null,
+    bic: null,
+    vehicleRegistrationCertificateSecurityCode: 'SEC1234',  // ZB I code, required
+    previousLicensePlate: DS::previousLicensePlate(        // the plate the vehicle keeps
+        plate: DS::plate('B', 'AB', '1234'),
+        licensePlateType: VehicleRegistrationLicensePlateType::Regular,
+    ),
+),
+```
 
 **A deviating delivery address for the registration documents.** By default the registration
 office posts both the Zulassungsbescheinigung Teil I (Fahrzeugschein) and Teil II (Fahrzeugbrief)
@@ -625,7 +656,7 @@ The SDK follows these patterns:
 | `DELIVERY_SHIPMENT` | `DeliveryShipmentEvent` | Delivery shipped with tracking code |
 | `DELIVERY_RETURN` | `DeliveryReturnEvent` | Delivery returned with reason and reshipping offer |
 | `DELIVERY_CANCELLATION` | `DeliveryCancellationEvent` | Delivery cancelled |
-| `LICENSE_PLATE_RESERVATION_APPROVAL` | `LicensePlateReservationApprovalEvent` | Reservation approved with PIN and price |
+| `LICENSE_PLATE_RESERVATION_APPROVAL` | `LicensePlateReservationApprovalEvent` | Reservation approved with PIN, price and, if sent, `reservationDurationDays` |
 | `LICENSE_PLATE_RESERVATION_REJECTION` | `LicensePlateReservationRejectionEvent` | Reservation rejected with alternatives |
 | `LICENSE_PLATE_RESERVATION_TIMEOUT` | `LicensePlateReservationTimeoutEvent` | Reservation timed out |
 | `VEHICLE_DEREGISTRATION_XKFZ_EVENT` | `VehicleDeregistrationXkfzEvent` | Vehicle deregistration XKFZ status update — includes `status`, `derivedStatus`, optional `files` (with `fileAccessKey` for download), optional `costBreakdown`, and optional `messages` |
@@ -640,7 +671,7 @@ The SDK follows these patterns:
 
 #### Unknown event types
 
-The table above covers webhooks spec 3.2.0. The API can start sending a new event type before a
+The table above covers webhooks spec 3.3.0. The API can start sending a new event type before a
 matching SDK release exists — by default such an `eventType` throws a `WebhookException`. Opt into
 tolerance to receive them instead:
 

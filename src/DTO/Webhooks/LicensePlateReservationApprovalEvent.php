@@ -12,7 +12,8 @@ use Dropshipping\Support\Hydrator;
  * Webhook event fired when a license plate reservation is approved.
  *
  * Contains the order reference, reservation PIN, customization details,
- * and the reservation price.
+ * the reservation price and, since webhooks 3.3.0, how long the reservation
+ * lasts.
  */
 final readonly class LicensePlateReservationApprovalEvent implements WebhookEventInterface
 {
@@ -24,6 +25,7 @@ final readonly class LicensePlateReservationApprovalEvent implements WebhookEven
      * @param string|null                          $reservationPin   The reservation PIN, if provided.
      * @param LicensePlateReservationCustomization $customization    The license plate customization details.
      * @param string                               $reservationPrice The price for the reservation.
+     * @param int|null                             $reservationDurationDays Number of days the license plate is reserved for. Null when the API does not send it, which events before webhooks 3.3.0 never do.
      */
     public function __construct(
         public string $eventTime,
@@ -31,6 +33,7 @@ final readonly class LicensePlateReservationApprovalEvent implements WebhookEven
         public ?string $reservationPin,
         public LicensePlateReservationCustomization $customization,
         public string $reservationPrice,
+        public ?int $reservationDurationDays = null,
     ) {
     }
 
@@ -67,6 +70,7 @@ final readonly class LicensePlateReservationApprovalEvent implements WebhookEven
                 Hydrator::requireArray($data, 'customization', self::CONTEXT),
             ),
             reservationPrice: Hydrator::requireString($data, 'reservationPrice', self::CONTEXT),
+            reservationDurationDays: Hydrator::optionalInt($data, 'reservationDurationDays', self::CONTEXT),
         );
     }
 }

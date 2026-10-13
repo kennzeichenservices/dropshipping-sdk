@@ -307,11 +307,11 @@ final class VehicleRegistrationCustomizationTest extends TestCase
     public function test_constructor_allows_previous_vehicle_fields_for_other_service_type_codes(): void
     {
         foreach (self::continuingServiceTypeCodes() as $code) {
-            $array = $this->create([
+            $array = $this->create(self::fitFor($code, [
                 'vehicleRegistrationServiceTypeCode' => $code,
                 'vehicleRegistrationCertificateSecurityCode' => 'SEC1234',
                 'previousLicensePlate' => $this->previousLicensePlate(),
-            ])->toArray();
+            ]))->toArray();
 
             self::assertSame('SEC1234', $array['vehicleRegistrationCertificateSecurityCode'], $code->value);
             self::assertArrayHasKey('previousLicensePlate', $array, $code->value);
@@ -398,7 +398,6 @@ final class VehicleRegistrationCustomizationTest extends TestCase
             VehicleRegistrationServiceTypeCode::UM,
             VehicleRegistrationServiceTypeCode::UO,
             VehicleRegistrationServiceTypeCode::UI,
-            VehicleRegistrationServiceTypeCode::HA,
         ];
 
         foreach ($codes as $code) {
@@ -418,6 +417,139 @@ final class VehicleRegistrationCustomizationTest extends TestCase
         self::assertSame('NZ', $array['vehicleRegistrationServiceTypeCode']);
         self::assertArrayNotHasKey('vehicleRegistrationCertificateSecurityCode', $array);
         self::assertArrayNotHasKey('previousLicensePlate', $array);
+    }
+
+    public function test_ha_stays_valid_without_title_insurance_and_tax_fields(): void
+    {
+        $array = $this->createHolderChange()->toArray();
+
+        self::assertSame('HA', $array['vehicleRegistrationServiceTypeCode']);
+        self::assertFalse($array['deregistered']);
+        self::assertSame(['strategyType' => 'RETAINMENT'], $array['licensePlateNumberAssignmentStrategy']);
+        self::assertSame('SEC1234', $array['vehicleRegistrationCertificateSecurityCode']);
+        self::assertArrayHasKey('previousLicensePlate', $array);
+
+        foreach (['electronicInsuranceConfirmationNumber', 'vehicleTitleNumber', 'vehicleTitleSecurityCode', 'iban', 'bic'] as $field) {
+            self::assertArrayNotHasKey($field, $array, $field);
+        }
+    }
+
+    public function test_ha_passes_on_insurance_and_tax_fields_when_given(): void
+    {
+        $array = $this->createHolderChange([
+            'electronicInsuranceConfirmationNumber' => 'ABC1234',
+            'iban' => 'DE89370400440532013000',
+            'bic' => 'COBADEFFXXX',
+        ])->toArray();
+
+        self::assertSame('ABC1234', $array['electronicInsuranceConfirmationNumber']);
+        self::assertSame('DE89370400440532013000', $array['iban']);
+        self::assertSame('COBADEFFXXX', $array['bic']);
+    }
+
+    public function test_ha_still_checks_the_length_of_optional_fields(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage('Field "iban" must be between 15 and 34 characters');
+
+        $this->createHolderChange(['iban' => 'DE8937040044']);
+    }
+
+    public function test_ha_rejects_a_deregistered_vehicle(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage('Field "deregistered" must be false for vehicleRegistrationServiceTypeCode HA');
+
+        $this->createHolderChange(['deregistered' => true]);
+    }
+
+    public function test_ha_rejects_strategies_other_than_retainment(): void
+    {
+        $strategies = [
+            'RANDOM' => new VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom(
+                licensePlateType: VehicleRegistrationLicensePlateType::Regular,
+            ),
+            'RESERVATION' => new VehicleRegistrationLicensePlateNumberAssignmentStrategyReservation(
+                licensePlateNumberComponents: new EuroLicensePlateNumberComponents('M', 'KG', '6988'),
+                licensePlateType: VehicleRegistrationLicensePlateType::Regular,
+                reservationPin: '1234',
+            ),
+        ];
+
+        foreach ($strategies as $type => $strategy) {
+            try {
+                $this->createHolderChange(['licensePlateNumberAssignmentStrategy' => $strategy]);
+
+                self::fail(sprintf('Expected HA to reject the %s strategy', $type));
+            } catch (DropshippingException $exception) {
+                self::assertSame(
+                    sprintf(
+                        'Field "licensePlateNumberAssignmentStrategy" must be RETAINMENT for vehicleRegistrationServiceTypeCode HA, got %s',
+                        $type,
+                    ),
+                    $exception->getMessage(),
+                );
+            }
+        }
+    }
+
+    public function test_ha_rejects_vehicleTitleSecurityCode(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage('Field "vehicleTitleSecurityCode" must be null for vehicleRegistrationServiceTypeCode HA');
+
+        $this->createHolderChange(['vehicleTitleSecurityCode' => 'ABCDEF123456']);
+    }
+
+    public function test_ha_rejects_vehicleTitleNumber(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage('Field "vehicleTitleNumber" must be null for vehicleRegistrationServiceTypeCode HA');
+
+        $this->createHolderChange(['vehicleTitleNumber' => 'AB123456']);
+    }
+
+    public function test_retainment_stays_open_to_other_continuing_codes(): void
+    {
+        $array = $this->createContinuation([
+            'vehicleRegistrationServiceTypeCode' => VehicleRegistrationServiceTypeCode::UM,
+            'deregistered' => false,
+            'licensePlateNumberAssignmentStrategy' => new VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained(),
+        ])->toArray();
+
+        self::assertSame(['strategyType' => 'RETAINMENT'], $array['licensePlateNumberAssignmentStrategy']);
+        self::assertSame('ABCDEF123456', $array['vehicleTitleSecurityCode']);
+    }
+
+    public function test_constructor_requires_title_insurance_and_tax_fields_for_every_code_but_ha(): void
+    {
+        $fields = ['electronicInsuranceConfirmationNumber', 'vehicleTitleSecurityCode', 'iban', 'bic'];
+
+        foreach (VehicleRegistrationServiceTypeCode::cases() as $code) {
+            if ($code === VehicleRegistrationServiceTypeCode::HA) {
+                continue;
+            }
+
+            foreach ($fields as $field) {
+                $overrides = ['vehicleRegistrationServiceTypeCode' => $code, $field => null];
+
+                if ($code->requiresPreviousRegistration()) {
+                    $overrides['vehicleRegistrationCertificateSecurityCode'] = 'SEC1234';
+                    $overrides['previousLicensePlate'] = $this->previousLicensePlate();
+                }
+
+                try {
+                    $this->create($overrides);
+
+                    self::fail(sprintf('Expected %s to require %s', $code->value, $field));
+                } catch (DropshippingException $exception) {
+                    self::assertSame(
+                        sprintf('Field "%s" is required for vehicleRegistrationServiceTypeCode %s', $field, $code->value),
+                        $exception->getMessage(),
+                    );
+                }
+            }
+        }
     }
 
     public function test_constructor_rejects_too_short_iban(): void
@@ -458,6 +590,47 @@ final class VehicleRegistrationCustomizationTest extends TestCase
             frontLicensePlateSecurityCode: $frontLicensePlateSecurityCode,
             rearLicensePlateSecurityCode: $rearLicensePlateSecurityCode,
         );
+    }
+
+    /**
+     * The fields HA fixes, layered over overrides meant for any continuing code:
+     * a registered vehicle, the RETAINMENT strategy, and no ZB II.
+     *
+     * @param array<string, mixed> $overrides
+     *
+     * @return array<string, mixed>
+     */
+    private static function fitFor(VehicleRegistrationServiceTypeCode $code, array $overrides): array
+    {
+        if ($code !== VehicleRegistrationServiceTypeCode::HA) {
+            return $overrides;
+        }
+
+        return array_merge($overrides, [
+            'deregistered' => false,
+            'licensePlateNumberAssignmentStrategy' => new VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained(),
+            'vehicleTitleSecurityCode' => null,
+        ]);
+    }
+
+    /**
+     * A Halteränderung carrying only what the API requires for it.
+     *
+     * @param array<string, mixed> $overrides
+     */
+    private function createHolderChange(array $overrides = []): VehicleRegistrationCustomization
+    {
+        return $this->create(array_merge([
+            'licensePlateNumberAssignmentStrategy' => new VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained(),
+            'vehicleRegistrationServiceTypeCode' => VehicleRegistrationServiceTypeCode::HA,
+            'deregistered' => false,
+            'electronicInsuranceConfirmationNumber' => null,
+            'vehicleTitleSecurityCode' => null,
+            'iban' => null,
+            'bic' => null,
+            'vehicleRegistrationCertificateSecurityCode' => 'SEC1234',
+            'previousLicensePlate' => $this->previousLicensePlate(),
+        ], $overrides));
     }
 
     /**

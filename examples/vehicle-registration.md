@@ -2,9 +2,8 @@
 
 Submits a vehicle registration (Kfz-Zulassung) via `POST /vehicleRegistrations/registrations`.
 
-> Requires dropshipping API 2.4.0, which is not the SDK default — set
-> `DROPSHIPPING_API_VERSION=2.4.0` or pass `apiVersion: '2.4.0'` to `DropshippingConfig`, and make
-> sure your client is enabled for that version.
+> Requires dropshipping API 2.4.0 or later — 2.5.0, the SDK default, for a Halteränderung without
+> eVB and bank details. Make sure your client is enabled for the version you use.
 
 ## What it does
 
@@ -104,14 +103,31 @@ on and their seals unbroken, so nobody can read the codes off them —
 `frontLicensePlateSecurityCode` and `rearLicensePlateSecurityCode` on `previousLicensePlate`
 must stay `null` there. The other two strategies take them.
 
-None of these rules is published in any spec up to 2.4.0, where
-`VehicleRegistrationServiceTypeCode` is a bare enum without descriptions and the fields are
-declared plainly nullable. They are enforced here because the API only rejects them *after*
-identification and QES have run.
+`VehicleRegistrationServiceTypeCode` is a bare enum without descriptions in the spec, and its
+field descriptions only name the `NZ` side; the rest of the table is known from API rejections.
+The rules are enforced here because the API only rejects them *after* identification and QES
+have run.
+
+## Halteränderung (`HA`)
+
+A Halteränderung only changes the holder: the vehicle stays registered, keeps its plate, and the
+Zulassungsbescheinigung Teil II is not involved. Spec 2.5.0 publishes what follows from that, and
+`VehicleRegistrationCustomization` throws on any violation:
+
+| Field | `HA` | every other code |
+|-------|------|------------------|
+| `deregistered` | must be `false` | see above |
+| `licensePlateNumberAssignmentStrategy` | must be `RETAINMENT` | free (but not `RETAINMENT` for `NZ`) |
+| `vehicleTitleSecurityCode`, `vehicleTitleNumber` (ZB II) | must be `null` | security code required |
+| `electronicInsuranceConfirmationNumber`, `iban`, `bic` | optional | required |
+
+The ZB I security code and `previousLicensePlate` stay required, as for every code but `NZ`. As
+`RETAINMENT` keeps the plate on the vehicle, its two security codes stay `null`. Leaving out eVB,
+IBAN and BIC needs API 2.5.0 — 2.4.0 still requires them for every code.
 
 ## Webhooks
 
-Everything after the order creation is announced via webhook events (webhooks spec 3.2.0), all
+Everything after the order creation is announced via webhook events (webhooks spec 3.3.0), all
 typed:
 
 | Event type | Class |

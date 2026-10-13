@@ -156,6 +156,24 @@ final class Validator
     }
 
     /**
+     * Ensure that a boolean value is false.
+     *
+     * The counterpart to {@see self::requireTrue()}.
+     *
+     * @param bool   $value  The value to validate.
+     * @param string $field  The field name used in the exception message.
+     * @param string $reason Why the field has to be false, appended to the message.
+     *
+     * @throws DropshippingException If the value is true.
+     */
+    public static function requireFalse(bool $value, string $field, string $reason): void
+    {
+        if ($value === true) {
+            throw new DropshippingException(sprintf('Field "%s" must be false %s', $field, $reason));
+        }
+    }
+
+    /**
      * Validate a nullable string length. Skips validation if the value is null.
      *
      * @param string|null $value The value to validate.

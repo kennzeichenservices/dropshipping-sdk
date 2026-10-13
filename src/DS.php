@@ -665,17 +665,21 @@ final class DS
 
     /**
      * Create a vehicle registration customization DTO.
+     *
+     * The eVB number, ZB II security code, IBAN and BIC are required for every
+     * service type code but HA. Which fields each code requires or forbids is
+     * listed on {@see VehicleRegistrationCustomization}.
      */
     public static function registrationCustomization(
         VehicleRegistrationLicensePlateNumberAssignmentStrategyInterface $licensePlateNumberAssignmentStrategy,
         VehicleRegistrationServiceTypeCode $vehicleRegistrationServiceTypeCode,
         bool $deregistered,
         VehicleRegistrationVehicleType $vehicleType,
-        string $electronicInsuranceConfirmationNumber,
+        ?string $electronicInsuranceConfirmationNumber,
         string $vehicleIdentificationNumber,
-        string $vehicleTitleSecurityCode,
-        string $iban,
-        string $bic,
+        ?string $vehicleTitleSecurityCode,
+        ?string $iban,
+        ?string $bic,
         ?string $vehicleRegistrationCertificateSecurityCode = null,
         ?string $vehicleTitleNumber = null,
         ?VehicleRegistrationPreviousLicensePlate $previousLicensePlate = null,

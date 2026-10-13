@@ -25,6 +25,7 @@ use Dropshipping\DTO\Webhooks\WebhookEventFactory;
 use Dropshipping\DTO\Webhooks\WebhookOrder;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
 use Dropshipping\Enums\WebhookEventType;
+use Dropshipping\Exceptions\DropshippingException;
 use Dropshipping\Exceptions\WebhookException;
 use PHPUnit\Framework\TestCase;
 
@@ -104,6 +105,31 @@ final class WebhookEventFactoryTest extends TestCase
         self::assertInstanceOf(LicensePlateReservationApprovalEvent::class, $event);
         self::assertSame('1234', $event->reservationPin);
         self::assertSame('12.50', $event->reservationPrice);
+        self::assertNull($event->reservationDurationDays);
+    }
+
+    public function test_fromArray_reads_reservation_duration_days(): void
+    {
+        $event = WebhookEventFactory::fromArray(self::reservationApprovalPayload(['reservationDurationDays' => 90]));
+
+        self::assertInstanceOf(LicensePlateReservationApprovalEvent::class, $event);
+        self::assertSame(90, $event->reservationDurationDays);
+    }
+
+    public function test_fromArray_accepts_explicit_null_reservation_duration_days(): void
+    {
+        $event = WebhookEventFactory::fromArray(self::reservationApprovalPayload(['reservationDurationDays' => null]));
+
+        self::assertInstanceOf(LicensePlateReservationApprovalEvent::class, $event);
+        self::assertNull($event->reservationDurationDays);
+    }
+
+    public function test_fromArray_rejects_non_integer_reservation_duration_days(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage('Field "reservationDurationDays" in LicensePlateReservationApprovalEvent must be of type int');
+
+        WebhookEventFactory::fromArray(self::reservationApprovalPayload(['reservationDurationDays' => '90']));
     }
 
     public function test_fromArray_creates_license_plate_reservation_rejection_event(): void
@@ -413,5 +439,26 @@ final class WebhookEventFactoryTest extends TestCase
 
         $orderNoExternal = WebhookOrder::fromArray(['id' => 11]);
         self::assertNull($orderNoExternal->externalId);
+    }
+
+    /**
+     * @param array<string, mixed> $overrides
+     *
+     * @return array<string, mixed>
+     */
+    private static function reservationApprovalPayload(array $overrides = []): array
+    {
+        return array_merge([
+            'eventType' => 'LICENSE_PLATE_RESERVATION_APPROVAL',
+            'eventTime' => '2024-01-01T00:00:00Z',
+            'order' => ['id' => 10],
+            'customization' => [
+                'registrationOfficeServiceId' => 602,
+                'licensePlateType' => 'REGULAR',
+                'vehicleType' => 'CAR',
+                'licensePlateNumberComponents' => ['city' => 'B', 'middle' => 'AB', 'end' => '1'],
+            ],
+            'reservationPrice' => '12.50',
+        ], $overrides);
     }
 }

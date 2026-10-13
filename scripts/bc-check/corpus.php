@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Payload corpus for the differential test.
  *
  * Shapes are taken from the request/response examples in docs/dropshippingApi_2.3.2.yaml
- * and docs/dropshippingWebhooksApi_3.2.0.yaml, plus deliberate edge cases: absent
+ * and docs/dropshippingWebhooksApi_3.3.0.yml, plus deliberate edge cases: absent
  * optionals, explicit nulls, empty lists and non-sequential array keys.
  *
  * Each entry: [label, FQCN, payload]
@@ -116,6 +116,10 @@ return [
     ['reservationApproval/no-pin', 'Dropshipping\DTO\Webhooks\LicensePlateReservationApprovalEvent', [
         'eventTime' => '2026-01-01T10:00:00', 'order' => $order,
         'customization' => $cust, 'reservationPrice' => '12.00',
+    ]],
+    ['reservationApproval/with-duration', 'Dropshipping\DTO\Webhooks\LicensePlateReservationApprovalEvent', [
+        'eventTime' => '2026-01-01T10:00:00', 'order' => $order, 'reservationPin' => '1234',
+        'customization' => $cust, 'reservationPrice' => '12.00', 'reservationDurationDays' => 90,
     ]],
     ['reservationRejection/with-alternatives', 'Dropshipping\DTO\Webhooks\LicensePlateReservationRejectionEvent', [
         'eventTime' => '2026-01-01T10:00:00', 'order' => $order, 'customization' => $cust,

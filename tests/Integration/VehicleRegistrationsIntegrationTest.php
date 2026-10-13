@@ -7,6 +7,7 @@ namespace Dropshipping\Tests\Integration;
 use Dropshipping\Client\ApiClient;
 use Dropshipping\Configuration\DropshippingConfig;
 use Dropshipping\DTO\Address;
+use Dropshipping\DTO\EuroLicensePlateNumberComponents;
 use Dropshipping\DTO\Requests\VehicleRegistrationRequest;
 use Dropshipping\DTO\Requests\VehicleRegistrationVehicleHolder;
 use Dropshipping\DTO\Responses\VehicleRegistrationResponse;
@@ -18,7 +19,9 @@ use Dropshipping\DTO\VehicleRegistrationDeliveryConfigurations;
 use Dropshipping\DTO\VehicleRegistrationDeliveryToOwnerDeliveryConfiguration;
 use Dropshipping\DTO\VehicleRegistrationDeliveryToThirdPartyDeliveryConfiguration;
 use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom;
+use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained;
 use Dropshipping\DTO\VehicleRegistrationPickupByThirdPartyDeliveryConfiguration;
+use Dropshipping\DTO\VehicleRegistrationPreviousLicensePlate;
 use Dropshipping\Enums\Gender;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
 use Dropshipping\Enums\VehicleRegistrationServiceTypeCode;
@@ -44,11 +47,11 @@ final class VehicleRegistrationsIntegrationTest extends TestCase
             static::markTestSkipped('Integration test env vars not set');
         }
 
-        // Vehicle registration only exists from API 2.4.0, which is not the SDK default.
-        // Run this test by opting in explicitly: DROPSHIPPING_API_VERSION=2.4.0
+        // Run this test by opting in explicitly with the API version to exercise,
+        // e.g. DROPSHIPPING_API_VERSION=2.5.0. Every case creates real orders.
         if (!getenv('DROPSHIPPING_API_VERSION')) {
             static::markTestSkipped(
-                'Vehicle registration needs API 2.4.0 — set DROPSHIPPING_API_VERSION=2.4.0 to run this test',
+                'Vehicle registration test needs an explicit API version — set e.g. DROPSHIPPING_API_VERSION=2.5.0 to run it',
             );
         }
 
@@ -61,6 +64,28 @@ final class VehicleRegistrationsIntegrationTest extends TestCase
     public function test_create_registration(): void
     {
         $response = $this->submit(self::registrationRequest(null));
+
+        self::assertGreaterThan(0, $response->orderId);
+    }
+
+    /**
+     * A Halteränderung with only the fields API 2.5.0 requires for it: no ZB II,
+     * no eVB, no bank details.
+     */
+    public function test_create_holder_change(): void
+    {
+        $response = $this->submit(self::holderChangeRequest(withInsuranceAndTaxDetails: false));
+
+        self::assertGreaterThan(0, $response->orderId);
+    }
+
+    /**
+     * 2.5.0 makes the eVB number, IBAN and BIC optional for HA without forbidding
+     * them. The SDK passes them on, so this pins down that the API takes them.
+     */
+    public function test_create_holder_change_with_insurance_and_tax_details(): void
+    {
+        $response = $this->submit(self::holderChangeRequest(withInsuranceAndTaxDetails: true));
 
         self::assertGreaterThan(0, $response->orderId);
     }
@@ -183,17 +208,6 @@ final class VehicleRegistrationsIntegrationTest extends TestCase
     private static function registrationRequest(
         ?VehicleRegistrationDeliveryConfigurations $deliveryConfigurations,
     ): VehicleRegistrationRequest {
-        $address = new Address(
-            firstName: 'Ifirst',
-            lastName: 'Ilast',
-            gender: Gender::Female,
-            streetName: 'Istreet',
-            houseNumber: '1I',
-            zipCode: '22222',
-            cityName: 'Icity',
-            countryCode: 'DE',
-        );
-
         $customization = new VehicleRegistrationCustomization(
             licensePlateNumberAssignmentStrategy: new VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom(
                 licensePlateType: VehicleRegistrationLicensePlateType::Regular,
@@ -203,7 +217,9 @@ final class VehicleRegistrationsIntegrationTest extends TestCase
             vehicleType: VehicleRegistrationVehicleType::Car,
             electronicInsuranceConfirmationNumber: 'EVB1234',
             vehicleIdentificationNumber: 'W0L000051T2123456',
-            vehicleTitleSecurityCode: 'VTSC12345678',
+            // The API checks the format of this code beyond its length, without
+            // publishing the rule. This value is the one from the spec example.
+            vehicleTitleSecurityCode: 'B12345678900',
             iban: 'DE89370400440532013000',
             bic: 'COBADEFFXXX',
             deliveryConfigurations: $deliveryConfigurations,
@@ -213,11 +229,59 @@ final class VehicleRegistrationsIntegrationTest extends TestCase
             email: 'dropshipping-api-end-customer@localhost.test',
             customization: $customization,
             vehicleHolder: new VehicleRegistrationVehicleHolder(
-                address: $address,
+                address: self::holderAddress(),
                 placeOfBirth: 'Icity',
                 birthDate: '1990-01-31',
             ),
             externalOrderId: 'dropshipping-api-registration-' . uniqid(),
+        );
+    }
+
+    /**
+     * A Halteränderung of a registered car that keeps its plate.
+     */
+    private static function holderChangeRequest(bool $withInsuranceAndTaxDetails): VehicleRegistrationRequest
+    {
+        $customization = new VehicleRegistrationCustomization(
+            licensePlateNumberAssignmentStrategy: new VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained(),
+            vehicleRegistrationServiceTypeCode: VehicleRegistrationServiceTypeCode::HA,
+            deregistered: false,
+            vehicleType: VehicleRegistrationVehicleType::Car,
+            electronicInsuranceConfirmationNumber: $withInsuranceAndTaxDetails ? 'EVB1234' : null,
+            vehicleIdentificationNumber: 'W0L000051T2123456',
+            vehicleTitleSecurityCode: null,
+            iban: $withInsuranceAndTaxDetails ? 'DE89370400440532013000' : null,
+            bic: $withInsuranceAndTaxDetails ? 'COBADEFFXXX' : null,
+            vehicleRegistrationCertificateSecurityCode: 'VRCS123',
+            previousLicensePlate: new VehicleRegistrationPreviousLicensePlate(
+                licensePlateNumberComponents: new EuroLicensePlateNumberComponents('BO', 'EF', '456'),
+                licensePlateType: VehicleRegistrationLicensePlateType::Regular,
+            ),
+        );
+
+        return new VehicleRegistrationRequest(
+            email: 'dropshipping-api-end-customer@localhost.test',
+            customization: $customization,
+            vehicleHolder: new VehicleRegistrationVehicleHolder(
+                address: self::holderAddress(),
+                placeOfBirth: 'Icity',
+                birthDate: '1990-01-31',
+            ),
+            externalOrderId: 'dropshipping-api-holder-change-' . uniqid(),
+        );
+    }
+
+    private static function holderAddress(): Address
+    {
+        return new Address(
+            firstName: 'Ifirst',
+            lastName: 'Ilast',
+            gender: Gender::Female,
+            streetName: 'Istreet',
+            houseNumber: '1I',
+            zipCode: '22222',
+            cityName: 'Icity',
+            countryCode: 'DE',
         );
     }
 

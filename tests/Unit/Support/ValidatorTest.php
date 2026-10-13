@@ -139,4 +139,18 @@ final class ValidatorTest extends TestCase
 
         Validator::requireNullableIntRange(13, 'field', 1, 12);
     }
+
+    public function test_requireFalse_passes_for_false(): void
+    {
+        Validator::requireFalse(false, 'field', 'for reasons');
+        $this->addToAssertionCount(1);
+    }
+
+    public function test_requireFalse_throws_for_true(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage('Field "field" must be false for reasons');
+
+        Validator::requireFalse(true, 'field', 'for reasons');
+    }
 }
