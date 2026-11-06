@@ -40,6 +40,7 @@ use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyReta
 use Dropshipping\DTO\VehicleRegistrationPickupByThirdPartyDeliveryConfiguration;
 use Dropshipping\DTO\VehicleRegistrationPreviousLicensePlate;
 use Dropshipping\Enums\Gender;
+use Dropshipping\Enums\IdentityVerificationDocumentType;
 use Dropshipping\Enums\LicensePlateType;
 use Dropshipping\Enums\VehicleDeregistrationLicensePlateType;
 use Dropshipping\Enums\VehicleDeregistrationVehicleType;
@@ -707,6 +708,10 @@ final class DS
      *
      * The vehicle holder is wrapped automatically — pass the address and birth
      * details directly. The API requires both the place of birth and the birth date.
+     *
+     * $identityVerificationDocumentType is required by API 2.6.0 and unknown to
+     * 2.4.0 and 2.5.0, so it stays optional here and is left out of the payload
+     * when null.
      */
     public static function vehicleRegistration(
         string $email,
@@ -718,6 +723,7 @@ final class DS
         ?string $externalOrderId = null,
         ?string $gksConfigurationId = null,
         ?string $contractPartnerKopaKey = null,
+        ?IdentityVerificationDocumentType $identityVerificationDocumentType = null,
     ): VehicleRegistrationRequest {
         return new VehicleRegistrationRequest(
             email: $email,
@@ -731,6 +737,7 @@ final class DS
             externalOrderId: $externalOrderId,
             gksConfigurationId: $gksConfigurationId,
             contractPartnerKopaKey: $contractPartnerKopaKey,
+            identityVerificationDocumentType: $identityVerificationDocumentType,
         );
     }
 }

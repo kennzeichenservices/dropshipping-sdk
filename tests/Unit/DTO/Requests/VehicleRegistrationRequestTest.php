@@ -12,6 +12,7 @@ use Dropshipping\DTO\VehicleRegistrationCustomization;
 use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom;
 use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyReservation;
 use Dropshipping\Enums\Gender;
+use Dropshipping\Enums\IdentityVerificationDocumentType;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
 use Dropshipping\Enums\VehicleRegistrationServiceTypeCode;
 use Dropshipping\Enums\VehicleRegistrationVehicleType;
@@ -163,10 +164,39 @@ final class VehicleRegistrationRequestTest extends TestCase
         );
     }
 
+    public function test_toArray_includes_identityVerificationDocumentType_as_its_api_value(): void
+    {
+        $array = $this->createRequest(
+            identityVerificationDocumentType: IdentityVerificationDocumentType::ForeignPapersWithProofOfAddress,
+        )->toArray();
+
+        self::assertSame('FOREIGN_PAPERS_WITH_PROOF_OF_ADDRESS', $array['identityVerificationDocumentType']);
+    }
+
+    /**
+     * The field is required by API 2.6.0 and unknown to 2.4.0 and 2.5.0, so leaving
+     * it unset must keep it out of the payload rather than send a null the older
+     * versions would reject.
+     */
+    public function test_toArray_omits_identityVerificationDocumentType_when_not_set(): void
+    {
+        self::assertArrayNotHasKey('identityVerificationDocumentType', $this->createRequest()->toArray());
+    }
+
+    public function test_every_document_type_survives_the_payload_unchanged(): void
+    {
+        foreach (IdentityVerificationDocumentType::cases() as $case) {
+            $array = $this->createRequest(identityVerificationDocumentType: $case)->toArray();
+
+            self::assertSame($case->value, $array['identityVerificationDocumentType']);
+        }
+    }
+
     private function createRequest(
         ?string $externalOrderId = null,
         ?string $gksConfigurationId = null,
         ?string $contractPartnerKopaKey = null,
+        ?IdentityVerificationDocumentType $identityVerificationDocumentType = null,
     ): VehicleRegistrationRequest {
         return new VehicleRegistrationRequest(
             email: 'test@example.com',
@@ -175,6 +205,7 @@ final class VehicleRegistrationRequestTest extends TestCase
             externalOrderId: $externalOrderId,
             gksConfigurationId: $gksConfigurationId,
             contractPartnerKopaKey: $contractPartnerKopaKey,
+            identityVerificationDocumentType: $identityVerificationDocumentType,
         );
     }
 

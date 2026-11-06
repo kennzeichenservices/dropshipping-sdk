@@ -5,6 +5,9 @@ Submits a vehicle registration (Kfz-Zulassung) via `POST /vehicleRegistrations/r
 > Works on dropshipping API 2.4.0, the SDK default, except for a Halteränderung (`HA`), which needs
 > 2.5.0 — set `DROPSHIPPING_API_VERSION=2.5.0` or pass `apiVersion: '2.5.0'` to
 > `DropshippingConfig`, and make sure your client is enabled for that version.
+>
+> On 2.6.0, `identityVerificationDocumentType` is mandatory and the API answers `400` without it.
+> See [Identity verification document type](#identity-verification-document-type).
 
 ## What it does
 
@@ -61,6 +64,41 @@ licensePlateNumberAssignmentStrategy: DS::reservedLicensePlateNumber(
 
 The registration API requires more than the address: both `placeOfBirth` and `birthDate`
 (ISO 8601) are mandatory. `birthName` is optional.
+
+## Identity verification document type
+
+The customer identifies themselves with one of four documents, picked when the order is created
+and independent of the verification vendor the API assigns:
+
+| `IdentityVerificationDocumentType` | Document | Needs a proof of address |
+|------------------------------------|----------|--------------------------|
+| `GermanId` | Personalausweis | no |
+| `ResidencePermit` | Aufenthaltstitel | no |
+| `GermanPassportWithProofOfAddress` | Reisepass | yes |
+| `ForeignPapersWithProofOfAddress` | foreign identity papers | yes |
+
+The last two need a second document showing the address, because neither paper carries a German
+one.
+
+The field is **required on API 2.6.0** and unknown to 2.4.0 and 2.5.0. The SDK keeps it optional
+and leaves it out of the payload while it is `null`, so one call site serves all three versions.
+Set it whenever you run on 2.6.0 or the API answers `400`.
+
+The choice can be corrected afterwards, for instance when the customer turns out not to hold a
+German ID card:
+
+```php
+$client->vehicleRegistrations->updateIdentityVerificationDocumentType(
+    orderId: $response->orderId,
+    documentType: IdentityVerificationDocumentType::GermanPassportWithProofOfAddress,
+);
+```
+
+That operation needs 2.6.0 as well. The API answers `202` and acts asynchronously, so a
+successful call means the change was accepted, not that a new link exists yet. Depending on the
+change, another `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED` event follows with a
+fresh URL. An `ApiException` with status `409` means document signing has already started or the
+order is not eligible for a change, and `404` means the order ID is unknown.
 
 ## Field lengths enforced by the SDK
 

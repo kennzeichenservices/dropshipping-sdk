@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dropshipping\Tests\Unit\Enums;
 
 use Dropshipping\Enums\Gender;
+use Dropshipping\Enums\IdentityVerificationDocumentType;
 use Dropshipping\Enums\LicensePlateType;
 use Dropshipping\Enums\LicensePlateUsageType;
 use Dropshipping\Enums\ProductType;
@@ -25,6 +26,22 @@ use PHPUnit\Framework\TestCase;
 
 final class EnumValuesTest extends TestCase
 {
+    public function test_identity_verification_document_type_values(): void
+    {
+        self::assertSame('GERMAN_ID', IdentityVerificationDocumentType::GermanId->value);
+        self::assertSame('RESIDENCE_PERMIT', IdentityVerificationDocumentType::ResidencePermit->value);
+        self::assertSame(
+            'GERMAN_PASSPORT_WITH_PROOF_OF_ADDRESS',
+            IdentityVerificationDocumentType::GermanPassportWithProofOfAddress->value,
+        );
+        self::assertSame(
+            'FOREIGN_PAPERS_WITH_PROOF_OF_ADDRESS',
+            IdentityVerificationDocumentType::ForeignPapersWithProofOfAddress->value,
+        );
+        self::assertCount(4, IdentityVerificationDocumentType::cases());
+        self::assertNull(IdentityVerificationDocumentType::tryFrom('GERMAN_PASSPORT'));
+    }
+
     public function test_gender_values(): void
     {
         self::assertSame('FEMALE', Gender::Female->value);

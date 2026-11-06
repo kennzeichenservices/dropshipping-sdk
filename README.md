@@ -4,7 +4,7 @@ A PHP SDK for the Kennzeichen Services Dropshipping API. It provides typed reque
 
 ## Features
 
-- Typed endpoints for orders, shipments, products, webhooks, GKS configurations, vehicle deregistrations, and vehicle registrations
+- Typed endpoints for orders, shipments, products, registration offices, webhooks, GKS configurations, vehicle deregistrations, and vehicle registrations
 - Immutable DTOs for all requests and responses
 - Webhook processing with configurable middleware pipeline (signature validation, payload validation, deserialization)
 - Async webhook processing via queue abstraction
@@ -83,25 +83,26 @@ $response = $client->orders->create(
 
 The only imports you need are `Dropshipping\DS` and the enums you use (e.g. `Gender`, `LicensePlateType`). See the [`examples/`](examples/) directory for complete runnable scripts.
 
-The client exposes seven endpoint groups as public readonly properties:
+The client exposes eight endpoint groups as public readonly properties:
 
 - `$client->orders` -- Order operations
 - `$client->shipments` -- Shipment operations (license plate reservations)
-- `$client->products` -- Product operations (availability checks)
+- `$client->products` -- Product operations (availability checks, product catalog)
+- `$client->registrationOffices` -- Registration office listing (requires API 2.6.0)
 - `$client->webhooks` -- Webhook operations
 - `$client->gksConfigurations` -- GKS configuration management (KBA interface)
 - `$client->vehicleDeregistrations` -- Vehicle deregistration operations
 - `$client->vehicleRegistrations` -- Vehicle registration operations (requires API 2.4.0 or later)
 
-> **The SDK talks to dropshipping API 2.4.0 by default and supports 2.5.0.** The API version is
-> part of the request URL, and an API version your client is not entitled to answers
+> **The SDK talks to dropshipping API 2.4.0 by default and supports 2.5.0 and 2.6.0.** The API
+> version is part of the request URL, and an API version your client is not entitled to answers
 > `403 Forbidden` on *every* endpoint -- not just the new ones. `api-version` in `composer.json`
 > therefore always names a version that is live for all clients, so an SDK update never moves you
-> onto a version you cannot use. Opt into 2.5.0 per integration, once your client is enabled for
-> it:
+> onto a version you cannot use. Opt into a newer version per integration, once your client is
+> enabled for it:
 >
 > ```bash
-> DROPSHIPPING_API_VERSION=2.5.0
+> DROPSHIPPING_API_VERSION=2.6.0
 > ```
 >
 > Or pass it directly, which takes precedence over the environment:
@@ -112,13 +113,22 @@ The client exposes seven endpoint groups as public readonly properties:
 >     dropshippingClientId: 12345,
 >     username: '...',
 >     password: '...',
->     apiVersion: '2.5.0',
+>     apiVersion: '2.6.0',
 > );
 > ```
 >
 > Vehicle registration works on the default, except for a Halteränderung (`HA`): it needs 2.5.0.
 > 2.4.0 requires the ZB II security code for every service type code, while 2.5.0 forbids it for
 > `HA` -- and the SDK follows 2.5.0.
+>
+> **2.6.0 adds three operations and one required field.** The product catalog
+> (`$client->products->getCatalog()`), the registration office listing
+> (`$client->registrationOffices->getAll()`) and the document type change
+> (`$client->vehicleRegistrations->updateIdentityVerificationDocumentType()`) exist only there and
+> answer `403 Forbidden` below it. On 2.6.0, a registration request must carry
+> `identityVerificationDocumentType`, which 2.4.0 and 2.5.0 do not know: the SDK keeps it optional
+> and omits it from the payload when null, so set it whenever you run on 2.6.0 or the API answers
+> `400`.
 
 ## Examples
 
@@ -131,6 +141,8 @@ Ready-to-run PHP scripts are available in the [`examples/`](examples/) directory
 | [create-reshipped-order.php](examples/create-reshipped-order.php) · [docs](examples/create-reshipped-order.md) | Create a reshipped order for a returned delivery |
 | [check-license-plate-availability.php](examples/check-license-plate-availability.php) · [docs](examples/check-license-plate-availability.md) | Check available license plate numbers at a registration office |
 | [reserve-license-plate.php](examples/reserve-license-plate.php) · [docs](examples/reserve-license-plate.md) | Reserve a license plate |
+| [product-catalog.php](examples/product-catalog.php) · [docs](examples/product-catalog.md) | List every orderable product with its net costs (API 2.6.0) |
+| [registration-offices.php](examples/registration-offices.php) · [docs](examples/registration-offices.md) | List every registration office with its reservation fee (API 2.6.0) |
 | [gks-configurations.php](examples/gks-configurations.php) · [docs](examples/gks-configurations.md) | Create, update, list, and get GKS configurations |
 | [vehicle-deregistration.php](examples/vehicle-deregistration.php) · [docs](examples/vehicle-deregistration.md) | Submit a vehicle deregistration and handle the XKFZ webhook with file download |
 | [vehicle-registration.php](examples/vehicle-registration.php) · [docs](examples/vehicle-registration.md) | Submit a vehicle registration |
@@ -220,6 +232,52 @@ $response = $client->products->checkLicensePlateAvailability(
 
 foreach ($response->availableLicensePlateNumbers as $plate) {
     echo "{$plate->city} {$plate->middle} {$plate->end}\n";
+}
+```
+
+### Fetching the Product Catalog
+
+Requires API 2.6.0. The catalog is the same content as the product catalog CSV export of the
+dropshipping self service, and it is where `productVariantId` for an order item comes from. Costs
+are decimal strings, not floats, because they are billed cent amounts.
+
+```php
+$catalog = $client->products->getCatalog();
+
+foreach ($catalog->ofType('LICENSE_PLATE') as $product) {
+    echo "{$product->productVariantId}: {$product->productVariantName} from {$product->costItem1} EUR\n";
+}
+
+// Cost of the second plate of a pair, plus the supplier's shipping cost.
+$plate = $catalog->findByVariantId(2);
+echo $plate?->costForItem(2), ' ', $plate?->shippingCost;
+```
+
+The listing is not paginated and changes rarely, so cache it on your side rather than fetching it
+per order.
+
+### Fetching the Registration Offices
+
+Requires API 2.6.0. The same content as the registration office CSV export of the dropshipping
+self service. `reservationPrice` is the fee the office charges in advance.
+
+The spec does not say whether `id` is the same identifier as the `registrationOfficeServiceId`
+the availability check and the license plate reservation take. The names differ and so do the
+formats (`int64` here against `int32` there), so confirm with the API before passing one for the
+other.
+
+```php
+$offices = $client->registrationOffices->getAll();
+
+$office = $offices->findById(1);
+
+if ($office?->chargesReservationFee()) {
+    echo "{$office->name} charges {$office->reservationPrice} EUR up front\n";
+}
+
+// A region code is not unique, so this returns every office issuing it.
+foreach ($offices->findByRegionCode('BO') as $match) {
+    echo "{$match->id}: {$match->name} ({$match->stateName})\n";
 }
 ```
 
@@ -368,6 +426,7 @@ class DeregistrationXkfzHandler implements WebhookHandlerInterface
 ```php
 use Dropshipping\DS;
 use Dropshipping\Enums\{
+    IdentityVerificationDocumentType,
     VehicleRegistrationLicensePlateType,
     VehicleRegistrationServiceTypeCode,
     VehicleRegistrationVehicleType,
@@ -395,6 +454,8 @@ $response = $client->vehicleRegistrations->createRegistration(
         vehicleHolderBirthName: 'Musterfrau',  // optional
         externalOrderId: 'registration-001',   // optional
         gksConfigurationId: 'your-gks-uuid',   // optional
+        identityVerificationDocumentType:      // required on API 2.6.0, unknown to 2.4.0 and 2.5.0
+            IdentityVerificationDocumentType::GermanId,
     )
 );
 
@@ -525,6 +586,27 @@ check and signing steps report their start and outcome, and `VEHICLE_REGISTRATIO
 carries the registration office's verdict along with the assigned plate. See
 [Webhook Event Types](#webhook-event-types).
 
+### Changing the Identity Verification Document Type
+
+Requires API 2.6.0. The customer picks the document they identify themselves with when the order
+is created. This corrects that choice afterwards, for instance when they turn out not to hold a
+German ID card.
+
+```php
+use Dropshipping\Enums\IdentityVerificationDocumentType;
+
+$client->vehicleRegistrations->updateIdentityVerificationDocumentType(
+    orderId: 12345,
+    documentType: IdentityVerificationDocumentType::GermanPassportWithProofOfAddress,
+);
+```
+
+The API answers `202` and does the work asynchronously, so a successful call means the change was
+accepted, not that a new link exists yet. Depending on the change, a fresh verification URL
+arrives as another `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED` webhook. An
+`ApiException` with status `409` means document signing has already started or the order is not
+eligible for a change, and `404` means the order ID is unknown.
+
 ### Handling Webhooks
 
 Set up a webhook receiver with the built-in middleware pipeline:
@@ -639,6 +721,8 @@ The SDK follows these patterns:
 | `$client->orders->createReshippedOrder()` | POST /orders/reshippedOrders | Create reshipped order |
 | `$client->shipments->createLicensePlateReservation()` | POST /licensePlateReservations/reservations | Reserve a license plate |
 | `$client->products->checkLicensePlateAvailability()` | POST /licensePlateReservations/availabilityChecks | Check license plate availability |
+| `$client->products->getCatalog()` | GET /products | List every orderable product with its net costs (API 2.6.0) |
+| `$client->registrationOffices->getAll()` | GET /registrationOffices | List every registration office with its reservation fee (API 2.6.0) |
 | `$client->gksConfigurations->create()` | POST /gksConfigurations | Create a GKS configuration |
 | `$client->gksConfigurations->update()` | PUT /gksConfigurations/{id} | Update a GKS configuration |
 | `$client->gksConfigurations->getOverviews()` | GET /gksConfigurations/overviews | List all GKS configurations |
@@ -647,6 +731,7 @@ The SDK follows these patterns:
 | `$client->vehicleDeregistrations->createDeregistration()` | POST /vehicleDeregistrations/deregistrations | Submit a vehicle deregistration |
 | `$client->vehicleDeregistrations->downloadFileContent()` | GET /vehicleDeregistrations/files/content/{fileAccessKey} | Download a file from a `VEHICLE_DEREGISTRATION_XKFZ_EVENT` webhook |
 | `$client->vehicleRegistrations->createRegistration()` | POST /vehicleRegistrations/registrations | Submit a vehicle registration |
+| `$client->vehicleRegistrations->updateIdentityVerificationDocumentType()` | PUT /vehicleRegistrations/{orderId}/identityVerifications | Change the identity document of an existing order (API 2.6.0) |
 | `$client->vehicleRegistrations->downloadFileContent()` | GET /vehicleRegistrations/files/content/{fileAccessKey} | Download a file from a `VEHICLE_REGISTRATION_XKFZ_EVENT` webhook |
 | `$client->vehicleRegistrations->downloadApplicationFileContent()` | GET /vehicleRegistrations/applicationFiles/content/{fileAccessKey} | Download a signed document from a `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED` webhook |
 
@@ -707,6 +792,7 @@ throws, except where the SDK defines a fallback — `status` on both XKFZ events
 | `VehicleRegistrationDeliveryConfigurationDeliveryOption` | `DELIVERY_TO_OWNER`, `DELIVERY_TO_THIRD_PARTY`, `PICKUP_BY_THIRD_PARTY` |
 | `VehicleRegistrationDeliveryConfigurationRecipientType` | `NATURAL_PERSON`, `LEGAL_PERSON` |
 | `VehicleRegistrationServiceTypeCode` | `NZ`, `WZ`, `UO`, `UI`, `UM`, `WG`, `UG`, `HA` |
+| `IdentityVerificationDocumentType` | `GERMAN_ID`, `RESIDENCE_PERMIT`, `GERMAN_PASSPORT_WITH_PROOF_OF_ADDRESS`, `FOREIGN_PAPERS_WITH_PROOF_OF_ADDRESS` |
 | `VehicleRegistrationXkfzEventStatus` | `ACCEPTED`, `APPROVED`, `APPROVED_WITH_DOCUMENTS`, `FAILED`, `FORWARDED`, `PROCESSED`, `REJECTED`, `REJECTED_WITH_DOCUMENTS`, `UNKNOWN` |
 | `VehicleRegistrationXkfzEventFilePurposeType` | `OTHER`, `PROVISIONAL_VEHICLE_REGISTRATION_CERTIFICATE`, `VEHICLE_REGISTRATION_APPLICATION_POWER_OF_ATTORNEY`, `VEHICLE_REGISTRATION_APPROVAL_NOTICE`, `VEHICLE_REGISTRATION_CERTIFICATE_TOKEN`, `VEHICLE_REGISTRATION_CHARGES_NOTICE`, `VEHICLE_REGISTRATION_ELECTRONIC_INSURANCE_CONFIRMATION`, `VEHICLE_REGISTRATION_GDPR_CONSENT_DECLARATION`, `VEHICLE_REGISTRATION_MOTOR_VEHICLE_TAX_SEPA_DIRECT_DEBIT_MANDATE`, `VEHICLE_REGISTRATION_REJECTION_NOTICE` |
 | `WebhookEventType` | see [Webhook Event Types](#webhook-event-types), plus `UNKNOWN` for unrecognised types |

@@ -10,6 +10,7 @@ use Dropshipping\Contracts\SerializerInterface;
 use Dropshipping\Endpoints\GksConfigurations\GksConfigurationsEndpoint;
 use Dropshipping\Endpoints\Orders\OrdersEndpoint;
 use Dropshipping\Endpoints\Products\ProductsEndpoint;
+use Dropshipping\Endpoints\RegistrationOffices\RegistrationOfficesEndpoint;
 use Dropshipping\Endpoints\Shipments\ShipmentsEndpoint;
 use Dropshipping\Endpoints\VehicleDeregistrations\VehicleDeregistrationsEndpoint;
 use Dropshipping\Endpoints\VehicleRegistrations\VehicleRegistrationsEndpoint;
@@ -26,9 +27,9 @@ use Psr\Http\Message\StreamFactoryInterface;
  * Main entry point for the dropshipping SDK.
  *
  * Orchestrates the HTTP client, authentication, request building and response
- * mapping. Exposes endpoint objects for orders, shipments, products, webhooks,
- * GKS configurations, vehicle deregistrations and vehicle registrations as
- * public readonly properties.
+ * mapping. Exposes endpoint objects for orders, shipments, products,
+ * registration offices, webhooks, GKS configurations, vehicle deregistrations
+ * and vehicle registrations as public readonly properties.
  */
 final class ApiClient
 {
@@ -40,6 +41,7 @@ final class ApiClient
     public readonly OrdersEndpoint $orders;
     public readonly ShipmentsEndpoint $shipments;
     public readonly ProductsEndpoint $products;
+    public readonly RegistrationOfficesEndpoint $registrationOffices;
     public readonly WebhooksEndpoint $webhooks;
     public readonly GksConfigurationsEndpoint $gksConfigurations;
     public readonly VehicleDeregistrationsEndpoint $vehicleDeregistrations;
@@ -90,6 +92,13 @@ final class ApiClient
         );
 
         $this->products = new ProductsEndpoint(
+            $this->httpClient,
+            $this->requestFactory,
+            $this->responseMapper,
+            $this->baseUrl,
+        );
+
+        $this->registrationOffices = new RegistrationOfficesEndpoint(
             $this->httpClient,
             $this->requestFactory,
             $this->responseMapper,

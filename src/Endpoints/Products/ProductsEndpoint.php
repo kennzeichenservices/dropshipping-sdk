@@ -7,6 +7,8 @@ namespace Dropshipping\Endpoints\Products;
 use Dropshipping\Client\Psr18HttpClient;
 use Dropshipping\DTO\Requests\AvailabilityCheckRequest;
 use Dropshipping\DTO\Responses\AvailabilityCheckResponse;
+use Dropshipping\DTO\Responses\ProductsResponse;
+use Dropshipping\Exceptions\ApiException;
 use Dropshipping\Http\RequestFactory;
 use Dropshipping\Http\ResponseMapper;
 
@@ -48,5 +50,32 @@ final class ProductsEndpoint
         $data = $this->responseMapper->mapResponse($response);
 
         return AvailabilityCheckResponse::fromArray($data);
+    }
+
+    /**
+     * Get the product catalog with the net costs that currently apply.
+     *
+     * Requires API 2.6.0. The same content as the product catalog CSV export of
+     * the dropshipping self service. Use it to resolve the `productVariantId` an
+     * order item needs. The listing is not paginated and changes rarely, so it is
+     * worth caching on the caller's side rather than fetching it per order.
+     *
+     * @return ProductsResponse The catalog entries.
+     *
+     * @throws ApiException When the API responds with an unexpected status code, which
+     *                      includes 403 on an API version below 2.6.0.
+     */
+    public function getCatalog(): ProductsResponse
+    {
+        $httpRequest = $this->requestFactory->createJsonRequest(
+            'GET',
+            $this->baseUrl . '/products',
+            [],
+        );
+
+        $response = $this->httpClient->sendRequest($httpRequest);
+        $data = $this->responseMapper->mapResponse($response);
+
+        return ProductsResponse::fromArray($data);
     }
 }

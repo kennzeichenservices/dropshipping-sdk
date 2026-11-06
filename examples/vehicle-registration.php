@@ -7,6 +7,7 @@ require_once __DIR__ . '/_bootstrap.php';
 use Dropshipping\DS;
 use Dropshipping\Enums\{
     Gender,
+    IdentityVerificationDocumentType,
     VehicleRegistrationLicensePlateType,
     VehicleRegistrationServiceTypeCode,
     VehicleRegistrationVehicleType,
@@ -15,6 +16,11 @@ use Dropshipping\Enums\{
 // NOTE: Vehicle registration works on the SDK default, dropshipping API 2.4.0, except for a
 // Halteränderung (HA), which needs 2.5.0 — set
 // DROPSHIPPING_API_VERSION=2.5.0 or pass apiVersion to DropshippingConfig.
+//
+// On 2.6.0 the identityVerificationDocumentType below stops being optional: the API rejects a
+// registration without it. 2.4.0 and 2.5.0 do not know the field, and the SDK leaves it out of
+// the payload while it is null, so one script can serve all three versions as long as the value
+// is set whenever DROPSHIPPING_API_VERSION is 2.6.0 or later.
 
 $address = DS::address(
     firstName: 'Max',
@@ -88,6 +94,11 @@ $response = $client->vehicleRegistrations->createRegistration(
         externalOrderId: 'registration-001',   // optional
         gksConfigurationId: 'your-gks-uuid',   // optional
         contractPartnerKopaKey: 'K123X',       // optional
+        // The document the customer identifies themselves with. Required on API 2.6.0,
+        // unknown to 2.4.0 and 2.5.0. GERMAN_PASSPORT_WITH_PROOF_OF_ADDRESS and
+        // FOREIGN_PAPERS_WITH_PROOF_OF_ADDRESS need a second document showing the address,
+        // because neither paper carries a German one.
+        identityVerificationDocumentType: IdentityVerificationDocumentType::GermanId,
     ),
 );
 
@@ -117,3 +128,17 @@ echo "Registration order created: {$response->orderId}\n";
 // Fetch either before the file's expirationTime passes.
 //
 // See webhooks.php for the full event handling setup.
+
+// Picked the wrong document type, or the customer turns out not to hold a German ID card? On
+// API 2.6.0 the choice can be corrected while the order is still early enough:
+//
+//   $client->vehicleRegistrations->updateIdentityVerificationDocumentType(
+//       orderId: $response->orderId,
+//       documentType: IdentityVerificationDocumentType::GermanPassportWithProofOfAddress,
+//   );
+//
+// The API answers 202 and acts asynchronously, so a successful call means the change was
+// accepted, not that a new link exists yet. Depending on the change, another
+// VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED event follows with a fresh URL.
+// An ApiException with status 409 means document signing has already started or the order is
+// not eligible for a change; 404 means the order ID is unknown.

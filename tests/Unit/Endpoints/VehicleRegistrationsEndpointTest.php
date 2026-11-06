@@ -13,10 +13,12 @@ use Dropshipping\DTO\VehicleRegistrationCustomization;
 use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom;
 use Dropshipping\Endpoints\VehicleRegistrations\VehicleRegistrationsEndpoint;
 use Dropshipping\Enums\Gender;
+use Dropshipping\Enums\IdentityVerificationDocumentType;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
 use Dropshipping\Enums\VehicleRegistrationServiceTypeCode;
 use Dropshipping\Enums\VehicleRegistrationVehicleType;
 use Dropshipping\Exceptions\ApiException;
+use Dropshipping\Exceptions\DropshippingException;
 use Dropshipping\Http\RequestFactory;
 use Dropshipping\Http\ResponseMapper;
 use Dropshipping\Serialization\ArrayMapper;
@@ -165,6 +167,125 @@ final class VehicleRegistrationsEndpointTest extends TestCase
             self::assertSame('File access key expired', $e->getMessage());
             self::assertSame(404, $e->getStatusCode());
             self::assertSame('trace-11', $e->getTraceId());
+        }
+    }
+
+    public function test_updateIdentityVerificationDocumentType_sends_a_put_with_the_document_type(): void
+    {
+        $sentBody = null;
+
+        $endpoint = $this->endpointReturning(
+            new Response(202, [], ''),
+            function (RequestInterface $request) use (&$sentBody): void {
+                self::assertSame('PUT', $request->getMethod());
+                self::assertStringEndsWith(
+                    '/vehicleRegistrations/88/identityVerifications',
+                    (string) $request->getUri(),
+                );
+                self::assertSame('application/json', $request->getHeaderLine('Content-Type'));
+                self::assertNotSame('', $request->getHeaderLine('Authorization'));
+                $sentBody = (string) $request->getBody();
+            },
+        );
+
+        $endpoint->updateIdentityVerificationDocumentType(
+            88,
+            IdentityVerificationDocumentType::GermanPassportWithProofOfAddress,
+        );
+
+        self::assertSame(
+            ['identityVerificationDocumentType' => 'GERMAN_PASSPORT_WITH_PROOF_OF_ADDRESS'],
+            json_decode((string) $sentBody, true, 512, JSON_THROW_ON_ERROR),
+        );
+    }
+
+    /**
+     * The API answers 202 with an empty body. Accepting only 200 would turn every
+     * successful change into an exception.
+     */
+    public function test_updateIdentityVerificationDocumentType_accepts_the_202_empty_body(): void
+    {
+        $requestWasSent = false;
+
+        $endpoint = $this->endpointReturning(
+            new Response(202, [], ''),
+            function (RequestInterface $request) use (&$requestWasSent): void {
+                $requestWasSent = true;
+            },
+        );
+
+        $endpoint->updateIdentityVerificationDocumentType(1, IdentityVerificationDocumentType::GermanId);
+
+        self::assertTrue($requestWasSent);
+    }
+
+    /**
+     * A 200 is not what this operation is documented to answer. Treating it as
+     * success would hide a route that silently did something else.
+     */
+    public function test_updateIdentityVerificationDocumentType_rejects_an_undocumented_200(): void
+    {
+        $endpoint = $this->endpointReturning(new Response(200, [], '{}'));
+
+        $this->expectException(ApiException::class);
+
+        $endpoint->updateIdentityVerificationDocumentType(1, IdentityVerificationDocumentType::GermanId);
+    }
+
+    public function test_updateIdentityVerificationDocumentType_reports_a_409_as_api_exception(): void
+    {
+        $endpoint = $this->endpointReturning(
+            new Response(409, ['X-Trace-Id' => 'trace-12'], '{"error":"Document signing already initialized"}'),
+        );
+
+        try {
+            $endpoint->updateIdentityVerificationDocumentType(88, IdentityVerificationDocumentType::ResidencePermit);
+            self::fail('Expected ApiException');
+        } catch (ApiException $e) {
+            self::assertSame('Document signing already initialized', $e->getMessage());
+            self::assertSame(409, $e->getStatusCode());
+            self::assertSame('trace-12', $e->getTraceId());
+        }
+    }
+
+    public function test_updateIdentityVerificationDocumentType_reports_a_404_as_api_exception(): void
+    {
+        $endpoint = $this->endpointReturning(new Response(404, [], '{"error":"Order not found"}'));
+
+        $this->expectException(ApiException::class);
+        $this->expectExceptionMessage('Order not found');
+
+        $endpoint->updateIdentityVerificationDocumentType(4711, IdentityVerificationDocumentType::GermanId);
+    }
+
+    /**
+     * An order ID that cannot name a real order is rejected before a request goes
+     * out, so a mix-up does not travel into the URL path and hit another route.
+     */
+    public function test_updateIdentityVerificationDocumentType_rejects_a_non_positive_order_id(): void
+    {
+        $mockClient = $this->createMock(ClientInterface::class);
+        $mockClient->expects($this->never())->method('sendRequest');
+
+        $psr17 = new Psr17Factory();
+        $serializer = new ArrayMapper();
+        $endpoint = new VehicleRegistrationsEndpoint(
+            new Psr18HttpClient($mockClient),
+            new RequestFactory($psr17, $psr17, new ApiKeyAuthenticator('user', 'pass'), $serializer),
+            new ResponseMapper($serializer),
+            'https://api.example.com/dropshippingClients/1',
+        );
+
+        foreach ([0, -1] as $invalid) {
+            try {
+                $endpoint->updateIdentityVerificationDocumentType(
+                    $invalid,
+                    IdentityVerificationDocumentType::GermanId,
+                );
+                self::fail(sprintf('Expected DropshippingException for order ID %d', $invalid));
+            } catch (DropshippingException $e) {
+                self::assertStringContainsString('orderId', $e->getMessage());
+            }
         }
     }
 
