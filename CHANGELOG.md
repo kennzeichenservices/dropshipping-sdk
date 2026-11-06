@@ -1,11 +1,21 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [2.6.0] — 2026-11-06
+
+### Features
+
+- Add product and registration office DTOs and endpoints
+
 ## [2.5.1] — 2026-10-13
 
 ### Bug Fixes
 
 - Restore 2.4.0 as default API version; holder change (HA) requires API 2.5.0, RETAINMENT and no ZB II fields
+
+### Miscellaneous
+
+- Release v2.5.1
 
 ## [2.5.0] — 2026-10-13
 
