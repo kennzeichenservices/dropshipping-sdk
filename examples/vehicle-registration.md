@@ -8,6 +8,9 @@ Submits a vehicle registration (Kfz-Zulassung) via `POST /vehicleRegistrations/r
 >
 > On 2.6.0, `identityVerificationDocumentType` is mandatory and the API answers `400` without it.
 > See [Identity verification document type](#identity-verification-document-type).
+>
+> On 2.7.0, `vehicleHolder.type` is mandatory and a legal person becomes possible as the holder.
+> See [Vehicle holder](#vehicle-holder).
 
 ## What it does
 
@@ -47,7 +50,11 @@ licensePlateNumberAssignmentStrategy: DS::reservedLicensePlateNumber(
 | `VehicleRegistrationCustomization` | Vehicle, insurance and bank data |
 | `VehicleRegistrationLicensePlateNumberAssignmentStrategyInterface` | Implemented by the `…Random`, `…Reservation` and `…Retained` strategies, each carrying its own plate fields |
 | `VehicleRegistrationPreviousLicensePlate` | The plate the vehicle carried before, if any |
-| `VehicleRegistrationVehicleHolder` | Vehicle holder address and birth details |
+| `VehicleRegistrationVehicleHolderInterface` | Implemented by the three holder variants, which decide whether and how `type` is sent |
+| `VehicleRegistrationVehicleHolder` | Natural person without `type`, the payload for API 2.4.0 to 2.6.0 |
+| `VehicleRegistrationNaturalPersonVehicleHolder` | Natural person with `type: NATURAL_PERSON`, API 2.7.0 |
+| `VehicleRegistrationLegalPersonVehicleHolder` | Legal person with `type: LEGAL_PERSON`, API 2.7.0 |
+| `VehicleHolderIndustriesResponse` | The industry codes a legal person holder can use (API 2.7.0) |
 | `VehicleRegistrationResponse` | `orderId` |
 | `VehicleRegistrationLicensePlateNumberAssignmentStrategyType` | Enum: `RANDOM`, `RESERVATION`, `RETAINMENT` |
 | `VehicleRegistrationServiceTypeCode` | Enum: `NZ`, `WZ`, `UO`, `UI`, `UM`, `WG`, `UG`, `HA` |
@@ -62,8 +69,62 @@ licensePlateNumberAssignmentStrategy: DS::reservedLicensePlateNumber(
 
 ## Vehicle holder
 
-The registration API requires more than the address: both `placeOfBirth` and `birthDate`
-(ISO 8601) are mandatory. `birthName` is optional.
+For a natural person the registration API requires more than the address: both `placeOfBirth` and
+`birthDate` (ISO 8601) are mandatory. `birthName` is optional.
+
+### Which holder class to pass
+
+API 2.7.0 added the discriminator `vehicleHolder.type` and made it required. No earlier version
+knows the field, so the SDK ships one holder per payload shape and the class decides what goes out:
+
+| Factory | `type` in the payload | API versions |
+|---------|----------------------|--------------|
+| `DS::vehicleRegistration(...)`, which wraps `VehicleRegistrationVehicleHolder` | not sent | 2.4.0 to 2.6.0 |
+| `DS::registrationNaturalPersonVehicleHolder(...)` | `NATURAL_PERSON` | 2.7.0 |
+| `DS::registrationLegalPersonVehicleHolder(...)` | `LEGAL_PERSON` | 2.7.0 |
+
+The two new holders are passed to `DS::vehicleRegistrationWithHolder(...)` rather than
+`DS::vehicleRegistration(...)`, which builds its holder itself. An existing call site therefore
+keeps sending exactly what it sent before the SDK learned about the discriminator.
+
+### A legal person as the holder
+
+Requires 2.7.0, and the service type code `HA` does not accept it: the request throws on that
+combination.
+
+```php
+$response = $client->vehicleRegistrations->createRegistration(
+    DS::vehicleRegistrationWithHolder(
+        email: 'einkauf@autohaus-muster.de',
+        customization: $customization,
+        vehicleHolder: DS::registrationLegalPersonVehicleHolder(
+            address: $address,
+            name: 'Autohaus Muster GmbH',
+            industryCode: 'G01',
+            companyNumber: 'HRB 123456',
+        ),
+        identityVerificationDocumentType: IdentityVerificationDocumentType::GermanId,
+    )
+);
+```
+
+The address is the address *of the company*. Its `firstName`, `lastName` and `gender` name a
+contact person, and its `companyName` is **not** read as the holder's name: that is what `name` is
+for, so a company carrying one on its address has to repeat it there. The two may differ.
+
+`industryCode` has to be a code the API knows, fetched from
+[vehicle-holder-industries.php](vehicle-holder-industries.php). The SDK checks the shape (three
+characters of `A-Z` and `0-9`), the API checks existence, and it does so only after the customer
+has identified themselves and signed.
+
+### Paying the motor vehicle tax through customs
+
+A company holding a major customer ID of the customs administration (Zoll-GK-Nr.) settles the tax
+that way instead of by SEPA direct debit mandate. Pass it as `customsMajorCustomerId`, and leave
+`iban` and `bic` null on the customization; the request throws if both are given, since the API
+rejects that combination.
+
+The ID is three digits, an upper case letter and four digits, for instance `123A4567`.
 
 ## Identity verification document type
 
@@ -114,6 +175,10 @@ before any HTTP call:
 | `vehicleTitleSecurityCode` (ZB II) | exactly 12 |
 | `iban` | 15–34 |
 | `bic` | 8–11 |
+| `name` of a legal person holder | 1–255 |
+| `industryCode` of a legal person holder | exactly 3, `A-Z` and `0-9` |
+| `companyNumber` of a legal person holder | 1–100, not blank |
+| `customsMajorCustomerId` of a legal person holder | exactly 8, `999A9999` |
 | `reservationPin` | 4–12 |
 | `placeOfBirth` | 1–150 |
 | `birthName` | 1–100 |
@@ -158,12 +223,41 @@ Zulassungsbescheinigung Teil II is not involved. Spec 2.5.0 publishes what follo
 | `deregistered` | must be `false` | see above |
 | `licensePlateNumberAssignmentStrategy` | must be `RETAINMENT` | free (but not `RETAINMENT` for `NZ`) |
 | `vehicleTitleSecurityCode`, `vehicleTitleNumber` (ZB II) | must be `null` | security code required |
-| `electronicInsuranceConfirmationNumber`, `iban`, `bic` | optional | required |
+| `electronicInsuranceConfirmationNumber` | optional | required |
+| `iban` | optional | required, unless the holder pays the tax through customs |
+| vehicle holder | natural person only | natural or legal person (2.7.0) |
 
 The ZB I security code and `previousLicensePlate` stay required, as for every code but `NZ`. As
 `RETAINMENT` keeps the plate on the vehicle, its two security codes stay `null`. Leaving out eVB,
 IBAN and BIC is new in 2.5.0, and so is the ban on the ZB II security code — 2.4.0 requires both
 for every code. An `HA` built by the SDK is therefore rejected by 2.4.0: use 2.5.0 for it.
+
+## Reusing an earlier identification
+
+`recycledVehicleRegistrationOrderId` points at an earlier registration order whose identity
+verification and signed files this one takes over, so the customer identifies themselves and signs
+only once. It is serialized as `recycledVehicleRegistration.orderId` and needs API 2.6.0; the field
+has been in the spec since then, but 2.7.0 is the first version to describe it.
+
+The referenced order has to match this one:
+
+- the same `vehicleHolder.type`, and for a legal person the same `vehicleHolder.name`, compared case
+  insensitively and ignoring surrounding whitespace;
+- the files this registration needs: the power of attorney, the SEPA direct debit mandate (except
+  for `HA` and for a holder with a `customsMajorCustomerId`) and, for a natural person, the GDPR
+  consent declaration (except for `HA`).
+
+None of that is checkable in the SDK, since it is all about the other order, so the API is what
+rejects a mismatch. The SDK only rejects an order ID of zero or less, which cannot name an order.
+
+## The BIC and its three countries
+
+Up to 2.6.0 the spec called `bic` required for every service type code but `HA`, and the SDK
+enforced that. 2.7.0 narrows it down: only an `iban` from Monaco (`MC`), San Marino (`SM`) or
+Switzerland (`CH`) needs a `bic` alongside it, every other country does not. The SDK follows
+2.7.0, so a German IBAN without a BIC now goes out rather than being rejected locally. The country
+is read from the first two characters of the IBAN, upper cased first, so a lower case IBAN is
+judged the same way.
 
 ## Webhooks
 

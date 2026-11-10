@@ -13,6 +13,7 @@ use Dropshipping\Endpoints\Products\ProductsEndpoint;
 use Dropshipping\Endpoints\RegistrationOffices\RegistrationOfficesEndpoint;
 use Dropshipping\Endpoints\Shipments\ShipmentsEndpoint;
 use Dropshipping\Endpoints\VehicleDeregistrations\VehicleDeregistrationsEndpoint;
+use Dropshipping\Endpoints\VehicleHolderIndustries\VehicleHolderIndustriesEndpoint;
 use Dropshipping\Endpoints\VehicleRegistrations\VehicleRegistrationsEndpoint;
 use Dropshipping\Endpoints\Webhooks\WebhooksEndpoint;
 use Dropshipping\Http\RequestFactory;
@@ -28,8 +29,9 @@ use Psr\Http\Message\StreamFactoryInterface;
  *
  * Orchestrates the HTTP client, authentication, request building and response
  * mapping. Exposes endpoint objects for orders, shipments, products,
- * registration offices, webhooks, GKS configurations, vehicle deregistrations
- * and vehicle registrations as public readonly properties.
+ * registration offices, vehicle holder industries, webhooks, GKS
+ * configurations, vehicle deregistrations and vehicle registrations as public
+ * readonly properties.
  */
 final class ApiClient
 {
@@ -42,6 +44,7 @@ final class ApiClient
     public readonly ShipmentsEndpoint $shipments;
     public readonly ProductsEndpoint $products;
     public readonly RegistrationOfficesEndpoint $registrationOffices;
+    public readonly VehicleHolderIndustriesEndpoint $vehicleHolderIndustries;
     public readonly WebhooksEndpoint $webhooks;
     public readonly GksConfigurationsEndpoint $gksConfigurations;
     public readonly VehicleDeregistrationsEndpoint $vehicleDeregistrations;
@@ -99,6 +102,13 @@ final class ApiClient
         );
 
         $this->registrationOffices = new RegistrationOfficesEndpoint(
+            $this->httpClient,
+            $this->requestFactory,
+            $this->responseMapper,
+            $this->baseUrl,
+        );
+
+        $this->vehicleHolderIndustries = new VehicleHolderIndustriesEndpoint(
             $this->httpClient,
             $this->requestFactory,
             $this->responseMapper,

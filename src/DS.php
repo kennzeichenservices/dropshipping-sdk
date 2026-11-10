@@ -21,8 +21,11 @@ use Dropshipping\DTO\Requests\OrderCreationRequest;
 use Dropshipping\DTO\Requests\ReshippedOrderRequest;
 use Dropshipping\DTO\Requests\VehicleDeregistrationRequest;
 use Dropshipping\DTO\Requests\VehicleDeregistrationVehicleHolder;
+use Dropshipping\DTO\Requests\VehicleRegistrationLegalPersonVehicleHolder;
+use Dropshipping\DTO\Requests\VehicleRegistrationNaturalPersonVehicleHolder;
 use Dropshipping\DTO\Requests\VehicleRegistrationRequest;
 use Dropshipping\DTO\Requests\VehicleRegistrationVehicleHolder;
+use Dropshipping\DTO\Requests\VehicleRegistrationVehicleHolderInterface;
 use Dropshipping\DTO\VehicleDeregistrationCustomization;
 use Dropshipping\DTO\VehicleRegistrationCustomization;
 use Dropshipping\DTO\VehicleRegistrationDeliveryConfigurationAddress;
@@ -704,7 +707,8 @@ final class DS
     }
 
     /**
-     * Create a vehicle registration request.
+     * Create a vehicle registration request for a natural person, in the payload
+     * shape API versions up to 2.6.0 expect.
      *
      * The vehicle holder is wrapped automatically — pass the address and birth
      * details directly. The API requires both the place of birth and the birth date.
@@ -712,6 +716,17 @@ final class DS
      * $identityVerificationDocumentType is required by API 2.6.0 and unknown to
      * 2.4.0 and 2.5.0, so it stays optional here and is left out of the payload
      * when null.
+     *
+     * $recycledVehicleRegistrationOrderId reuses the identity verification and
+     * signed files of an earlier registration order, so the customer goes through
+     * neither a second time. It needs API 2.6.0, and the referenced order has to
+     * match this one in the ways {@see VehicleRegistrationRequest} lists.
+     *
+     * For API 2.7.0 use {@see self::vehicleRegistrationWithHolder()} with a
+     * holder from {@see self::registrationNaturalPersonVehicleHolder()} or
+     * {@see self::registrationLegalPersonVehicleHolder()}: 2.7.0 requires the
+     * `vehicleHolder.type` discriminator, which the holder built here does not
+     * send.
      */
     public static function vehicleRegistration(
         string $email,
@@ -724,6 +739,7 @@ final class DS
         ?string $gksConfigurationId = null,
         ?string $contractPartnerKopaKey = null,
         ?IdentityVerificationDocumentType $identityVerificationDocumentType = null,
+        ?int $recycledVehicleRegistrationOrderId = null,
     ): VehicleRegistrationRequest {
         return new VehicleRegistrationRequest(
             email: $email,
@@ -738,6 +754,87 @@ final class DS
             gksConfigurationId: $gksConfigurationId,
             contractPartnerKopaKey: $contractPartnerKopaKey,
             identityVerificationDocumentType: $identityVerificationDocumentType,
+            recycledVehicleRegistrationOrderId: $recycledVehicleRegistrationOrderId,
+        );
+    }
+
+    /**
+     * Create a natural person vehicle holder for API 2.7.0, which requires the
+     * `type` discriminator.
+     *
+     * The same fields as {@see self::vehicleRegistration()} takes inline, but as
+     * a holder that carries `type: NATURAL_PERSON`.
+     */
+    public static function registrationNaturalPersonVehicleHolder(
+        Address $address,
+        string $placeOfBirth,
+        string $birthDate,
+        ?string $birthName = null,
+    ): VehicleRegistrationNaturalPersonVehicleHolder {
+        return new VehicleRegistrationNaturalPersonVehicleHolder(
+            address: $address,
+            placeOfBirth: $placeOfBirth,
+            birthDate: $birthDate,
+            birthName: $birthName,
+        );
+    }
+
+    /**
+     * Create a legal person (juristische Person) vehicle holder. Requires API
+     * 2.7.0 and is not accepted for the service type code HA.
+     *
+     * The address is the address of the company; its name fields name a contact
+     * person and its companyName is not sent as the holder's name, so $name has
+     * to carry it. $industryCode has to be a code from
+     * {@see \Dropshipping\Endpoints\VehicleHolderIndustries\VehicleHolderIndustriesEndpoint::getAll()}.
+     *
+     * Passing $customsMajorCustomerId settles the motor vehicle tax through the
+     * customs administration, which means the customization must leave the IBAN
+     * and BIC empty.
+     */
+    public static function registrationLegalPersonVehicleHolder(
+        Address $address,
+        string $name,
+        string $industryCode,
+        string $companyNumber,
+        ?string $customsMajorCustomerId = null,
+    ): VehicleRegistrationLegalPersonVehicleHolder {
+        return new VehicleRegistrationLegalPersonVehicleHolder(
+            address: $address,
+            name: $name,
+            industryCode: $industryCode,
+            companyNumber: $companyNumber,
+            customsMajorCustomerId: $customsMajorCustomerId,
+        );
+    }
+
+    /**
+     * Create a vehicle registration request for a holder built beforehand.
+     *
+     * The way to order a registration for a legal person, and the way to send
+     * the `vehicleHolder.type` API 2.7.0 requires. Which holder implementation
+     * fits which API version is listed on
+     * {@see VehicleRegistrationVehicleHolderInterface}.
+     */
+    public static function vehicleRegistrationWithHolder(
+        string $email,
+        VehicleRegistrationCustomization $customization,
+        VehicleRegistrationVehicleHolderInterface $vehicleHolder,
+        ?string $externalOrderId = null,
+        ?string $gksConfigurationId = null,
+        ?string $contractPartnerKopaKey = null,
+        ?IdentityVerificationDocumentType $identityVerificationDocumentType = null,
+        ?int $recycledVehicleRegistrationOrderId = null,
+    ): VehicleRegistrationRequest {
+        return new VehicleRegistrationRequest(
+            email: $email,
+            customization: $customization,
+            vehicleHolder: $vehicleHolder,
+            externalOrderId: $externalOrderId,
+            gksConfigurationId: $gksConfigurationId,
+            contractPartnerKopaKey: $contractPartnerKopaKey,
+            identityVerificationDocumentType: $identityVerificationDocumentType,
+            recycledVehicleRegistrationOrderId: $recycledVehicleRegistrationOrderId,
         );
     }
 }

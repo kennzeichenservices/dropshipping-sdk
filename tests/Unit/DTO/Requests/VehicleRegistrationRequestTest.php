@@ -6,15 +6,20 @@ namespace Dropshipping\Tests\Unit\DTO\Requests;
 
 use Dropshipping\DTO\Address;
 use Dropshipping\DTO\EuroLicensePlateNumberComponents;
+use Dropshipping\DTO\Requests\VehicleRegistrationLegalPersonVehicleHolder;
+use Dropshipping\DTO\Requests\VehicleRegistrationNaturalPersonVehicleHolder;
 use Dropshipping\DTO\Requests\VehicleRegistrationRequest;
 use Dropshipping\DTO\Requests\VehicleRegistrationVehicleHolder;
 use Dropshipping\DTO\VehicleRegistrationCustomization;
 use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom;
 use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyReservation;
+use Dropshipping\DTO\VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained;
+use Dropshipping\DTO\VehicleRegistrationPreviousLicensePlate;
 use Dropshipping\Enums\Gender;
 use Dropshipping\Enums\IdentityVerificationDocumentType;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
 use Dropshipping\Enums\VehicleRegistrationServiceTypeCode;
+use Dropshipping\Enums\VehicleRegistrationVehicleHolderType;
 use Dropshipping\Enums\VehicleRegistrationVehicleType;
 use Dropshipping\Exceptions\DropshippingException;
 use PHPUnit\Framework\TestCase;
@@ -209,20 +214,32 @@ final class VehicleRegistrationRequestTest extends TestCase
         );
     }
 
-    private function createCustomization(): VehicleRegistrationCustomization
-    {
+    private function createCustomization(
+        VehicleRegistrationServiceTypeCode $code = VehicleRegistrationServiceTypeCode::NZ,
+        ?string $iban = 'DE89370400440532013000',
+        ?string $bic = 'COBADEFFXXX',
+    ): VehicleRegistrationCustomization {
+        $continuesRegistration = $code->requiresPreviousRegistration();
+
         return new VehicleRegistrationCustomization(
             licensePlateNumberAssignmentStrategy: new VehicleRegistrationLicensePlateNumberAssignmentStrategyRandom(
                 licensePlateType: VehicleRegistrationLicensePlateType::Regular,
             ),
-            vehicleRegistrationServiceTypeCode: VehicleRegistrationServiceTypeCode::NZ,
+            vehicleRegistrationServiceTypeCode: $code,
             deregistered: true,
             vehicleType: VehicleRegistrationVehicleType::Car,
             electronicInsuranceConfirmationNumber: 'ABC1234',
             vehicleIdentificationNumber: 'WBA12345678901234',
             vehicleTitleSecurityCode: 'ABCDEF123456',
-            iban: 'DE89370400440532013000',
-            bic: 'COBADEFFXXX',
+            iban: $iban,
+            bic: $bic,
+            vehicleRegistrationCertificateSecurityCode: $continuesRegistration ? 'SEC1234' : null,
+            previousLicensePlate: $continuesRegistration
+                ? new VehicleRegistrationPreviousLicensePlate(
+                    licensePlateNumberComponents: new EuroLicensePlateNumberComponents('M', 'KG', '6988'),
+                    licensePlateType: VehicleRegistrationLicensePlateType::Regular,
+                )
+                : null,
         );
     }
 
@@ -238,5 +255,268 @@ final class VehicleRegistrationRequestTest extends TestCase
     private function createAddress(): Address
     {
         return new Address('Max', 'Mustermann', Gender::Male, 'Str', '1', '12345', 'Berlin', 'DE');
+    }
+
+    public function test_the_request_takes_any_holder_variant(): void
+    {
+        $naturalPerson = new VehicleRegistrationRequest(
+            email: 'test@example.com',
+            customization: $this->createCustomization(),
+            vehicleHolder: new VehicleRegistrationNaturalPersonVehicleHolder(
+                address: $this->createAddress(),
+                placeOfBirth: 'Berlin',
+                birthDate: '1990-01-31',
+            ),
+        );
+
+        self::assertSame('NATURAL_PERSON', $naturalPerson->toArray()['vehicleHolder']['type']);
+
+        $legalPerson = new VehicleRegistrationRequest(
+            email: 'test@example.com',
+            customization: $this->createCustomization(),
+            vehicleHolder: $this->createLegalPersonHolder(),
+        );
+
+        self::assertSame('LEGAL_PERSON', $legalPerson->toArray()['vehicleHolder']['type']);
+        self::assertSame('Autohaus Muster GmbH', $legalPerson->toArray()['vehicleHolder']['name']);
+    }
+
+    public function test_a_legal_person_cannot_order_a_holder_change(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage(
+            'A vehicleHolder of type LEGAL_PERSON is not supported for vehicleRegistrationServiceTypeCode HA',
+        );
+
+        new VehicleRegistrationRequest(
+            email: 'test@example.com',
+            customization: $this->createHolderChangeCustomization(),
+            vehicleHolder: $this->createLegalPersonHolder(),
+        );
+    }
+
+    public function test_a_legal_person_can_order_every_other_code(): void
+    {
+        foreach (VehicleRegistrationServiceTypeCode::cases() as $code) {
+            if ($code === VehicleRegistrationServiceTypeCode::HA) {
+                continue;
+            }
+
+            $request = new VehicleRegistrationRequest(
+                email: 'test@example.com',
+                customization: $this->createCustomization($code),
+                vehicleHolder: $this->createLegalPersonHolder(),
+            );
+
+            self::assertSame($code->value, $request->toArray()['customization']['vehicleRegistrationServiceTypeCode']);
+        }
+    }
+
+    public function test_a_natural_person_can_still_order_a_holder_change(): void
+    {
+        $request = new VehicleRegistrationRequest(
+            email: 'test@example.com',
+            customization: $this->createHolderChangeCustomization(),
+            vehicleHolder: new VehicleRegistrationNaturalPersonVehicleHolder(
+                address: $this->createAddress(),
+                placeOfBirth: 'Berlin',
+                birthDate: '1990-01-31',
+            ),
+        );
+
+        self::assertSame('HA', $request->toArray()['customization']['vehicleRegistrationServiceTypeCode']);
+        self::assertSame(VehicleRegistrationVehicleHolderType::NaturalPerson, $request->vehicleHolder->holderType());
+    }
+
+    public function test_a_customs_major_customer_id_forbids_the_iban(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage('Field "customization.iban" must be null when vehicleHolder.customsMajorCustomerId is set');
+
+        new VehicleRegistrationRequest(
+            email: 'test@example.com',
+            customization: $this->createCustomization(),
+            vehicleHolder: $this->createLegalPersonHolder(customsMajorCustomerId: '123A4567'),
+        );
+    }
+
+    public function test_a_customs_major_customer_id_forbids_the_bic(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage('Field "customization.bic" must be null when vehicleHolder.customsMajorCustomerId is set');
+
+        new VehicleRegistrationRequest(
+            email: 'test@example.com',
+            customization: $this->createCustomization(iban: null, bic: 'COBADEFFXXX'),
+            vehicleHolder: $this->createLegalPersonHolder(customsMajorCustomerId: '123A4567'),
+        );
+    }
+
+    public function test_a_customs_major_customer_id_replaces_the_bank_details(): void
+    {
+        $array = (new VehicleRegistrationRequest(
+            email: 'test@example.com',
+            customization: $this->createCustomization(iban: null, bic: null),
+            vehicleHolder: $this->createLegalPersonHolder(customsMajorCustomerId: '123A4567'),
+        ))->toArray();
+
+        self::assertArrayNotHasKey('iban', $array['customization']);
+        self::assertArrayNotHasKey('bic', $array['customization']);
+        self::assertSame('123A4567', $array['vehicleHolder']['customsMajorCustomerId']);
+    }
+
+    /**
+     * The rule moved here from the customization in SDK 2.7.0, because whether
+     * the IBAN is required or forbidden depends on the holder.
+     */
+    public function test_the_iban_is_required_for_every_code_but_ha_without_a_customs_id(): void
+    {
+        foreach (VehicleRegistrationServiceTypeCode::cases() as $code) {
+            if ($code === VehicleRegistrationServiceTypeCode::HA) {
+                continue;
+            }
+
+            try {
+                new VehicleRegistrationRequest(
+                    email: 'test@example.com',
+                    customization: $this->createCustomization($code, iban: null, bic: null),
+                    vehicleHolder: $this->createVehicleHolder(),
+                );
+
+                self::fail(sprintf('Expected %s to require an iban', $code->value));
+            } catch (DropshippingException $exception) {
+                self::assertSame(
+                    sprintf('Field "customization.iban" is required for vehicleRegistrationServiceTypeCode %s', $code->value),
+                    $exception->getMessage(),
+                );
+            }
+        }
+    }
+
+    public function test_a_holder_change_needs_no_iban(): void
+    {
+        $array = (new VehicleRegistrationRequest(
+            email: 'test@example.com',
+            customization: $this->createHolderChangeCustomization(),
+            vehicleHolder: $this->createVehicleHolder(),
+        ))->toArray();
+
+        self::assertArrayNotHasKey('iban', $array['customization']);
+    }
+
+    /**
+     * The customs ID can only come from a legal person, so a natural person
+     * always has to carry the bank details.
+     */
+    public function test_a_natural_person_cannot_skip_the_iban(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage('Field "customization.iban" is required for vehicleRegistrationServiceTypeCode NZ');
+
+        new VehicleRegistrationRequest(
+            email: 'test@example.com',
+            customization: $this->createCustomization(iban: null, bic: null),
+            vehicleHolder: new VehicleRegistrationNaturalPersonVehicleHolder(
+                address: $this->createAddress(),
+                placeOfBirth: 'Berlin',
+                birthDate: '1990-01-31',
+            ),
+        );
+    }
+
+    private function createLegalPersonHolder(?string $customsMajorCustomerId = null): VehicleRegistrationLegalPersonVehicleHolder
+    {
+        return new VehicleRegistrationLegalPersonVehicleHolder(
+            address: $this->createAddress(),
+            name: 'Autohaus Muster GmbH',
+            industryCode: 'G01',
+            companyNumber: 'HRB 123456',
+            customsMajorCustomerId: $customsMajorCustomerId,
+        );
+    }
+
+    private function createHolderChangeCustomization(): VehicleRegistrationCustomization
+    {
+        return new VehicleRegistrationCustomization(
+            licensePlateNumberAssignmentStrategy: new VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained(),
+            vehicleRegistrationServiceTypeCode: VehicleRegistrationServiceTypeCode::HA,
+            deregistered: false,
+            vehicleType: VehicleRegistrationVehicleType::Car,
+            electronicInsuranceConfirmationNumber: null,
+            vehicleIdentificationNumber: 'WBA12345678901234',
+            vehicleTitleSecurityCode: null,
+            iban: null,
+            bic: null,
+            vehicleRegistrationCertificateSecurityCode: 'SEC1234',
+            previousLicensePlate: new VehicleRegistrationPreviousLicensePlate(
+                licensePlateNumberComponents: new EuroLicensePlateNumberComponents('M', 'KG', '6988'),
+                licensePlateType: VehicleRegistrationLicensePlateType::Regular,
+            ),
+        );
+    }
+
+    public function test_toArray_wraps_the_recycled_order_id_in_its_object(): void
+    {
+        $array = (new VehicleRegistrationRequest(
+            email: 'test@example.com',
+            customization: $this->createCustomization(),
+            vehicleHolder: $this->createVehicleHolder(),
+            recycledVehicleRegistrationOrderId: 12345,
+        ))->toArray();
+
+        self::assertSame(['orderId' => 12345], $array['recycledVehicleRegistration']);
+    }
+
+    public function test_toArray_omits_the_recycled_registration_when_not_set(): void
+    {
+        self::assertArrayNotHasKey('recycledVehicleRegistration', $this->createRequest()->toArray());
+    }
+
+    /**
+     * The API assigns order IDs, so a zero or negative one cannot name an order.
+     * Catching it here saves a round trip.
+     */
+    public function test_constructor_rejects_a_non_positive_recycled_order_id(): void
+    {
+        foreach ([0, -1, PHP_INT_MIN] as $orderId) {
+            try {
+                new VehicleRegistrationRequest(
+                    email: 'test@example.com',
+                    customization: $this->createCustomization(),
+                    vehicleHolder: $this->createVehicleHolder(),
+                    recycledVehicleRegistrationOrderId: $orderId,
+                );
+
+                self::fail(sprintf('Expected the order ID %d to be rejected', $orderId));
+            } catch (DropshippingException $exception) {
+                self::assertStringContainsString('recycledVehicleRegistrationOrderId', $exception->getMessage());
+            }
+        }
+    }
+
+    public function test_constructor_accepts_a_large_recycled_order_id(): void
+    {
+        // int64 on the API side, so the whole PHP int range has to pass.
+        $request = new VehicleRegistrationRequest(
+            email: 'test@example.com',
+            customization: $this->createCustomization(),
+            vehicleHolder: $this->createVehicleHolder(),
+            recycledVehicleRegistrationOrderId: PHP_INT_MAX,
+        );
+
+        self::assertSame(['orderId' => PHP_INT_MAX], $request->toArray()['recycledVehicleRegistration']);
+    }
+
+    public function test_the_recycled_registration_works_for_a_legal_person_too(): void
+    {
+        $array = (new VehicleRegistrationRequest(
+            email: 'einkauf@autohaus-muster.de',
+            customization: $this->createCustomization(),
+            vehicleHolder: $this->createLegalPersonHolder(),
+            recycledVehicleRegistrationOrderId: 999,
+        ))->toArray();
+
+        self::assertSame(['orderId' => 999], $array['recycledVehicleRegistration']);
+        self::assertSame('LEGAL_PERSON', $array['vehicleHolder']['type']);
     }
 }

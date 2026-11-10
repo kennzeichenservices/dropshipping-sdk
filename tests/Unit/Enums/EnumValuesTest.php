@@ -17,6 +17,7 @@ use Dropshipping\Enums\VehicleRegistrationDeliveryConfigurationRecipientType;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateNumberAssignmentStrategyType;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
 use Dropshipping\Enums\VehicleRegistrationServiceTypeCode;
+use Dropshipping\Enums\VehicleRegistrationVehicleHolderType;
 use Dropshipping\Enums\VehicleRegistrationVehicleType;
 use Dropshipping\Enums\VehicleRegistrationXkfzEventFilePurposeType;
 use Dropshipping\Enums\VehicleRegistrationXkfzEventStatus;
@@ -231,5 +232,27 @@ final class EnumValuesTest extends TestCase
     {
         $this->expectException(\ValueError::class);
         Gender::from('INVALID');
+    }
+
+    public function test_vehicle_registration_vehicle_holder_type_values(): void
+    {
+        self::assertSame('NATURAL_PERSON', VehicleRegistrationVehicleHolderType::NaturalPerson->value);
+        self::assertSame('LEGAL_PERSON', VehicleRegistrationVehicleHolderType::LegalPerson->value);
+        self::assertCount(2, VehicleRegistrationVehicleHolderType::cases());
+    }
+
+    /**
+     * A legal person is excluded from HA only, and that has to stay in step with
+     * the codes whose predicates describe a Halteränderung.
+     */
+    public function test_only_ha_rejects_a_legal_person_vehicle_holder(): void
+    {
+        foreach (VehicleRegistrationServiceTypeCode::cases() as $code) {
+            self::assertSame(
+                $code !== VehicleRegistrationServiceTypeCode::HA,
+                $code->supportsLegalPersonVehicleHolder(),
+                sprintf('%s is judged wrongly', $code->value),
+            );
+        }
     }
 }

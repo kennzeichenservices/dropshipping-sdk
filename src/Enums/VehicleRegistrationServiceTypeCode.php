@@ -126,11 +126,32 @@ enum VehicleRegistrationServiceTypeCode: string
     /**
      * Whether the procedure requires the insurance and vehicle tax details.
      *
-     * True for every code but `HA`: the eVB number, IBAN and BIC are required
+     * True for every code but `HA`: the eVB number and the IBAN are required
      * then. For `HA` the spec (2.5.0) only drops the requirement — it does not
      * forbid the fields, so they are passed on when given.
+     *
+     * The BIC is not covered by this: since 2.7.0 it depends on the country of
+     * the IBAN, not on the code. Neither is the IBAN where the holder is a legal
+     * person paying the tax through the customs administration, which forbids it
+     * for every code.
      */
     public function requiresInsuranceAndTaxDetails(): bool
+    {
+        return match ($this) {
+            self::HA => false,
+            self::NZ, self::WZ, self::WG, self::UG, self::UM, self::UO, self::UI => true,
+        };
+    }
+
+    /**
+     * Whether the procedure can be ordered for a legal person as the vehicle
+     * holder.
+     *
+     * False only for a Halteränderung: 2.7.0, which introduced the legal person
+     * holder, excludes `HA` from it. For every other code both holder types are
+     * accepted.
+     */
+    public function supportsLegalPersonVehicleHolder(): bool
     {
         return match ($this) {
             self::HA => false,

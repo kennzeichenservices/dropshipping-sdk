@@ -521,9 +521,9 @@ final class VehicleRegistrationCustomizationTest extends TestCase
         self::assertSame('ABCDEF123456', $array['vehicleTitleSecurityCode']);
     }
 
-    public function test_constructor_requires_title_insurance_and_tax_fields_for_every_code_but_ha(): void
+    public function test_constructor_requires_title_and_insurance_fields_for_every_code_but_ha(): void
     {
-        $fields = ['electronicInsuranceConfirmationNumber', 'vehicleTitleSecurityCode', 'iban', 'bic'];
+        $fields = ['electronicInsuranceConfirmationNumber', 'vehicleTitleSecurityCode'];
 
         foreach (VehicleRegistrationServiceTypeCode::cases() as $code) {
             if ($code === VehicleRegistrationServiceTypeCode::HA) {
@@ -550,6 +550,60 @@ final class VehicleRegistrationCustomizationTest extends TestCase
                 }
             }
         }
+    }
+
+    public function test_constructor_accepts_a_german_iban_without_a_bic(): void
+    {
+        // 2.7.0 only requires the BIC for an IBAN from MC, SM or CH. Up to 2.6.0
+        // the spec called it required for every code but HA, and this class
+        // enforced that.
+        $array = $this->create(['bic' => null])->toArray();
+
+        self::assertSame('DE89370400440532013000', $array['iban']);
+        self::assertArrayNotHasKey('bic', $array);
+    }
+
+    public function test_constructor_requires_a_bic_for_an_iban_from_monaco_san_marino_or_switzerland(): void
+    {
+        foreach (['MC5810096180790001944690U75', 'SM86U0322509800000000270100', 'CH9300762011623852957'] as $iban) {
+            try {
+                $this->create(['iban' => $iban, 'bic' => null]);
+
+                self::fail(sprintf('Expected the IBAN %s to require a BIC', $iban));
+            } catch (DropshippingException $exception) {
+                self::assertSame(
+                    sprintf('Field "bic" is required for an iban starting with %s', substr($iban, 0, 2)),
+                    $exception->getMessage(),
+                );
+            }
+        }
+    }
+
+    public function test_constructor_judges_the_iban_country_case_insensitively(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage('Field "bic" is required for an iban starting with ch');
+
+        $this->create(['iban' => 'ch9300762011623852957', 'bic' => null]);
+    }
+
+    public function test_constructor_accepts_a_swiss_iban_with_a_bic(): void
+    {
+        $array = $this->create(['iban' => 'CH9300762011623852957', 'bic' => 'POFICHBEXXX'])->toArray();
+
+        self::assertSame('CH9300762011623852957', $array['iban']);
+        self::assertSame('POFICHBEXXX', $array['bic']);
+    }
+
+    public function test_constructor_no_longer_requires_an_iban_which_is_checked_on_the_request(): void
+    {
+        // Whether the IBAN is required or forbidden depends on the vehicle
+        // holder, which this DTO does not see. VehicleRegistrationRequest
+        // checks it.
+        $array = $this->create(['iban' => null, 'bic' => null])->toArray();
+
+        self::assertArrayNotHasKey('iban', $array);
+        self::assertArrayNotHasKey('bic', $array);
     }
 
     public function test_constructor_rejects_too_short_iban(): void

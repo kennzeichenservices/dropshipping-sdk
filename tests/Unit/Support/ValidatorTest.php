@@ -153,4 +153,59 @@ final class ValidatorTest extends TestCase
 
         Validator::requireFalse(true, 'field', 'for reasons');
     }
+
+    public function test_requirePattern_passes_for_a_match(): void
+    {
+        Validator::requirePattern('G01', 'industryCode', '/^[A-Z0-9]{3}$/', 'be three characters');
+        $this->addToAssertionCount(1);
+    }
+
+    public function test_requirePattern_throws_for_a_mismatch(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage('Field "industryCode" must be three characters, got "g01"');
+
+        Validator::requirePattern('g01', 'industryCode', '/^[A-Z0-9]{3}$/', 'be three characters');
+    }
+
+    public function test_requirePattern_throws_for_an_empty_value(): void
+    {
+        $this->expectException(DropshippingException::class);
+
+        Validator::requirePattern('', 'industryCode', '/^[A-Z0-9]{3}$/', 'be three characters');
+    }
+
+    /**
+     * A pattern that cannot compile makes preg_match() return false. Reading that
+     * as a pass would let an unvalidated value through, so it has to be reported
+     * as a violation.
+     */
+    public function test_requirePattern_treats_an_uncompilable_pattern_as_a_violation(): void
+    {
+        $this->expectException(DropshippingException::class);
+
+        @Validator::requirePattern('G01', 'industryCode', '/^[A-Z/', 'be three characters');
+    }
+
+    public function test_requirePattern_is_not_anchored_by_itself(): void
+    {
+        // The caller owns the anchoring: an unanchored pattern matches anywhere,
+        // which is what the not-blank check relies on.
+        Validator::requirePattern('  HRB 1  ', 'companyNumber', '/\S/', 'not be blank');
+        $this->addToAssertionCount(1);
+    }
+
+    public function test_requireNullablePattern_skips_null(): void
+    {
+        Validator::requireNullablePattern(null, 'customsMajorCustomerId', '/^[0-9]{3}[A-Z][0-9]{4}$/', 'be an ID');
+        $this->addToAssertionCount(1);
+    }
+
+    public function test_requireNullablePattern_validates_a_non_null_value(): void
+    {
+        $this->expectException(DropshippingException::class);
+        $this->expectExceptionMessage('Field "customsMajorCustomerId" must be an ID, got "123a4567"');
+
+        Validator::requireNullablePattern('123a4567', 'customsMajorCustomerId', '/^[0-9]{3}[A-Z][0-9]{4}$/', 'be an ID');
+    }
 }

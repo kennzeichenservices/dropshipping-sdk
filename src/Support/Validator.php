@@ -220,4 +220,49 @@ final class Validator
             );
         }
     }
+
+    /**
+     * Validate a string against a regular expression the API publishes as a
+     * `pattern` constraint.
+     *
+     * The pattern is passed through as a full PCRE, delimiters included, so the
+     * caller controls anchoring. A pattern that fails to compile is reported as
+     * a violation rather than swallowed: preg_match() returns false then, and
+     * treating that as a pass would let an unvalidated value through.
+     *
+     * @param string $value       The value to validate.
+     * @param string $field       The field name used in the exception message.
+     * @param string $pattern     The PCRE the value has to match.
+     * @param string $description Human readable form of the constraint, used in the exception message.
+     *
+     * @throws DropshippingException If the value does not match the pattern.
+     */
+    public static function requirePattern(string $value, string $field, string $pattern, string $description): void
+    {
+        if (preg_match($pattern, $value) !== 1) {
+            throw new DropshippingException(
+                sprintf('Field "%s" must %s, got "%s"', $field, $description, $value),
+            );
+        }
+    }
+
+    /**
+     * Validate a nullable string against a regular expression. Skips validation
+     * if the value is null.
+     *
+     * @param string|null $value       The value to validate.
+     * @param string      $field       The field name used in the exception message.
+     * @param string      $pattern     The PCRE the value has to match.
+     * @param string      $description Human readable form of the constraint, used in the exception message.
+     *
+     * @throws DropshippingException If a non-null value does not match the pattern.
+     */
+    public static function requireNullablePattern(?string $value, string $field, string $pattern, string $description): void
+    {
+        if ($value === null) {
+            return;
+        }
+
+        self::requirePattern($value, $field, $pattern, $description);
+    }
 }

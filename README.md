@@ -4,7 +4,7 @@ A PHP SDK for the Kennzeichen Services Dropshipping API. It provides typed reque
 
 ## Features
 
-- Typed endpoints for orders, shipments, products, registration offices, webhooks, GKS configurations, vehicle deregistrations, and vehicle registrations
+- Typed endpoints for orders, shipments, products, registration offices, vehicle holder industries, webhooks, GKS configurations, vehicle deregistrations, and vehicle registrations
 - Immutable DTOs for all requests and responses
 - Webhook processing with configurable middleware pipeline (signature validation, payload validation, deserialization)
 - Async webhook processing via queue abstraction
@@ -83,18 +83,19 @@ $response = $client->orders->create(
 
 The only imports you need are `Dropshipping\DS` and the enums you use (e.g. `Gender`, `LicensePlateType`). See the [`examples/`](examples/) directory for complete runnable scripts.
 
-The client exposes eight endpoint groups as public readonly properties:
+The client exposes nine endpoint groups as public readonly properties:
 
 - `$client->orders` -- Order operations
 - `$client->shipments` -- Shipment operations (license plate reservations)
 - `$client->products` -- Product operations (availability checks, product catalog)
 - `$client->registrationOffices` -- Registration office listing (requires API 2.6.0)
+- `$client->vehicleHolderIndustries` -- Industry listing for legal person vehicle holders (requires API 2.7.0)
 - `$client->webhooks` -- Webhook operations
 - `$client->gksConfigurations` -- GKS configuration management (KBA interface)
 - `$client->vehicleDeregistrations` -- Vehicle deregistration operations
 - `$client->vehicleRegistrations` -- Vehicle registration operations (requires API 2.4.0 or later)
 
-> **The SDK talks to dropshipping API 2.4.0 by default and supports 2.5.0 and 2.6.0.** The API
+> **The SDK talks to dropshipping API 2.4.0 by default and supports 2.5.0, 2.6.0 and 2.7.0.** The API
 > version is part of the request URL, and an API version your client is not entitled to answers
 > `403 Forbidden` on *every* endpoint -- not just the new ones. `api-version` in `composer.json`
 > therefore always names a version that is live for all clients, so an SDK update never moves you
@@ -129,6 +130,21 @@ The client exposes eight endpoint groups as public readonly properties:
 > `identityVerificationDocumentType`, which 2.4.0 and 2.5.0 do not know: the SDK keeps it optional
 > and omits it from the payload when null, so set it whenever you run on 2.6.0 or the API answers
 > `400`.
+>
+> **2.7.0 adds the legal person vehicle holder, one operation and a required discriminator.** The
+> industry listing (`$client->vehicleHolderIndustries->getAll()`) exists only there. A registration
+> request must carry `vehicleHolder.type`, which no earlier version knows, so the holder you pass
+> decides which payload goes out:
+>
+> | Holder | `type` in the payload | API versions |
+> |--------|----------------------|--------------|
+> | `DS::vehicleRegistration(...)`, which wraps `VehicleRegistrationVehicleHolder` | not sent | 2.4.0 to 2.6.0 |
+> | `DS::registrationNaturalPersonVehicleHolder(...)` | `NATURAL_PERSON` | 2.7.0 |
+> | `DS::registrationLegalPersonVehicleHolder(...)` | `LEGAL_PERSON` | 2.7.0 |
+>
+> Nothing about an existing integration changes on an SDK update: `DS::vehicleRegistration(...)`
+> sends what it always sent. Switch to `DS::vehicleRegistrationWithHolder(...)` with one of the two
+> new holders when you move to 2.7.0 -- see [Submitting a Vehicle Registration](#submitting-a-vehicle-registration).
 
 ## Examples
 
@@ -143,6 +159,7 @@ Ready-to-run PHP scripts are available in the [`examples/`](examples/) directory
 | [reserve-license-plate.php](examples/reserve-license-plate.php) · [docs](examples/reserve-license-plate.md) | Reserve a license plate |
 | [product-catalog.php](examples/product-catalog.php) · [docs](examples/product-catalog.md) | List every orderable product with its net costs (API 2.6.0) |
 | [registration-offices.php](examples/registration-offices.php) · [docs](examples/registration-offices.md) | List every registration office with its reservation fee (API 2.6.0) |
+| [vehicle-holder-industries.php](examples/vehicle-holder-industries.php) · [docs](examples/vehicle-holder-industries.md) | List the industries a legal person vehicle holder can be registered under (API 2.7.0) |
 | [gks-configurations.php](examples/gks-configurations.php) · [docs](examples/gks-configurations.md) | Create, update, list, and get GKS configurations |
 | [vehicle-deregistration.php](examples/vehicle-deregistration.php) · [docs](examples/vehicle-deregistration.md) | Submit a vehicle deregistration and handle the XKFZ webhook with file download |
 | [vehicle-registration.php](examples/vehicle-registration.php) · [docs](examples/vehicle-registration.md) | Submit a vehicle registration |
@@ -278,6 +295,38 @@ if ($office?->chargesReservationFee()) {
 // A region code is not unique, so this returns every office issuing it.
 foreach ($offices->findByRegionCode('BO') as $match) {
     echo "{$match->id}: {$match->name} ({$match->stateName})\n";
+}
+```
+
+### Fetching the Vehicle Holder Industries
+
+Requires API 2.7.0. The industries (Wirtschaftszweige) a legal person vehicle holder can be
+registered under, taken from the Berufsschlüssel of the ErfassRL Kfz, a KBA reference table. A
+`code` from here goes into `industryCode` of `DS::registrationLegalPersonVehicleHolder(...)`.
+
+A code is not unique: the same one can appear under several industry names, so the lookup returns
+a list. The listing is not paginated and changes rarely, so cache it on your side rather than
+fetching it per order.
+
+```php
+$industries = $client->vehicleHolderIndustries->getAll();
+
+if (!$industries->hasCode('G01')) {
+    throw new RuntimeException('G01 is no longer an accepted industry code');
+}
+
+// A code can carry several names, so this returns every match.
+foreach ($industries->findByCode('G01') as $industry) {
+    echo "{$industry->sectionName}: {$industry->name}\n";
+}
+
+// For a two-level picker.
+foreach ($industries->groupedBySection() as $sectionName => $entries) {
+    echo $sectionName, "\n";
+
+    foreach ($entries as $entry) {
+        echo "  {$entry->code} {$entry->name}\n";
+    }
 }
 ```
 
@@ -420,8 +469,8 @@ class DeregistrationXkfzHandler implements WebhookHandlerInterface
 
 ### Submitting a Vehicle Registration
 
-> Works on the default API version 2.4.0, except for a Halteränderung, which needs 2.5.0 -- see
-> below and the version notice above.
+> Works on the default API version 2.4.0, except for a Halteränderung, which needs 2.5.0, and a
+> legal person as the vehicle holder, which needs 2.7.0 -- see below and the version notice above.
 
 ```php
 use Dropshipping\DS;
@@ -446,7 +495,7 @@ $response = $client->vehicleRegistrations->createRegistration(
             vehicleIdentificationNumber: 'WBA12345678901234',
             vehicleTitleSecurityCode: 'B12345678900',           // ZB II code, exactly 12 chars
             iban: 'DE89370400440532013000',
-            bic: 'COBADEFFXXX',
+            bic: 'COBADEFFXXX',                                 // only required for an MC, SM or CH iban
         ),
         vehicleHolderAddress: $address,
         vehicleHolderPlaceOfBirth: 'Berlin',   // required
@@ -514,7 +563,8 @@ customization enforces it:
 | `deregistered` | must be `false` | see above |
 | `licensePlateNumberAssignmentStrategy` | must be `RETAINMENT` | free (but not `RETAINMENT` for `NZ`) |
 | `vehicleTitleSecurityCode`, `vehicleTitleNumber` (ZB II) | must be `null` | security code required |
-| `electronicInsuranceConfirmationNumber`, `iban`, `bic` | optional | required |
+| `electronicInsuranceConfirmationNumber` | optional | required |
+| `iban` | optional | required, unless the holder pays the tax through customs (see below) |
 
 ```php
 customization: DS::registrationCustomization(
@@ -534,6 +584,98 @@ customization: DS::registrationCustomization(
     ),
 ),
 ```
+
+**The BIC is only required for three countries.** Spec 2.7.0 narrows it down: an `iban` from
+Monaco (`MC`), San Marino (`SM`) or Switzerland (`CH`) needs a `bic` alongside it, every other
+country does not. Up to 2.6.0 the spec called it required for every code but `HA`, and the SDK
+enforced that; it no longer does, so a German IBAN without a BIC now goes out rather than being
+rejected locally.
+
+**A legal person (juristische Person) as the vehicle holder.** Requires API 2.7.0 and is not
+accepted for `HA`. Build the holder separately and pass it to `DS::vehicleRegistrationWithHolder(...)`:
+
+```php
+$response = $client->vehicleRegistrations->createRegistration(
+    DS::vehicleRegistrationWithHolder(
+        email: 'einkauf@autohaus-muster.de',
+        customization: $customization,
+        vehicleHolder: DS::registrationLegalPersonVehicleHolder(
+            address: $address,                      // the address of the company
+            name: 'Autohaus Muster GmbH',           // the name of the holder
+            industryCode: 'G01',                    // from $client->vehicleHolderIndustries->getAll()
+            companyNumber: 'HRB 123456',            // company register number, for the verification
+            customsMajorCustomerId: null,           // optional Zoll-GK-Nr., see below
+        ),
+        identityVerificationDocumentType: IdentityVerificationDocumentType::GermanId,
+    )
+);
+```
+
+The address is the address *of the company*. Its `firstName`, `lastName` and `gender` name a
+contact person, and its `companyName` is **not** read as the holder's name -- that is what `name`
+is for, so a company with a `companyName` on its address still has to repeat it there. The two may
+differ.
+
+`industryCode` has to be a code the API knows; fetch it from
+[the industry listing](#fetching-the-vehicle-holder-industries). The SDK checks the shape (three
+characters of `A-Z` and `0-9`), the API checks existence.
+
+**Paying the motor vehicle tax through customs.** A company holding a major customer ID of the
+customs administration (Großkunden-ID der Zollverwaltung, Zoll-GK-Nr.) settles the tax that way
+instead of by SEPA direct debit mandate. Pass it as `customsMajorCustomerId` and leave `iban` and
+`bic` empty on the customization -- the request throws if both are given, since the API rejects
+that combination:
+
+```php
+vehicleHolder: DS::registrationLegalPersonVehicleHolder(
+    address: $address,
+    name: 'Autohaus Muster GmbH',
+    industryCode: 'G01',
+    companyNumber: 'HRB 123456',
+    customsMajorCustomerId: '123A4567',  // three digits, a letter, four digits
+),
+```
+
+**A natural person on 2.7.0.** `DS::vehicleRegistration(...)` keeps sending the payload without
+`vehicleHolder.type`, which is what 2.4.0 to 2.6.0 expect and 2.7.0 rejects with `400`. On 2.7.0
+use the explicit holder instead:
+
+```php
+DS::vehicleRegistrationWithHolder(
+    email: 'max@example.com',
+    customization: $customization,
+    vehicleHolder: DS::registrationNaturalPersonVehicleHolder(
+        address: $address,
+        placeOfBirth: 'Berlin',
+        birthDate: '1990-01-31',
+        birthName: 'Musterfrau',  // optional
+    ),
+    identityVerificationDocumentType: IdentityVerificationDocumentType::GermanId,
+);
+```
+
+**Reusing an earlier identification.** `recycledVehicleRegistrationOrderId` points at an earlier
+registration order whose identity verification and signed files this one takes over, so the
+customer identifies themselves and signs only once. Requires API 2.6.0; the field has been in the
+spec since then, but 2.7.0 is the first version to describe it.
+
+```php
+DS::vehicleRegistrationWithHolder(
+    email: 'max@example.com',
+    customization: $customization,
+    vehicleHolder: $holder,
+    recycledVehicleRegistrationOrderId: 12345,  // serialized as recycledVehicleRegistration.orderId
+);
+```
+
+The referenced order has to match this one: the same `vehicleHolder.type`, and for a legal person
+the same `vehicleHolder.name` (compared case insensitively, ignoring surrounding whitespace). It
+also has to carry the files this registration needs, which are the power of attorney, the SEPA
+direct debit mandate (except for `HA` and for a holder with a `customsMajorCustomerId`) and, for a
+natural person, the GDPR consent declaration (except for `HA`).
+
+None of that is checkable in the SDK, since it is all about the other order, so the API is what
+rejects a mismatch. The SDK only rejects an order ID of zero or less, which cannot name an order.
 
 **A deviating delivery address for the registration documents.** By default the registration
 office posts both the Zulassungsbescheinigung Teil I (Fahrzeugschein) and Teil II (Fahrzeugbrief)
@@ -723,6 +865,7 @@ The SDK follows these patterns:
 | `$client->products->checkLicensePlateAvailability()` | POST /licensePlateReservations/availabilityChecks | Check license plate availability |
 | `$client->products->getCatalog()` | GET /products | List every orderable product with its net costs (API 2.6.0) |
 | `$client->registrationOffices->getAll()` | GET /registrationOffices | List every registration office with its reservation fee (API 2.6.0) |
+| `$client->vehicleHolderIndustries->getAll()` | GET /vehicleHolderIndustries | List the industries a legal person vehicle holder can be registered under (API 2.7.0) |
 | `$client->gksConfigurations->create()` | POST /gksConfigurations | Create a GKS configuration |
 | `$client->gksConfigurations->update()` | PUT /gksConfigurations/{id} | Update a GKS configuration |
 | `$client->gksConfigurations->getOverviews()` | GET /gksConfigurations/overviews | List all GKS configurations |
@@ -792,6 +935,7 @@ throws, except where the SDK defines a fallback — `status` on both XKFZ events
 | `VehicleRegistrationDeliveryConfigurationDeliveryOption` | `DELIVERY_TO_OWNER`, `DELIVERY_TO_THIRD_PARTY`, `PICKUP_BY_THIRD_PARTY` |
 | `VehicleRegistrationDeliveryConfigurationRecipientType` | `NATURAL_PERSON`, `LEGAL_PERSON` |
 | `VehicleRegistrationServiceTypeCode` | `NZ`, `WZ`, `UO`, `UI`, `UM`, `WG`, `UG`, `HA` |
+| `VehicleRegistrationVehicleHolderType` | `NATURAL_PERSON`, `LEGAL_PERSON` |
 | `IdentityVerificationDocumentType` | `GERMAN_ID`, `RESIDENCE_PERMIT`, `GERMAN_PASSPORT_WITH_PROOF_OF_ADDRESS`, `FOREIGN_PAPERS_WITH_PROOF_OF_ADDRESS` |
 | `VehicleRegistrationXkfzEventStatus` | `ACCEPTED`, `APPROVED`, `APPROVED_WITH_DOCUMENTS`, `FAILED`, `FORWARDED`, `PROCESSED`, `REJECTED`, `REJECTED_WITH_DOCUMENTS`, `UNKNOWN` |
 | `VehicleRegistrationXkfzEventFilePurposeType` | `OTHER`, `PROVISIONAL_VEHICLE_REGISTRATION_CERTIFICATE`, `VEHICLE_REGISTRATION_APPLICATION_POWER_OF_ATTORNEY`, `VEHICLE_REGISTRATION_APPROVAL_NOTICE`, `VEHICLE_REGISTRATION_CERTIFICATE_TOKEN`, `VEHICLE_REGISTRATION_CHARGES_NOTICE`, `VEHICLE_REGISTRATION_ELECTRONIC_INSURANCE_CONFIRMATION`, `VEHICLE_REGISTRATION_GDPR_CONSENT_DECLARATION`, `VEHICLE_REGISTRATION_MOTOR_VEHICLE_TAX_SEPA_DIRECT_DEBIT_MANDATE`, `VEHICLE_REGISTRATION_REJECTION_NOTICE` |

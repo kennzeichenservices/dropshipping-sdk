@@ -21,6 +21,11 @@ use Dropshipping\Enums\{
 // registration without it. 2.4.0 and 2.5.0 do not know the field, and the SDK leaves it out of
 // the payload while it is null, so one script can serve all three versions as long as the value
 // is set whenever DROPSHIPPING_API_VERSION is 2.6.0 or later.
+//
+// 2.7.0 goes one step further: vehicleHolder.type becomes required, and no earlier version knows
+// it. DS::vehicleRegistration() below keeps sending the holder without it, which is what 2.4.0 to
+// 2.6.0 expect and 2.7.0 rejects with 400. On 2.7.0 use DS::vehicleRegistrationWithHolder() with
+// an explicit holder instead, as shown at the end of this script.
 
 $address = DS::address(
     firstName: 'Max',
@@ -69,6 +74,8 @@ $response = $client->vehicleRegistrations->createRegistration(
             vehicleIdentificationNumber: 'WBA12345678901234',        // VIN / FIN
             vehicleTitleSecurityCode: 'B12345678900',                // ZB II security code, exactly 12 chars
             iban: 'DE89370400440532013000',
+            // Only required for an iban from Monaco (MC), San Marino (SM) or Switzerland (CH)
+            // since 2.7.0, optional for every other country.
             bic: 'COBADEFFXXX',
             // ZB I code and previousLicensePlate belong to a vehicle that was registered
             // before. NZ is a first registration, so both must stay null — passing them
@@ -142,3 +149,72 @@ echo "Registration order created: {$response->orderId}\n";
 // VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED event follows with a fresh URL.
 // An ApiException with status 409 means document signing has already started or the order is
 // not eligible for a change; 404 means the order ID is unknown.
+
+
+// ---------------------------------------------------------------------------
+// Reusing an earlier identification (API 2.6.0)
+// ---------------------------------------------------------------------------
+//
+// recycledVehicleRegistrationOrderId points at an earlier registration order whose identity
+// verification and signed files this one takes over, so the customer identifies themselves and
+// signs only once. It goes out as recycledVehicleRegistration.orderId.
+//
+//   DS::vehicleRegistration(
+//       // ... as above ...
+//       recycledVehicleRegistrationOrderId: 12345,
+//   );
+//
+// The referenced order has to match this one: the same vehicleHolder.type, and for a legal person
+// the same vehicleHolder.name (case insensitive, surrounding whitespace ignored). It also has to
+// carry the files this registration needs, which are the power of attorney, the SEPA direct debit
+// mandate (except for HA and for a holder with a customsMajorCustomerId) and, for a natural
+// person, the GDPR consent declaration (except for HA). None of that is checkable in the SDK,
+// since it is all about the other order, so the API is what rejects a mismatch. The SDK only
+// rejects an order ID of zero or less, which cannot name an order.
+
+// ---------------------------------------------------------------------------
+// API 2.7.0: the vehicle holder carries a type, and can be a legal person
+// ---------------------------------------------------------------------------
+//
+// Up to 2.6.0 the holder was always a natural person and sent no type. 2.7.0 requires the
+// discriminator, so the SDK ships one holder per payload shape and lets the class decide what
+// goes out. Nothing above changes on an SDK update.
+//
+// A natural person on 2.7.0:
+//
+//   DS::vehicleRegistrationWithHolder(
+//       email: 'max@example.com',
+//       customization: $customization,
+//       vehicleHolder: DS::registrationNaturalPersonVehicleHolder(
+//           address: $address,
+//           placeOfBirth: 'Berlin',
+//           birthDate: '1990-01-31',
+//           birthName: 'Musterfrau',  // optional
+//       ),
+//       identityVerificationDocumentType: IdentityVerificationDocumentType::GermanId,
+//   );
+//
+// A company as the holder, which 2.7.0 introduced and which the service type code HA does not
+// accept:
+//
+//   $industries = $client->vehicleHolderIndustries->getAll();   // cache this, see
+//                                                               // vehicle-holder-industries.php
+//   DS::vehicleRegistrationWithHolder(
+//       email: 'einkauf@autohaus-muster.de',
+//       customization: $customization,
+//       vehicleHolder: DS::registrationLegalPersonVehicleHolder(
+//           // The address of the company. Its firstName, lastName and gender name a contact
+//           // person, and its companyName is NOT read as the holder's name: that is what the
+//           // name below is for, so a company carrying one on its address repeats it there.
+//           address: $address,
+//           name: 'Autohaus Muster GmbH',
+//           industryCode: 'G01',          // a code from $industries, three chars of A-Z and 0-9
+//           companyNumber: 'HRB 123456',  // company register number, for the verification
+//           // Optional major customer ID of the customs administration (Zoll-GK-Nr.). Where it
+//           // is set, the company settles the motor vehicle tax through customs instead of a
+//           // SEPA direct debit mandate, so the customization must leave iban and bic null.
+//           // The request throws if both are given, since the API rejects that combination.
+//           customsMajorCustomerId: '123A4567',
+//       ),
+//       identityVerificationDocumentType: IdentityVerificationDocumentType::GermanId,
+//   );

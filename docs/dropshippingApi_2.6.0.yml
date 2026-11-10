@@ -7,7 +7,7 @@ servers:
   - url: https://{host}/dropshipping-api/{dropshippingClientId}/2.6.0
     variables:
       host:
-        default: api.kennzeichen.dev
+        default: PLACEHOLDER_DROPSHIPPING_API_HOST_DEFAULT
         description: API host
       dropshippingClientId:
         default: 0
@@ -194,7 +194,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-                
+
   /licensePlateReservations/availabilityChecks:
     post:
       summary: Check if a license plate (number) is available for reservation
@@ -249,7 +249,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         '503':
-          description: The service of the registration office for the given registrationOfficeServiceId is unavailable at the moment. Other services might still work. 
+          description: The service of the registration office for the given registrationOfficeServiceId is unavailable at the moment. Other services might still work.
           content:
             application/json:
               schema:
@@ -328,7 +328,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: 
+            schema:
               $ref: "#/components/schemas/OrderCreationRequest"
             example:
               {
@@ -389,7 +389,7 @@ paths:
                   "productVariantId": 2
                 } ]
               }
-                
+
       responses:
         '201':
           description: Created order
@@ -426,7 +426,7 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/EmissionStickerOrderCreationRequest"
-            encoding: 
+            encoding:
               order:
                 contentType: application/json
       responses:
@@ -1252,7 +1252,7 @@ components:
     LicensePlateReservationAvailabilityCheckRequest:
       type: object
       required:
-        - registrationOfficeServiceId 
+        - registrationOfficeServiceId
         - licensePlateType
         - vehicleType
         - licensePlateNumberPatternComponents
@@ -1277,7 +1277,7 @@ components:
             format: int32
             nullable: true
             minimum: 1
-            maximum: 12      
+            maximum: 12
     LicensePlateReservationAvailabilityCheckResponse:
       type: object
       required:
@@ -1369,7 +1369,7 @@ components:
     LicensePlateReservationCustomization:
       type: object
       required:
-        - registrationOfficeServiceId 
+        - registrationOfficeServiceId
         - licensePlateType
         - vehicleType
         - licensePlateNumberComponents
@@ -1431,7 +1431,7 @@ components:
           nullable: true
         birthDate:
           $ref: "#/components/schemas/NullableLocalDate"
-    
+
     LicensePlateReservationResponse:
       type: object
       required:
@@ -1559,7 +1559,7 @@ components:
           type: string
           description: "Order net cost value. Decimal separator: ."
           example: "1.23"
-    
+
     OtherItemCustomization:
       type: object
       allOf:
@@ -1688,7 +1688,7 @@ components:
             id:
               type: integer
               format: int64
-              
+
     VehicleRegistrationLicensePlateNumberAssignmentStrategyType:
       type: string
       enum:
@@ -1874,7 +1874,7 @@ components:
           $ref: '#/components/schemas/VehicleRegistrationPreviousLicensePlate'
         deliveryConfigurations:
           $ref: '#/components/schemas/VehicleRegistrationDeliveryConfigurations'
-  
+
     VehicleRegistrationDeliveryConfigurations:
       type: object
       nullable: true
@@ -1916,14 +1916,14 @@ components:
       type: object
       allOf:
         - $ref: '#/components/schemas/VehicleRegistrationDeliveryConfiguration'
-          
+
     VehicleRegistrationDeliveryToThirdPartyDeliveryConfiguration:
       type: object
       allOf:
         - $ref: '#/components/schemas/VehicleRegistrationDeliveryConfiguration'
       required:
         - recipient
-      properties: 
+      properties:
         recipient:
           $ref: '#/components/schemas/VehicleRegistrationDeliveryConfigurationRecipient'
 
@@ -2074,7 +2074,7 @@ components:
             orderId:
               type: integer
               format: int64
-        
+
     VehicleRegistrationRequestVehicleHolder:
       type: object
       required:
@@ -2228,7 +2228,7 @@ components:
     basicAuth:
       type: http
       scheme: basic
-          
+
 security:
   - basicAuth: []
-    
+

@@ -63,11 +63,34 @@ use Dropshipping\Support\Validator;
  *   every other code requires them. See
  *   {@see VehicleRegistrationServiceTypeCode::requiresInsuranceAndTaxDetails()}.
  *
+ * Published in 2.7.0, both about the vehicle tax debit:
+ *
+ * - `bic` is only required where the `iban` belongs to Monaco, San Marino or
+ *   Switzerland, and optional for every other country. Up to 2.6.0 the spec
+ *   called it required for every code but `HA`, which this class enforced; that
+ *   guard is gone, because rejecting a request the API accepts is the worse of
+ *   the two errors.
+ * - `iban` and `bic` must both be empty when the vehicle holder is a legal
+ *   person carrying a `customsMajorCustomerId`, which settles the tax through
+ *   the customs administration instead of a direct debit mandate. Whether
+ *   `iban` is required or forbidden therefore depends on the holder, which this
+ *   class does not see, so both rules are enforced by
+ *   {@see \Dropshipping\DTO\Requests\VehicleRegistrationRequest} where the
+ *   holder and the customization meet. Building a customization without an IBAN
+ *   for a code that needs one no longer throws here.
+ *
  * Should the API ever accept other combinations, the guards here have to go
  * with them.
  */
 final readonly class VehicleRegistrationCustomization implements ItemCustomizationInterface
 {
+    /**
+     * Country prefixes whose IBAN needs a BIC alongside it (2.7.0): Monaco, San
+     * Marino and Switzerland are in SEPA but outside the EU, so the debit is not
+     * routed on the IBAN alone.
+     */
+    private const BIC_REQUIRING_IBAN_PREFIXES = ['MC', 'SM', 'CH'];
+
     /** @var ProductType The product type, always VehicleRegistration. */
     public ProductType $productType;
 
@@ -79,8 +102,8 @@ final readonly class VehicleRegistrationCustomization implements ItemCustomizati
      * @param string|null                                                      $electronicInsuranceConfirmationNumber Electronic insurance confirmation number (eVB-Nummer), exactly 7 characters. Required for every service type code but HA.
      * @param string                                                           $vehicleIdentificationNumber           Vehicle identification number (VIN / FIN).
      * @param string|null                                                      $vehicleTitleSecurityCode              Security code from Fahrzeugbrief / Zulassungsbescheinigung Teil II, exactly 12 characters. Required for every service type code but HA, which forbids it.
-     * @param string|null                                                      $iban                                  IBAN for the recurring vehicle tax debit. Required for every service type code but HA.
-     * @param string|null                                                      $bic                                   BIC belonging to the IBAN. Required for every service type code but HA.
+     * @param string|null                                                      $iban                                  IBAN for the recurring vehicle tax debit. Required for every service type code but HA, unless the vehicle holder is a legal person settling the tax through the customs administration, which forbids it. Both rules are checked by {@see \Dropshipping\DTO\Requests\VehicleRegistrationRequest}.
+     * @param string|null                                                      $bic                                   BIC belonging to the IBAN. Required only for an IBAN from Monaco, San Marino or Switzerland (2.7.0), optional otherwise.
      * @param string|null                                                      $vehicleRegistrationCertificateSecurityCode Security code from Fahrzeugschein / Zulassungsbescheinigung Teil I, exactly 7 characters. Required for every service type code but NZ, which forbids it.
      * @param string|null                                                      $vehicleTitleNumber                    Number from Fahrzeugbrief / Zulassungsbescheinigung Teil II (Fahrzeugbriefnummer), exactly 8 characters. Forbidden for HA.
      * @param VehicleRegistrationPreviousLicensePlate|null                     $previousLicensePlate                  The license plate the vehicle carried before. Required for every service type code but NZ, which forbids it, and by the RETAINMENT strategy.
@@ -152,8 +175,10 @@ final readonly class VehicleRegistrationCustomization implements ItemCustomizati
 
         if ($vehicleRegistrationServiceTypeCode->requiresInsuranceAndTaxDetails()) {
             Validator::requireNotNull($electronicInsuranceConfirmationNumber, 'electronicInsuranceConfirmationNumber', $forCode);
-            Validator::requireNotNull($iban, 'iban', $forCode);
-            Validator::requireNotNull($bic, 'bic', $forCode);
+        }
+
+        if ($iban !== null && self::ibanRequiresBic($iban)) {
+            Validator::requireNotNull($bic, 'bic', sprintf('for an iban starting with %s', mb_substr($iban, 0, 2)));
         }
 
         if ($licensePlateNumberAssignmentStrategy instanceof VehicleRegistrationLicensePlateNumberAssignmentStrategyRetained) {
@@ -163,6 +188,18 @@ final readonly class VehicleRegistrationCustomization implements ItemCustomizati
             Validator::requireNull($previousLicensePlate?->frontLicensePlateSecurityCode, 'previousLicensePlate.frontLicensePlateSecurityCode', $whenRetained);
             Validator::requireNull($previousLicensePlate?->rearLicensePlateSecurityCode, 'previousLicensePlate.rearLicensePlateSecurityCode', $whenRetained);
         }
+    }
+
+    /**
+     * Whether an IBAN has to be accompanied by a BIC.
+     *
+     * True for Monaco, San Marino and Switzerland. The country is read from the
+     * first two characters, upper cased first so a lower case IBAN is judged the
+     * same way; the API itself rejects a malformed IBAN.
+     */
+    private static function ibanRequiresBic(string $iban): bool
+    {
+        return in_array(mb_strtoupper(mb_substr($iban, 0, 2)), self::BIC_REQUIRING_IBAN_PREFIXES, true);
     }
 
     /**
