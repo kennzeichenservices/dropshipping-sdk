@@ -1,11 +1,21 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [2.7.0] — 2026-11-10
+
+### Features
+
+- Add support for vehicle registration holders in API 2.7.0
+
 ## [2.6.0] — 2026-11-06
 
 ### Features
 
 - Add product and registration office DTOs and endpoints
+
+### Miscellaneous
+
+- Release v2.6.0
 
 ## [2.5.1] — 2026-10-13
 
