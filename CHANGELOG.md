@@ -1,11 +1,26 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [2.7.1] — 2026-11-13
+
+### Bug Fixes
+
+- Restore import for VehicleRegistrationIdentityVerificationFailureReason in EnumValuesTest
+
+### Features
+
+- Add vehicle registration identity verification failure reasons and update related documentation
+- Add vehicle registration identity verification failure reasons and update related documentation
+
 ## [2.7.0] — 2026-11-10
 
 ### Features
 
 - Add support for vehicle registration holders in API 2.7.0
+
+### Miscellaneous
+
+- Release v2.7.0
 
 ## [2.6.0] — 2026-11-06
 
