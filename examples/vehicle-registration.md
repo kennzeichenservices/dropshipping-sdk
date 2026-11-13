@@ -276,6 +276,33 @@ typed:
 
 Register a handler per event type as in [webhooks.md](webhooks.md).
 
+The failed identity verification carries an optional `message`. For a legal person the provider
+checks the company against the register and the named person against its representatives before
+any identification link exists. Where that check refuses the order, `message` is one of the keys
+of `VehicleRegistrationIdentityVerificationFailureReason`, and `failureReason()` resolves it:
+
+```php
+use Dropshipping\Enums\VehicleRegistrationIdentityVerificationFailureReason as FailureReason;
+
+$hint = match ($event->failureReason()) {
+    FailureReason::CompanyNotFound,
+    FailureReason::CompanyNotVerified,
+    FailureReason::CompanyNotActive => 'The company could not be confirmed in the register.',
+    FailureReason::CompanyNameMismatch,
+    FailureReason::CompanyNumberMismatch => 'Company name or register number differ from the order.',
+    FailureReason::MissingHolderName => 'First or last name of the person to identify is missing.',
+    FailureReason::NoMatchingRepresentative,
+    FailureReason::AmbiguousRepresentative => 'The named person could not be matched to one representative.',
+    FailureReason::MissingSoleSigningAuthority => 'The representative may not sign for the company alone.',
+    FailureReason::CompanyRepresentativeVerificationFailed => 'The company check failed without a specific reason.',
+    null => $event->message ?? 'The identity verification failed.',
+};
+```
+
+`failureReason()` returns `null` for an event without a message and for any other text, a free
+text of the identification vendor for example, or a key a later API version adds. The raw string
+stays readable in `$event->message`, so keep the `null` arm.
+
 Two of those events carry files, and each has its own download operation. The XKFZ event's
 `files` — the documents the registration office issues — go to
 `$client->vehicleRegistrations->downloadFileContent($file->fileAccessKey)`. The document

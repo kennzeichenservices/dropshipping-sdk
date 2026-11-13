@@ -19,12 +19,15 @@ final readonly class VehicleRegistrationIdentityVerificationFailedEvent implemen
      * @param string                                       $eventTime                  The ISO 8601 timestamp when the event occurred.
      * @param WebhookOrder                                 $order                      The associated order reference.
      * @param VehicleRegistrationIdentityVerificationVendor $identityVerificationVendor The vendor that handled the verification.
-     * @param string|null                                  $message                    Reason for the failure, if the vendor supplied one.
+     * @param string|null                                  $message                    Reason for the failure, if one was supplied. Either a
+     *                                                                                 key of the provider's own company and representative
+     *                                                                                 check for a legal person, which refuses the order
+     *                                                                                 before the vendor is involved (resolved by
+     *                                                                                 {@see self::failureReason()}), or a free text of the
+     *                                                                                 identification vendor.
      *                                                                                 The spec declares `format: uri` for this field, which
      *                                                                                 looks like a copy-paste from the neighbouring URL
-     *                                                                                 properties — it is treated as a plain string.
-     *                                                                                 For the keys of the company check see
-     *                                                                                 {@see self::failureReason()}.
+     *                                                                                 properties, so it is treated as a plain string.
      */
     public function __construct(
         public string $eventTime,
