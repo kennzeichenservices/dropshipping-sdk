@@ -12,6 +12,7 @@ use Dropshipping\DTO\Webhooks\VehicleRegistrationIdentityVerificationInitialized
 use Dropshipping\DTO\Webhooks\VehicleRegistrationIdentityVerificationSucceededEvent;
 use Dropshipping\DTO\Webhooks\VehicleRegistrationIdentityVerificationVendor;
 use Dropshipping\Enums\VehicleRegistrationApplicationFilePurposeType;
+use Dropshipping\Enums\VehicleRegistrationIdentityVerificationFailureReason;
 use Dropshipping\Enums\WebhookEventType;
 use Dropshipping\Exceptions\DropshippingException;
 use PHPUnit\Framework\TestCase;
@@ -67,6 +68,41 @@ final class VehicleRegistrationLifecycleEventsTest extends TestCase
 
         self::assertSame(WebhookEventType::VehicleRegistrationIdentityVerificationFailed, $event->getEventType());
         self::assertSame('Document could not be read', $event->message);
+        // Free text of the vendor is no known reason, and stays readable as it came.
+        self::assertNull($event->failureReason());
+    }
+
+    public function test_identity_verification_failed_names_the_reason_of_a_refused_company_check(): void
+    {
+        $event = VehicleRegistrationIdentityVerificationFailedEvent::fromArray([
+            'eventTime' => '2026-11-12T14:07:53',
+            'order' => ['id' => 45623, 'externalId' => '4230'],
+            'identityVerificationVendor' => ['id' => 1],
+            'message' => 'no_matching_representative',
+        ]);
+
+        self::assertSame('no_matching_representative', $event->message);
+        self::assertSame(
+            VehicleRegistrationIdentityVerificationFailureReason::NoMatchingRepresentative,
+            $event->failureReason(),
+        );
+    }
+
+    public function test_identity_verification_failed_maps_the_longer_key_of_the_company_check(): void
+    {
+        $event = VehicleRegistrationIdentityVerificationFailedEvent::fromArray([
+            'eventTime' => '2026-11-12T12:40:09',
+            'order' => ['id' => 45618, 'externalId' => '4225'],
+            'identityVerificationVendor' => ['id' => 1],
+            'message' => 'company_verification_not_verified',
+        ]);
+
+        // The raw key is kept, only the reason is the shared one.
+        self::assertSame('company_verification_not_verified', $event->message);
+        self::assertSame(
+            VehicleRegistrationIdentityVerificationFailureReason::CompanyNotVerified,
+            $event->failureReason(),
+        );
     }
 
     public function test_identity_verification_failed_fromArray_without_message(): void
@@ -78,6 +114,7 @@ final class VehicleRegistrationLifecycleEventsTest extends TestCase
         ]);
 
         self::assertNull($event->message);
+        self::assertNull($event->failureReason());
     }
 
     public function test_document_signature_initialized_fromArray(): void

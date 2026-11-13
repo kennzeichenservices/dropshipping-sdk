@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dropshipping\DTO\Webhooks;
 
+use Dropshipping\Enums\VehicleRegistrationIdentityVerificationFailureReason;
 use Dropshipping\Enums\WebhookEventType;
 use Dropshipping\Support\Hydrator;
 
@@ -22,6 +23,8 @@ final readonly class VehicleRegistrationIdentityVerificationFailedEvent implemen
      *                                                                                 The spec declares `format: uri` for this field, which
      *                                                                                 looks like a copy-paste from the neighbouring URL
      *                                                                                 properties — it is treated as a plain string.
+     *                                                                                 For the keys of the company check see
+     *                                                                                 {@see self::failureReason()}.
      */
     public function __construct(
         public string $eventTime,
@@ -45,6 +48,18 @@ final readonly class VehicleRegistrationIdentityVerificationFailedEvent implemen
     public function getEventTime(): string
     {
         return $this->eventTime;
+    }
+
+    /**
+     * The reason of the failure, where the message is one of the known keys.
+     *
+     * Those are the outcomes of the company and representative check that
+     * precedes the identification of a legal person. Null for an event without
+     * a message and for any other text, which stays readable in `$message`.
+     */
+    public function failureReason(): ?VehicleRegistrationIdentityVerificationFailureReason
+    {
+        return VehicleRegistrationIdentityVerificationFailureReason::fromMessage($this->message);
     }
 
     /**

@@ -13,6 +13,7 @@ use Dropshipping\Enums\VehicleDeregistrationLicensePlateType;
 use Dropshipping\Enums\VehicleDeregistrationVehicleType;
 use Dropshipping\Enums\VehicleRegistrationApplicationFilePurposeType;
 use Dropshipping\Enums\VehicleRegistrationDeliveryConfigurationDeliveryOption;
+use Dropshipping\Enums\VehicleRegistrationIdentityVerificationFailureReason;
 use Dropshipping\Enums\VehicleRegistrationDeliveryConfigurationRecipientType;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateNumberAssignmentStrategyType;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
@@ -252,6 +253,66 @@ final class EnumValuesTest extends TestCase
                 $code !== VehicleRegistrationServiceTypeCode::HA,
                 $code->supportsLegalPersonVehicleHolder(),
                 sprintf('%s is judged wrongly', $code->value),
+            );
+        }
+    }
+
+    public function test_vehicle_registration_identity_verification_failure_reason_values(): void
+    {
+        $expected = [
+            'company_not_found' => VehicleRegistrationIdentityVerificationFailureReason::CompanyNotFound,
+            'company_not_verified' => VehicleRegistrationIdentityVerificationFailureReason::CompanyNotVerified,
+            'company_not_active' => VehicleRegistrationIdentityVerificationFailureReason::CompanyNotActive,
+            'company_name_mismatch' => VehicleRegistrationIdentityVerificationFailureReason::CompanyNameMismatch,
+            'company_number_mismatch' => VehicleRegistrationIdentityVerificationFailureReason::CompanyNumberMismatch,
+            'missing_holder_name' => VehicleRegistrationIdentityVerificationFailureReason::MissingHolderName,
+            'no_matching_representative' => VehicleRegistrationIdentityVerificationFailureReason::NoMatchingRepresentative,
+            'ambiguous_representative' => VehicleRegistrationIdentityVerificationFailureReason::AmbiguousRepresentative,
+            'missing_sole_signing_authority' => VehicleRegistrationIdentityVerificationFailureReason::MissingSoleSigningAuthority,
+            'company_representative_verification_failed' => VehicleRegistrationIdentityVerificationFailureReason::CompanyRepresentativeVerificationFailed,
+        ];
+
+        foreach ($expected as $value => $case) {
+            self::assertSame($value, $case->value);
+            self::assertSame($case, VehicleRegistrationIdentityVerificationFailureReason::fromMessage($value));
+        }
+
+        self::assertCount(10, VehicleRegistrationIdentityVerificationFailureReason::cases());
+    }
+
+    /**
+     * The sandbox sends the longer key for the same outcome. It is an alias of the
+     * case, not a case of its own, so it cannot be built with from().
+     */
+    public function test_company_verification_not_verified_is_the_same_reason_as_company_not_verified(): void
+    {
+        self::assertSame(
+            VehicleRegistrationIdentityVerificationFailureReason::CompanyNotVerified,
+            VehicleRegistrationIdentityVerificationFailureReason::fromMessage('company_verification_not_verified'),
+        );
+        self::assertNull(
+            VehicleRegistrationIdentityVerificationFailureReason::tryFrom('company_verification_not_verified'),
+        );
+    }
+
+    public function test_failure_reason_ignores_case_and_surrounding_whitespace(): void
+    {
+        self::assertSame(
+            VehicleRegistrationIdentityVerificationFailureReason::NoMatchingRepresentative,
+            VehicleRegistrationIdentityVerificationFailureReason::fromMessage("  No_Matching_Representative\n"),
+        );
+    }
+
+    /**
+     * The message is free text: whatever is not a known key is no reason, and
+     * never an exception.
+     */
+    public function test_failure_reason_is_null_for_anything_that_is_not_a_known_key(): void
+    {
+        foreach ([null, '', '   ', 'Document could not be read', 'company_not_found_at_all', 'no matching representative'] as $message) {
+            self::assertNull(
+                VehicleRegistrationIdentityVerificationFailureReason::fromMessage($message),
+                var_export($message, true),
             );
         }
     }
