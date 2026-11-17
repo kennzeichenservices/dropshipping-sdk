@@ -21,6 +21,12 @@ use Dropshipping\DTO\Requests\OrderCreationRequest;
 use Dropshipping\DTO\Requests\ReshippedOrderRequest;
 use Dropshipping\DTO\Requests\VehicleDeregistrationRequest;
 use Dropshipping\DTO\Requests\VehicleDeregistrationVehicleHolder;
+use Dropshipping\DTO\Requests\VehicleRegistrationDurablePowerOfAttorneyCompany;
+use Dropshipping\DTO\Requests\VehicleRegistrationDurablePowerOfAttorneyCompanyTaxDataInterface;
+use Dropshipping\DTO\Requests\VehicleRegistrationDurablePowerOfAttorneyCreationRequest;
+use Dropshipping\DTO\Requests\VehicleRegistrationDurablePowerOfAttorneyCustomsMajorCustomerTaxData;
+use Dropshipping\DTO\Requests\VehicleRegistrationDurablePowerOfAttorneySepaDirectDebitMandateTaxData;
+use Dropshipping\DTO\Requests\VehicleRegistrationDurablePowerOfAttorneySigner;
 use Dropshipping\DTO\Requests\VehicleRegistrationLegalPersonVehicleHolder;
 use Dropshipping\DTO\Requests\VehicleRegistrationNaturalPersonVehicleHolder;
 use Dropshipping\DTO\Requests\VehicleRegistrationRequest;
@@ -835,6 +841,83 @@ final class DS
             contractPartnerKopaKey: $contractPartnerKopaKey,
             identityVerificationDocumentType: $identityVerificationDocumentType,
             recycledVehicleRegistrationOrderId: $recycledVehicleRegistrationOrderId,
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Durable powers of attorney
+    // -------------------------------------------------------------------------
+
+    /**
+     * Tax data settling the motor vehicle tax by a SEPA direct debit mandate.
+     *
+     * The BIC is required only for an IBAN from Monaco, San Marino or Switzerland.
+     */
+    public static function durablePowerOfAttorneySepaTaxData(
+        string $iban,
+        ?string $bic = null,
+    ): VehicleRegistrationDurablePowerOfAttorneySepaDirectDebitMandateTaxData {
+        return new VehicleRegistrationDurablePowerOfAttorneySepaDirectDebitMandateTaxData(iban: $iban, bic: $bic);
+    }
+
+    /**
+     * Tax data settling the motor vehicle tax through the customs administration,
+     * with the major customer ID (Zoll-GK-Nr.) instead of a SEPA mandate.
+     */
+    public static function durablePowerOfAttorneyCustomsTaxData(
+        string $customsMajorCustomerId,
+    ): VehicleRegistrationDurablePowerOfAttorneyCustomsMajorCustomerTaxData {
+        return new VehicleRegistrationDurablePowerOfAttorneyCustomsMajorCustomerTaxData(
+            customsMajorCustomerId: $customsMajorCustomerId,
+        );
+    }
+
+    /**
+     * The company a durable power of attorney is issued for. $number is the
+     * company register number, e.g. "HRB 123456".
+     */
+    public static function durablePowerOfAttorneyCompany(
+        string $name,
+        string $streetName,
+        string $houseNumber,
+        string $zipCode,
+        string $cityName,
+        VehicleRegistrationDurablePowerOfAttorneyCompanyTaxDataInterface $taxData,
+        ?string $number = null,
+    ): VehicleRegistrationDurablePowerOfAttorneyCompany {
+        return new VehicleRegistrationDurablePowerOfAttorneyCompany(
+            name: $name,
+            streetName: $streetName,
+            houseNumber: $houseNumber,
+            zipCode: $zipCode,
+            cityName: $cityName,
+            taxData: $taxData,
+            number: $number,
+        );
+    }
+
+    /**
+     * Create a durable power of attorney request. Requires API 2.7.0.
+     *
+     * The signer gets the signing invitation by email. $expirationDate
+     * (YYYY-MM-DD) may be at most one year from today; null lets the API set
+     * exactly that.
+     */
+    public static function durablePowerOfAttorney(
+        VehicleRegistrationDurablePowerOfAttorneyCompany $company,
+        string $signerFirstName,
+        string $signerLastName,
+        string $signerEmail,
+        ?string $expirationDate = null,
+    ): VehicleRegistrationDurablePowerOfAttorneyCreationRequest {
+        return new VehicleRegistrationDurablePowerOfAttorneyCreationRequest(
+            company: $company,
+            signer: new VehicleRegistrationDurablePowerOfAttorneySigner(
+                firstName: $signerFirstName,
+                lastName: $signerLastName,
+                email: $signerEmail,
+            ),
+            expirationDate: $expirationDate,
         );
     }
 }

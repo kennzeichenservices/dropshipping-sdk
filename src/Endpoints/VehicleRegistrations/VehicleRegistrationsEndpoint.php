@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Dropshipping\Endpoints\VehicleRegistrations;
 
 use Dropshipping\Client\Psr18HttpClient;
+use Dropshipping\DTO\Requests\VehicleRegistrationDurablePowerOfAttorneyCreationRequest;
 use Dropshipping\DTO\Requests\VehicleRegistrationRequest;
+use Dropshipping\DTO\Responses\VehicleRegistrationDurablePowerOfAttorney;
+use Dropshipping\DTO\Responses\VehicleRegistrationDurablePowersOfAttorneyResponse;
 use Dropshipping\DTO\Responses\VehicleRegistrationResponse;
 use Dropshipping\Enums\IdentityVerificationDocumentType;
 use Dropshipping\Exceptions\ApiException;
@@ -16,11 +19,14 @@ use Dropshipping\Support\Validator;
 /**
  * API endpoint for vehicle registration operations.
  *
- * Provides the methods to submit a vehicle registration request and to download
- * the files the registration produces.
+ * Provides the methods to submit a vehicle registration request, to download
+ * the files the registration produces and to manage durable powers of attorney.
  */
 final class VehicleRegistrationsEndpoint
 {
+    /** A UUID in its canonical 8-4-4-4-12 form, either letter case. */
+    private const UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iD';
+
     /**
      * @param Psr18HttpClient $httpClient      HTTP client for sending requests.
      * @param RequestFactory  $requestFactory  Factory for creating HTTP request objects.
@@ -148,5 +154,95 @@ final class VehicleRegistrationsEndpoint
 
         $response = $this->httpClient->sendRequest($httpRequest);
         $this->responseMapper->mapResponse($response, [202]);
+    }
+
+    /**
+     * Create a durable power of attorney (Dauervollmacht). Requires API 2.7.0.
+     *
+     * The API answers with the new record in status INCOMPLETE and then
+     * generates the documents and has the signer sign them. The outcome arrives
+     * as a VEHICLE_REGISTRATION_DURABLE_POWER_OF_ATTORNEY_COMPLETION or
+     * VEHICLE_REGISTRATION_DURABLE_POWER_OF_ATTORNEY_ERROR webhook event.
+     *
+     * Not idempotent: sending the same request twice creates two records, so do
+     * not retry blindly after a timeout. Check {@see getDurablePowersOfAttorney()}
+     * first.
+     *
+     * @param VehicleRegistrationDurablePowerOfAttorneyCreationRequest $request The company, the signer and optionally the expiration date.
+     *
+     * @return VehicleRegistrationDurablePowerOfAttorney The created record.
+     *
+     * @throws ApiException When the API rejects the request, which includes 403 on an
+     *                      API version below 2.7.0.
+     */
+    public function createDurablePowerOfAttorney(
+        VehicleRegistrationDurablePowerOfAttorneyCreationRequest $request,
+    ): VehicleRegistrationDurablePowerOfAttorney {
+        $httpRequest = $this->requestFactory->createJsonRequest(
+            'POST',
+            $this->baseUrl . '/vehicleRegistrations/durablePowersOfAttorney',
+            $request->toArray(),
+        );
+
+        $response = $this->httpClient->sendRequest($httpRequest);
+        $data = $this->responseMapper->mapResponse($response, [201]);
+
+        return VehicleRegistrationDurablePowerOfAttorney::fromArray($data);
+    }
+
+    /**
+     * Get every durable power of attorney of the client. Requires API 2.7.0.
+     *
+     * Revoked, failed and expired ones are included; use
+     * {@see VehicleRegistrationDurablePowersOfAttorneyResponse::usable()} to
+     * filter them out.
+     *
+     * @return VehicleRegistrationDurablePowersOfAttorneyResponse The powers of attorney.
+     *
+     * @throws ApiException When the API responds with an unexpected status code, which
+     *                      includes 403 on an API version below 2.7.0.
+     */
+    public function getDurablePowersOfAttorney(): VehicleRegistrationDurablePowersOfAttorneyResponse
+    {
+        $httpRequest = $this->requestFactory->createJsonRequest(
+            'GET',
+            $this->baseUrl . '/vehicleRegistrations/durablePowersOfAttorney',
+        );
+
+        $response = $this->httpClient->sendRequest($httpRequest);
+        $data = $this->responseMapper->mapResponse($response);
+
+        return VehicleRegistrationDurablePowersOfAttorneyResponse::fromArray($data);
+    }
+
+    /**
+     * Get a single durable power of attorney by its ID. Requires API 2.7.0.
+     *
+     * The ID comes from {@see createDurablePowerOfAttorney()}, the listing or a
+     * VEHICLE_REGISTRATION_DURABLE_POWER_OF_ATTORNEY_* webhook event.
+     *
+     * @param string $id UUID of the power of attorney.
+     *
+     * @return VehicleRegistrationDurablePowerOfAttorney The power of attorney.
+     *
+     * @throws \Dropshipping\Exceptions\DropshippingException When the ID is not a UUID.
+     * @throws ApiException When the API responds with an unexpected status code, e.g.
+     *                      for an unknown ID or on an API version below 2.7.0.
+     */
+    public function getDurablePowerOfAttorney(string $id): VehicleRegistrationDurablePowerOfAttorney
+    {
+        // Checked here so a mix-up (an order ID, an empty string) does not travel
+        // into the URL path and hit the listing or an unrelated route.
+        Validator::requirePattern($id, 'id', self::UUID_PATTERN, 'be a UUID');
+
+        $httpRequest = $this->requestFactory->createJsonRequest(
+            'GET',
+            $this->baseUrl . '/vehicleRegistrations/durablePowersOfAttorney/' . rawurlencode($id),
+        );
+
+        $response = $this->httpClient->sendRequest($httpRequest);
+        $data = $this->responseMapper->mapResponse($response);
+
+        return VehicleRegistrationDurablePowerOfAttorney::fromArray($data);
     }
 }

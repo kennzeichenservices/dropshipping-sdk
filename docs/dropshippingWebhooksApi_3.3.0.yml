@@ -97,6 +97,8 @@ components:
         - VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED
         - VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED
         - VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_FAILED
+        - VEHICLE_REGISTRATION_DURABLE_POWER_OF_ATTORNEY_COMPLETION
+        - VEHICLE_REGISTRATION_DURABLE_POWER_OF_ATTORNEY_ERROR
 
     WebhookEvent:
       type: object
@@ -116,6 +118,8 @@ components:
         - $ref: '#/components/schemas/VehicleRegistrationDocumentSignatureInitializedWebhookEvent'
         - $ref: '#/components/schemas/VehicleRegistrationDocumentSignatureSucceededWebhookEvent'
         - $ref: '#/components/schemas/VehicleRegistrationDocumentSignatureFailedWebhookEvent'
+        - $ref: '#/components/schemas/VehicleRegistrationDurablePowerOfAttorneyCompletionWebhookEvent'
+        - $ref: '#/components/schemas/VehicleRegistrationDurablePowerOfAttorneyErrorWebhookEvent'
       discriminator:
         propertyName: eventType
         mapping:
@@ -134,6 +138,8 @@ components:
           VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED: '#/components/schemas/VehicleRegistrationDocumentSignatureInitializedWebhookEvent'
           VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED: '#/components/schemas/VehicleRegistrationDocumentSignatureSucceededWebhookEvent'
           VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_FAILED: '#/components/schemas/VehicleRegistrationDocumentSignatureFailedWebhookEvent'
+          VEHICLE_REGISTRATION_DURABLE_POWER_OF_ATTORNEY_COMPLETION: '#/components/schemas/VehicleRegistrationDurablePowerOfAttorneyCompletionWebhookEvent'
+          VEHICLE_REGISTRATION_DURABLE_POWER_OF_ATTORNEY_ERROR: '#/components/schemas/VehicleRegistrationDurablePowerOfAttorneyErrorWebhookEvent'
       required:
         - eventType
         - eventTime
@@ -156,6 +162,8 @@ components:
             - VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED
             - VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED
             - VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_FAILED
+            - VEHICLE_REGISTRATION_DURABLE_POWER_OF_ATTORNEY_COMPLETION
+            - VEHICLE_REGISTRATION_DURABLE_POWER_OF_ATTORNEY_ERROR
         eventTime:
           $ref: '#/components/schemas/LocalDateTime'
 
@@ -789,6 +797,15 @@ components:
         externalId:
           $ref: '#/components/schemas/OrderExternalId'
 
+    VehicleRegistrationDurablePowerOfAttorneyWebhookEventDurablePowerOfAttorney:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          format: uuid
+
     VehicleRegistrationWebhookEventOrder:
       type: object
       required:
@@ -891,6 +908,46 @@ components:
             "id": 2,
             "externalId": null
           },
+          "eventTime": "2023-10-31T12:34:56"
+        }
+
+    VehicleRegistrationDurablePowerOfAttorneyCompletionWebhookEvent:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/WebhookEvent'
+      required:
+        - durablePowerOfAttorney
+      properties:
+        durablePowerOfAttorney:
+          $ref: '#/components/schemas/VehicleRegistrationDurablePowerOfAttorneyWebhookEventDurablePowerOfAttorney'
+      example:
+        {
+          "eventType": "VEHICLE_REGISTRATION_DURABLE_POWER_OF_ATTORNEY_COMPLETION",
+          "durablePowerOfAttorney": {
+            "id": "11111111-1111-1111-1111-111111111111"
+          },
+          "eventTime": "2023-10-31T12:34:56"
+        }
+
+    VehicleRegistrationDurablePowerOfAttorneyErrorWebhookEvent:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/WebhookEvent'
+      required:
+        - durablePowerOfAttorney
+        - message
+      properties:
+        durablePowerOfAttorney:
+          $ref: '#/components/schemas/VehicleRegistrationDurablePowerOfAttorneyWebhookEventDurablePowerOfAttorney'
+        message:
+          type: string
+      example:
+        {
+          "eventType": "VEHICLE_REGISTRATION_DURABLE_POWER_OF_ATTORNEY_ERROR",
+          "durablePowerOfAttorney": {
+            "id": "11111111-1111-1111-1111-111111111111"
+          },
+          "message": "error message",
           "eventTime": "2023-10-31T12:34:56"
         }
 

@@ -208,4 +208,28 @@ final class ValidatorTest extends TestCase
 
         Validator::requireNullablePattern('123a4567', 'customsMajorCustomerId', '/^[0-9]{3}[A-Z][0-9]{4}$/', 'be an ID');
     }
+
+    public function test_requireNullableIsoDate_skips_null(): void
+    {
+        Validator::requireNullableIsoDate(null, 'expirationDate');
+        $this->addToAssertionCount(1);
+    }
+
+    public function test_requireNullableIsoDate_accepts_a_real_date(): void
+    {
+        Validator::requireNullableIsoDate('2028-02-29', 'expirationDate');
+        $this->addToAssertionCount(1);
+    }
+
+    public function test_requireNullableIsoDate_rejects_what_is_no_date(): void
+    {
+        foreach (['', '2027-02-29', '2027-00-10', '2027-10-32', '27-10-31', '2027-10-31 ', "2027-10-31\n", '２０２７-10-31'] as $value) {
+            try {
+                Validator::requireNullableIsoDate($value, 'expirationDate');
+                self::fail(sprintf('Expected "%s" to be rejected', $value));
+            } catch (DropshippingException $e) {
+                self::assertStringContainsString('"expirationDate" must be a date in the form YYYY-MM-DD', $e->getMessage());
+            }
+        }
+    }
 }

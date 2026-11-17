@@ -9,6 +9,7 @@ use Dropshipping\Enums\VehicleRegistrationLicensePlateNumberAssignmentStrategyTy
 use Dropshipping\Enums\VehicleRegistrationServiceTypeCode;
 use Dropshipping\Enums\VehicleRegistrationVehicleType;
 use Dropshipping\Exceptions\DropshippingException;
+use Dropshipping\Support\Iban;
 use Dropshipping\Support\Validator;
 
 /**
@@ -84,13 +85,6 @@ use Dropshipping\Support\Validator;
  */
 final readonly class VehicleRegistrationCustomization implements ItemCustomizationInterface
 {
-    /**
-     * Country prefixes whose IBAN needs a BIC alongside it (2.7.0): Monaco, San
-     * Marino and Switzerland are in SEPA but outside the EU, so the debit is not
-     * routed on the IBAN alone.
-     */
-    private const BIC_REQUIRING_IBAN_PREFIXES = ['MC', 'SM', 'CH'];
-
     /** @var ProductType The product type, always VehicleRegistration. */
     public ProductType $productType;
 
@@ -177,7 +171,7 @@ final readonly class VehicleRegistrationCustomization implements ItemCustomizati
             Validator::requireNotNull($electronicInsuranceConfirmationNumber, 'electronicInsuranceConfirmationNumber', $forCode);
         }
 
-        if ($iban !== null && self::ibanRequiresBic($iban)) {
+        if ($iban !== null && Iban::requiresBic($iban)) {
             Validator::requireNotNull($bic, 'bic', sprintf('for an iban starting with %s', mb_substr($iban, 0, 2)));
         }
 
@@ -188,18 +182,6 @@ final readonly class VehicleRegistrationCustomization implements ItemCustomizati
             Validator::requireNull($previousLicensePlate?->frontLicensePlateSecurityCode, 'previousLicensePlate.frontLicensePlateSecurityCode', $whenRetained);
             Validator::requireNull($previousLicensePlate?->rearLicensePlateSecurityCode, 'previousLicensePlate.rearLicensePlateSecurityCode', $whenRetained);
         }
-    }
-
-    /**
-     * Whether an IBAN has to be accompanied by a BIC.
-     *
-     * True for Monaco, San Marino and Switzerland. The country is read from the
-     * first two characters, upper cased first so a lower case IBAN is judged the
-     * same way; the API itself rejects a malformed IBAN.
-     */
-    private static function ibanRequiresBic(string $iban): bool
-    {
-        return in_array(mb_strtoupper(mb_substr($iban, 0, 2)), self::BIC_REQUIRING_IBAN_PREFIXES, true);
     }
 
     /**

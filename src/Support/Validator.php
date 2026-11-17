@@ -265,4 +265,32 @@ final class Validator
 
         self::requirePattern($value, $field, $pattern, $description);
     }
+
+    /**
+     * Validate a nullable calendar date in ISO 8601 form (`YYYY-MM-DD`). Skips
+     * validation if the value is null.
+     *
+     * Checks that the date exists, so "2026-02-30" is rejected rather than
+     * rolled over into March the way DateTime would.
+     *
+     * @param string|null $value The value to validate.
+     * @param string      $field The field name used in the exception message.
+     *
+     * @throws DropshippingException If a non-null value is not a valid date.
+     */
+    public static function requireNullableIsoDate(?string $value, string $field): void
+    {
+        if ($value === null) {
+            return;
+        }
+
+        if (
+            preg_match('/^(\d{4})-(\d{2})-(\d{2})$/D', $value, $parts) !== 1
+            || !checkdate((int) $parts[2], (int) $parts[3], (int) $parts[1])
+        ) {
+            throw new DropshippingException(
+                sprintf('Field "%s" must be a date in the form YYYY-MM-DD, got "%s"', $field, $value),
+            );
+        }
+    }
 }

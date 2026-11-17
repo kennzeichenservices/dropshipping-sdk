@@ -24,6 +24,18 @@ $cust = [
     'vehicleType' => 'CAR', 'licensePlateNumberComponents' => $euro,
     'seasonStartMonth' => 4, 'seasonEndMonth' => 10,
 ];
+$durablePowerOfAttorney = [
+    'active' => true,
+    'company' => [
+        'cityName' => 'City X', 'houseNumber' => '12A', 'name' => 'Company X', 'number' => 'HRB 123456',
+        'streetName' => 'Street X', 'zipCode' => '12345',
+        'taxData' => ['type' => 'SEPA_DIRECT_DEBIT_MANDATE', 'iban' => 'DE0123456789000', 'bic' => 'BYLADEM1001'],
+    ],
+    'expirationDate' => '2000-10-31',
+    'id' => '11111111-1111-1111-1111-111111111111',
+    'signer' => ['email' => 'signer@localhost.test', 'firstName' => 'Erika', 'lastName' => 'Musterfrau'],
+    'status' => 'INCOMPLETE',
+];
 $costItem = ['number' => 1, 'code' => 'C1', 'name' => 'Gebühr', 'amount' => 1250, 'note' => 'n'];
 
 return [
@@ -275,6 +287,32 @@ return [
     ]],
 
     // --- malformed input: behaviour here is INTENDED to change ------------------
+    // --- durable powers of attorney (API 2.7.0, webhooks 3.3.0) -----------------
+    ['durablePowerOfAttorney/spec-example', 'Dropshipping\DTO\Responses\VehicleRegistrationDurablePowerOfAttorney', $durablePowerOfAttorney],
+    ['durablePowerOfAttorney/customs-no-number', 'Dropshipping\DTO\Responses\VehicleRegistrationDurablePowerOfAttorney', [
+        'company' => ['taxData' => ['type' => 'CUSTOMS_MAJOR_CUSTOMER', 'customsMajorCustomerId' => '123A4567']] + array_diff_key($durablePowerOfAttorney['company'], ['number' => 0]),
+    ] + $durablePowerOfAttorney],
+    ['durablePowerOfAttorney/unknown-status-and-tax-type', 'Dropshipping\DTO\Responses\VehicleRegistrationDurablePowerOfAttorney', [
+        'status' => 'REVOKED',
+        'company' => ['taxData' => ['type' => 'SOMETHING_NEW']] + $durablePowerOfAttorney['company'],
+    ] + $durablePowerOfAttorney],
+    ['durablePowersOfAttorney/list', 'Dropshipping\DTO\Responses\VehicleRegistrationDurablePowersOfAttorneyResponse', [
+        'durablePowersOfAttorney' => [$durablePowerOfAttorney],
+    ]],
+    ['durablePowersOfAttorney/empty', 'Dropshipping\DTO\Responses\VehicleRegistrationDurablePowersOfAttorneyResponse', [
+        'durablePowersOfAttorney' => [],
+    ]],
+    ['durablePowerOfAttorneyCompletion', 'Dropshipping\DTO\Webhooks\VehicleRegistrationDurablePowerOfAttorneyCompletionEvent', [
+        'eventTime' => '2026-01-01T10:00:00', 'durablePowerOfAttorney' => ['id' => '11111111-1111-1111-1111-111111111111'],
+    ]],
+    ['durablePowerOfAttorneyError', 'Dropshipping\DTO\Webhooks\VehicleRegistrationDurablePowerOfAttorneyErrorEvent', [
+        'eventTime' => '2026-01-01T10:00:00', 'durablePowerOfAttorney' => ['id' => '11111111-1111-1111-1111-111111111111'],
+        'message' => 'error message',
+    ]],
+    ['MALFORMED durablePowerOfAttorneyError/missing-message', 'Dropshipping\DTO\Webhooks\VehicleRegistrationDurablePowerOfAttorneyErrorEvent', [
+        'eventTime' => '2026-01-01T10:00:00', 'durablePowerOfAttorney' => ['id' => '11111111-1111-1111-1111-111111111111'],
+    ]],
+
     ['MALFORMED address/missing-lastName', 'Dropshipping\DTO\Address', ['firstName' => 'Max', 'gender' => 'MALE']],
     ['MALFORMED address/unknown-gender', 'Dropshipping\DTO\Address', ['gender' => 'DIVERSE'] + $address],
     ['MALFORMED xkfz/unknown-status', 'Dropshipping\DTO\Webhooks\VehicleDeregistrationXkfzEvent', [

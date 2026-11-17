@@ -152,7 +152,7 @@ final class VehicleRegistrationVehicleHolderVariantsTest extends TestCase
 
     public function test_the_legal_person_holder_rejects_an_industry_code_of_the_wrong_shape(): void
     {
-        foreach (['G1', 'G001', 'g01', 'G-1', '', 'GÖ1'] as $industryCode) {
+        foreach (['G1', 'G001', 'g01', 'G-1', '', 'GÖ1', "G01\n"] as $industryCode) {
             try {
                 $this->legalPerson(industryCode: $industryCode);
 

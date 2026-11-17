@@ -73,6 +73,8 @@ final class WebhookEventFactory
             WebhookEventType::VehicleRegistrationDocumentSignatureInitialized => VehicleRegistrationDocumentSignatureInitializedEvent::fromArray($data),
             WebhookEventType::VehicleRegistrationDocumentSignatureSucceeded => VehicleRegistrationDocumentSignatureSucceededEvent::fromArray($data),
             WebhookEventType::VehicleRegistrationDocumentSignatureFailed => VehicleRegistrationDocumentSignatureFailedEvent::fromArray($data),
+            WebhookEventType::VehicleRegistrationDurablePowerOfAttorneyCompletion => VehicleRegistrationDurablePowerOfAttorneyCompletionEvent::fromArray($data),
+            WebhookEventType::VehicleRegistrationDurablePowerOfAttorneyError => VehicleRegistrationDurablePowerOfAttorneyErrorEvent::fromArray($data),
         };
     }
 }

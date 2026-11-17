@@ -14,6 +14,8 @@ use Dropshipping\Enums\VehicleDeregistrationVehicleType;
 use Dropshipping\Enums\VehicleRegistrationApplicationFilePurposeType;
 use Dropshipping\Enums\VehicleRegistrationDeliveryConfigurationDeliveryOption;
 use Dropshipping\Enums\VehicleRegistrationDeliveryConfigurationRecipientType;
+use Dropshipping\Enums\VehicleRegistrationDurablePowerOfAttorneyCompanyTaxDataType;
+use Dropshipping\Enums\VehicleRegistrationDurablePowerOfAttorneyStatus;
 use Dropshipping\Enums\VehicleRegistrationIdentityVerificationFailureReason;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateNumberAssignmentStrategyType;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
@@ -103,8 +105,10 @@ final class EnumValuesTest extends TestCase
         self::assertSame('VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED', WebhookEventType::VehicleRegistrationDocumentSignatureInitialized->value);
         self::assertSame('VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED', WebhookEventType::VehicleRegistrationDocumentSignatureSucceeded->value);
         self::assertSame('VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_FAILED', WebhookEventType::VehicleRegistrationDocumentSignatureFailed->value);
+        self::assertSame('VEHICLE_REGISTRATION_DURABLE_POWER_OF_ATTORNEY_COMPLETION', WebhookEventType::VehicleRegistrationDurablePowerOfAttorneyCompletion->value);
+        self::assertSame('VEHICLE_REGISTRATION_DURABLE_POWER_OF_ATTORNEY_ERROR', WebhookEventType::VehicleRegistrationDurablePowerOfAttorneyError->value);
         self::assertSame('UNKNOWN', WebhookEventType::Unknown->value);
-        self::assertCount(16, WebhookEventType::cases());
+        self::assertCount(18, WebhookEventType::cases());
     }
 
     public function test_vehicle_deregistration_vehicle_type_values(): void
@@ -315,5 +319,22 @@ final class EnumValuesTest extends TestCase
                 var_export($message, true),
             );
         }
+    }
+
+    public function test_vehicle_registration_durable_power_of_attorney_status_values(): void
+    {
+        self::assertSame('INCOMPLETE', VehicleRegistrationDurablePowerOfAttorneyStatus::Incomplete->value);
+        self::assertSame('COMPLETE', VehicleRegistrationDurablePowerOfAttorneyStatus::Complete->value);
+        self::assertSame('ERROR', VehicleRegistrationDurablePowerOfAttorneyStatus::Error->value);
+        self::assertSame('UNKNOWN', VehicleRegistrationDurablePowerOfAttorneyStatus::Unknown->value);
+        self::assertCount(4, VehicleRegistrationDurablePowerOfAttorneyStatus::cases());
+    }
+
+    public function test_vehicle_registration_durable_power_of_attorney_tax_data_type_values(): void
+    {
+        self::assertSame('CUSTOMS_MAJOR_CUSTOMER', VehicleRegistrationDurablePowerOfAttorneyCompanyTaxDataType::CustomsMajorCustomer->value);
+        self::assertSame('SEPA_DIRECT_DEBIT_MANDATE', VehicleRegistrationDurablePowerOfAttorneyCompanyTaxDataType::SepaDirectDebitMandate->value);
+        self::assertSame('UNKNOWN', VehicleRegistrationDurablePowerOfAttorneyCompanyTaxDataType::Unknown->value);
+        self::assertCount(3, VehicleRegistrationDurablePowerOfAttorneyCompanyTaxDataType::cases());
     }
 }

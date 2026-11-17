@@ -44,10 +44,10 @@ use Dropshipping\Support\Validator;
 final readonly class VehicleRegistrationLegalPersonVehicleHolder implements VehicleRegistrationVehicleHolderInterface
 {
     /** Three characters, upper case letters and digits, e.g. "G01". */
-    private const INDUSTRY_CODE_PATTERN = '/^[A-Z0-9]{3}$/';
+    private const INDUSTRY_CODE_PATTERN = '/^[A-Z0-9]{3}$/D';
 
     /** Three digits, one upper case letter, four digits, e.g. "123A4567". */
-    private const CUSTOMS_MAJOR_CUSTOMER_ID_PATTERN = '/^[0-9]{3}[A-Z][0-9]{4}$/';
+    private const CUSTOMS_MAJOR_CUSTOMER_ID_PATTERN = '/^[0-9]{3}[A-Z][0-9]{4}$/D';
 
     /** At least one non-whitespace character. */
     private const NOT_BLANK_PATTERN = '/\S/';

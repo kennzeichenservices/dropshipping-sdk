@@ -163,6 +163,7 @@ Ready-to-run PHP scripts are available in the [`examples/`](examples/) directory
 | [gks-configurations.php](examples/gks-configurations.php) · [docs](examples/gks-configurations.md) | Create, update, list, and get GKS configurations |
 | [vehicle-deregistration.php](examples/vehicle-deregistration.php) · [docs](examples/vehicle-deregistration.md) | Submit a vehicle deregistration and handle the XKFZ webhook with file download |
 | [vehicle-registration.php](examples/vehicle-registration.php) · [docs](examples/vehicle-registration.md) | Submit a vehicle registration |
+| [durable-powers-of-attorney.php](examples/durable-powers-of-attorney.php) · [docs](examples/durable-powers-of-attorney.md) | Create, list and look up durable powers of attorney (API 2.7.0) |
 | [webhooks.php](examples/webhooks.php) · [docs](examples/webhooks.md) | Process incoming webhooks with the middleware pipeline |
 | [async-webhooks.php](examples/async-webhooks.php) · [docs](examples/async-webhooks.md) | Enqueue and process webhooks asynchronously via a queue |
 
@@ -749,6 +750,51 @@ arrives as another `VEHICLE_REGISTRATION_IDENTITY_VERIFICATION_INITIALIZED` webh
 `ApiException` with status `409` means document signing has already started or the order is not
 eligible for a change, and `404` means the order ID is unknown.
 
+### Managing Durable Powers of Attorney
+
+Requires API 2.7.0. A durable power of attorney (Dauervollmacht) lets a company authorise vehicle
+registrations once instead of signing a power of attorney per order. Creating one mails the signer
+and starts the signing; the outcome arrives as a webhook.
+
+```php
+use Dropshipping\DS;
+
+$created = $client->vehicleRegistrations->createDurablePowerOfAttorney(DS::durablePowerOfAttorney(
+    company: DS::durablePowerOfAttorneyCompany(
+        name: 'Muster Autohaus GmbH',
+        streetName: 'Hauptstraße',
+        houseNumber: '12A',
+        zipCode: '10115',
+        cityName: 'Berlin',
+        taxData: DS::durablePowerOfAttorneySepaTaxData(iban: 'DE89370400440532013000'),
+        // or: DS::durablePowerOfAttorneyCustomsTaxData('123A4567')
+        number: 'HRB 123456',
+    ),
+    signerFirstName: 'Erika',
+    signerLastName: 'Musterfrau',
+    signerEmail: 'erika.musterfrau@example.com',
+    expirationDate: null, // the API sets the maximum, one year from today
+));
+
+$created->status;   // INCOMPLETE until VEHICLE_REGISTRATION_DURABLE_POWER_OF_ATTORNEY_COMPLETION arrives
+
+$all = $client->vehicleRegistrations->getDurablePowersOfAttorney();
+$usable = $all->usable(); // COMPLETE, not revoked, not expired
+
+$one = $client->vehicleRegistrations->getDurablePowerOfAttorney($created->id);
+```
+
+The create call is not idempotent, so check the listing before retrying after a timeout.
+`getDurablePowerOfAttorney()` only accepts a UUID and throws a `DropshippingException` before any
+request for anything else.
+
+Responses are read leniently: a `status` or tax data `type` this SDK does not know comes back as
+`UNKNOWN` instead of failing the whole listing. The request DTOs, on the other hand, check every
+length, the IBAN/BIC rule and the date format before anything is sent.
+
+API 2.7.0 does not yet take a durable power of attorney as a reference when ordering a
+registration; that part is announced but not live.
+
 ### Handling Webhooks
 
 Set up a webhook receiver with the built-in middleware pipeline:
@@ -877,6 +923,9 @@ The SDK follows these patterns:
 | `$client->vehicleRegistrations->updateIdentityVerificationDocumentType()` | PUT /vehicleRegistrations/{orderId}/identityVerifications | Change the identity document of an existing order (API 2.6.0) |
 | `$client->vehicleRegistrations->downloadFileContent()` | GET /vehicleRegistrations/files/content/{fileAccessKey} | Download a file from a `VEHICLE_REGISTRATION_XKFZ_EVENT` webhook |
 | `$client->vehicleRegistrations->downloadApplicationFileContent()` | GET /vehicleRegistrations/applicationFiles/content/{fileAccessKey} | Download a signed document from a `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED` webhook |
+| `$client->vehicleRegistrations->createDurablePowerOfAttorney()` | POST /vehicleRegistrations/durablePowersOfAttorney | Create a durable power of attorney (API 2.7.0) |
+| `$client->vehicleRegistrations->getDurablePowersOfAttorney()` | GET /vehicleRegistrations/durablePowersOfAttorney | List every durable power of attorney (API 2.7.0) |
+| `$client->vehicleRegistrations->getDurablePowerOfAttorney()` | GET /vehicleRegistrations/durablePowersOfAttorney/{id} | Get one durable power of attorney by UUID (API 2.7.0) |
 
 ### Webhook Event Types
 
@@ -897,6 +946,8 @@ The SDK follows these patterns:
 | `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED` | `VehicleRegistrationDocumentSignatureInitializedEvent` | Signing started — send the customer to `documentSignatureUrl` |
 | `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED` | `VehicleRegistrationDocumentSignatureSucceededEvent` | Documents signed — `applicationFiles` carries them, each with a `fileAccessKey` for `downloadApplicationFileContent()` |
 | `VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_FAILED` | `VehicleRegistrationDocumentSignatureFailedEvent` | Signing failed, with an optional `message` |
+| `VEHICLE_REGISTRATION_DURABLE_POWER_OF_ATTORNEY_COMPLETION` | `VehicleRegistrationDurablePowerOfAttorneyCompletionEvent` | A durable power of attorney is signed. Carries `durablePowerOfAttorney->id`, no order |
+| `VEHICLE_REGISTRATION_DURABLE_POWER_OF_ATTORNEY_ERROR` | `VehicleRegistrationDurablePowerOfAttorneyErrorEvent` | A durable power of attorney failed. Carries `durablePowerOfAttorney->id` and a free-text `message`, no order |
 | _(any unrecognised type)_ | `UnknownWebhookEvent` | Only produced when the pipeline is built with `tolerateUnknownEvents: true`. Carries `rawEventType` and the full `payload` — see below |
 
 #### Unknown event types
@@ -938,6 +989,8 @@ throws, except where the SDK defines a fallback — `status` on both XKFZ events
 | `VehicleRegistrationVehicleHolderType` | `NATURAL_PERSON`, `LEGAL_PERSON` |
 | `IdentityVerificationDocumentType` | `GERMAN_ID`, `RESIDENCE_PERMIT`, `GERMAN_PASSPORT_WITH_PROOF_OF_ADDRESS`, `FOREIGN_PAPERS_WITH_PROOF_OF_ADDRESS` |
 | `VehicleRegistrationIdentityVerificationFailureReason` | `company_not_found`, `company_not_verified`, `company_not_active`, `company_name_mismatch`, `company_number_mismatch`, `missing_holder_name`, `no_matching_representative`, `ambiguous_representative`, `missing_sole_signing_authority`, `company_representative_verification_failed`. Not hydrated: `failureReason()` on `VehicleRegistrationIdentityVerificationFailedEvent` resolves it from the free-text `message` and returns `null` for anything else |
+| `VehicleRegistrationDurablePowerOfAttorneyStatus` | `INCOMPLETE`, `COMPLETE`, `ERROR`, `UNKNOWN` (local fallback for unmodelled values) |
+| `VehicleRegistrationDurablePowerOfAttorneyCompanyTaxDataType` | `CUSTOMS_MAJOR_CUSTOMER`, `SEPA_DIRECT_DEBIT_MANDATE`, `UNKNOWN` (local fallback for unmodelled values) |
 | `VehicleRegistrationXkfzEventStatus` | `ACCEPTED`, `APPROVED`, `APPROVED_WITH_DOCUMENTS`, `FAILED`, `FORWARDED`, `PROCESSED`, `REJECTED`, `REJECTED_WITH_DOCUMENTS`, `UNKNOWN` |
 | `VehicleRegistrationXkfzEventFilePurposeType` | `OTHER`, `PROVISIONAL_VEHICLE_REGISTRATION_CERTIFICATE`, `VEHICLE_REGISTRATION_APPLICATION_POWER_OF_ATTORNEY`, `VEHICLE_REGISTRATION_APPROVAL_NOTICE`, `VEHICLE_REGISTRATION_CERTIFICATE_TOKEN`, `VEHICLE_REGISTRATION_CHARGES_NOTICE`, `VEHICLE_REGISTRATION_ELECTRONIC_INSURANCE_CONFIRMATION`, `VEHICLE_REGISTRATION_GDPR_CONSENT_DECLARATION`, `VEHICLE_REGISTRATION_MOTOR_VEHICLE_TAX_SEPA_DIRECT_DEBIT_MANDATE`, `VEHICLE_REGISTRATION_REJECTION_NOTICE` |
 | `WebhookEventType` | see [Webhook Event Types](#webhook-event-types), plus `UNKNOWN` for unrecognised types |

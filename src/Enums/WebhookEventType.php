@@ -6,7 +6,8 @@ namespace Dropshipping\Enums;
 
 /**
  * Represents the type of webhook event, including delivery notifications,
- * license plate reservation status changes and the vehicle registration lifecycle.
+ * license plate reservation status changes, the vehicle registration lifecycle
+ * and durable powers of attorney.
  */
 enum WebhookEventType: string
 {
@@ -25,6 +26,8 @@ enum WebhookEventType: string
     case VehicleRegistrationDocumentSignatureInitialized = 'VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_INITIALIZED';
     case VehicleRegistrationDocumentSignatureSucceeded = 'VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_SUCCEEDED';
     case VehicleRegistrationDocumentSignatureFailed = 'VEHICLE_REGISTRATION_DOCUMENT_SIGNATURE_FAILED';
+    case VehicleRegistrationDurablePowerOfAttorneyCompletion = 'VEHICLE_REGISTRATION_DURABLE_POWER_OF_ATTORNEY_COMPLETION';
+    case VehicleRegistrationDurablePowerOfAttorneyError = 'VEHICLE_REGISTRATION_DURABLE_POWER_OF_ATTORNEY_ERROR';
 
     /**
      * Placeholder for event types this SDK version does not know.
