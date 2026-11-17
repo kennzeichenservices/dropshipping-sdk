@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [2.7.2] — 2026-11-17
+
+### Features
+
+- Add integration and unit tests for vehicle registration durable powers of attorney
+
 ## [2.7.1] — 2026-11-13
 
 ### Bug Fixes
@@ -11,6 +17,10 @@ All notable changes to this project will be documented in this file.
 
 - Add vehicle registration identity verification failure reasons and update related documentation
 - Add vehicle registration identity verification failure reasons and update related documentation
+
+### Miscellaneous
+
+- Release v2.7.1
 
 ## [2.7.0] — 2026-11-10
 
