@@ -1,11 +1,21 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [2.7.3] — 2026-11-24
+
+### Features
+
+- Add industryCode to durable power of attorney and update related documentation
+
 ## [2.7.2] — 2026-11-17
 
 ### Features
 
 - Add integration and unit tests for vehicle registration durable powers of attorney
+
+### Miscellaneous
+
+- Release v2.7.2
 
 ## [2.7.1] — 2026-11-13
 
