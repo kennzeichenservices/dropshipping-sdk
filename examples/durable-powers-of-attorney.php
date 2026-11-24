@@ -18,6 +18,8 @@ use Dropshipping\Exceptions\ApiException;
 $request = DS::durablePowerOfAttorney(
     company: DS::durablePowerOfAttorneyCompany(
         name: 'Muster Autohaus GmbH',
+        // From $client->vehicleHolderIndustries->getAll(), see vehicle-holder-industries.php.
+        industryCode: 'G01',
         streetName: 'Hauptstraße',
         houseNumber: '12A',
         zipCode: '10115',

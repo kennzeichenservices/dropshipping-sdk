@@ -303,7 +303,8 @@ foreach ($offices->findByRegionCode('BO') as $match) {
 
 Requires API 2.7.0. The industries (Wirtschaftszweige) a legal person vehicle holder can be
 registered under, taken from the Berufsschlüssel of the ErfassRL Kfz, a KBA reference table. A
-`code` from here goes into `industryCode` of `DS::registrationLegalPersonVehicleHolder(...)`.
+`code` from here goes into `industryCode` of `DS::registrationLegalPersonVehicleHolder(...)` and of
+`DS::durablePowerOfAttorneyCompany(...)`.
 
 A code is not unique: the same one can appear under several industry names, so the lookup returns
 a list. The listing is not paginated and changes rarely, so cache it on your side rather than
@@ -762,6 +763,7 @@ use Dropshipping\DS;
 $created = $client->vehicleRegistrations->createDurablePowerOfAttorney(DS::durablePowerOfAttorney(
     company: DS::durablePowerOfAttorneyCompany(
         name: 'Muster Autohaus GmbH',
+        industryCode: 'G01', // from $client->vehicleHolderIndustries->getAll()
         streetName: 'Hauptstraße',
         houseNumber: '12A',
         zipCode: '10115',
@@ -783,6 +785,11 @@ $usable = $all->usable(); // COMPLETE, not revoked, not expired
 
 $one = $client->vehicleRegistrations->getDurablePowerOfAttorney($created->id);
 ```
+
+`industryCode` is required and has to be a code from
+[the industry listing](#fetching-the-vehicle-holder-industries). The SDK checks the shape (three
+characters of `A-Z` and `0-9`), the API checks existence. When reading, `company->industryCode` is
+`null` for a record that was stored without one.
 
 The create call is not idempotent, so check the listing before retrying after a timeout.
 `getDurablePowerOfAttorney()` only accepts a UUID and throws a `DropshippingException` before any

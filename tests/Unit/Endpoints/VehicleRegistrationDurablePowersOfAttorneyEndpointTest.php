@@ -49,6 +49,7 @@ final class VehicleRegistrationDurablePowersOfAttorneyEndpointTest extends TestC
         $created = $endpoint->createDurablePowerOfAttorney(DS::durablePowerOfAttorney(
             company: DS::durablePowerOfAttorneyCompany(
                 name: 'Company X',
+                industryCode: 'G01',
                 streetName: 'Street X',
                 houseNumber: '12A',
                 zipCode: '12345',
@@ -65,6 +66,7 @@ final class VehicleRegistrationDurablePowersOfAttorneyEndpointTest extends TestC
         self::assertSame([
             'company' => [
                 'name' => 'Company X',
+                'industryCode' => 'G01',
                 'streetName' => 'Street X',
                 'houseNumber' => '12A',
                 'zipCode' => '12345',
@@ -77,6 +79,7 @@ final class VehicleRegistrationDurablePowersOfAttorneyEndpointTest extends TestC
         ], $sentBody);
 
         self::assertSame(self::ID, $created->id);
+        self::assertSame('G01', $created->company->industryCode);
         self::assertSame(VehicleRegistrationDurablePowerOfAttorneyStatus::Incomplete, $created->status);
         self::assertSame(VehicleRegistrationDurablePowerOfAttorneyCompanyTaxDataType::SepaDirectDebitMandate, $created->company->taxData->type);
     }
@@ -93,7 +96,7 @@ final class VehicleRegistrationDurablePowersOfAttorneyEndpointTest extends TestC
 
         try {
             $endpoint->createDurablePowerOfAttorney(DS::durablePowerOfAttorney(
-                company: DS::durablePowerOfAttorneyCompany('Company X', 'Street X', '1', '12345', 'City X', DS::durablePowerOfAttorneyCustomsTaxData('123A4567')),
+                company: DS::durablePowerOfAttorneyCompany('Company X', 'G01', 'Street X', '1', '12345', 'City X', DS::durablePowerOfAttorneyCustomsTaxData('123A4567')),
                 signerFirstName: 'Erika',
                 signerLastName: 'Musterfrau',
                 signerEmail: 'signer@localhost.test',
@@ -228,6 +231,7 @@ final class VehicleRegistrationDurablePowersOfAttorneyEndpointTest extends TestC
                 'houseNumber' => '12A',
                 'name' => 'Company X',
                 'number' => 'HRB 123456',
+                'industryCode' => 'G01',
                 'streetName' => 'Street X',
                 'zipCode' => '12345',
                 'taxData' => ['type' => 'SEPA_DIRECT_DEBIT_MANDATE', 'iban' => 'DE0123456789000', 'bic' => 'BYLADEM1001'],

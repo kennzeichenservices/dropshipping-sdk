@@ -13,6 +13,10 @@ use Dropshipping\Support\Hydrator;
  * {@see \Dropshipping\DTO\Requests\VehicleRegistrationDurablePowerOfAttorneyCompany}.
  * It is a separate class so that reading does not run the request validation:
  * a stored record that no longer meets a request constraint still loads.
+ *
+ * {@see $industryCode} is nullable although the spec requires it: it was added
+ * to API 2.7.0 after the fact, so a record created before may come without it,
+ * and one such record must not take the whole listing down.
  */
 final readonly class VehicleRegistrationDurablePowerOfAttorneyCompanyDetails
 {
@@ -26,6 +30,7 @@ final readonly class VehicleRegistrationDurablePowerOfAttorneyCompanyDetails
         public string $cityName,
         public VehicleRegistrationDurablePowerOfAttorneyTaxDataDetails $taxData,
         public ?string $number = null,
+        public ?string $industryCode = null,
     ) {
     }
 
@@ -46,6 +51,7 @@ final readonly class VehicleRegistrationDurablePowerOfAttorneyCompanyDetails
                 Hydrator::requireArray($data, 'taxData', self::CONTEXT),
             ),
             number: Hydrator::optionalString($data, 'number', self::CONTEXT),
+            industryCode: Hydrator::optionalString($data, 'industryCode', self::CONTEXT),
         );
     }
 }

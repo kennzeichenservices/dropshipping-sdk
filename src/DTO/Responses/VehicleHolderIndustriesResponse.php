@@ -11,7 +11,8 @@ use Dropshipping\Support\Hydrator;
  *
  * Carries every {@see VehicleHolderIndustry} a legal person can be registered
  * under. Published by API 2.7.0 alongside the legal person vehicle holder, whose
- * `industryCode` has to be one of these codes.
+ * `industryCode` has to be one of these codes. So does the one of the company of
+ * a durable power of attorney.
  *
  * The listing is not paginated and changes rarely (it mirrors a KBA reference
  * table), so it is worth caching on the caller's side rather than fetching it per
@@ -49,8 +50,8 @@ final readonly class VehicleHolderIndustriesResponse
      *
      * A code is not unique: the spec says it may belong to several industry
      * names, so this returns a list rather than a single entry. Any of them
-     * confirms the code is accepted as `vehicleHolder.industryCode`; an empty
-     * list means it is not.
+     * confirms the code is accepted as `industryCode` of a vehicle holder or of
+     * the company of a durable power of attorney; an empty list means it is not.
      *
      * The comparison is exact, so pass the code as the API publishes it, in
      * upper case.

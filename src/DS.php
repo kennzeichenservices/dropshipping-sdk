@@ -874,10 +874,13 @@ final class DS
 
     /**
      * The company a durable power of attorney is issued for. $number is the
-     * company register number, e.g. "HRB 123456".
+     * company register number, e.g. "HRB 123456". $industryCode has to be a code
+     * from
+     * {@see \Dropshipping\Endpoints\VehicleHolderIndustries\VehicleHolderIndustriesEndpoint::getAll()}.
      */
     public static function durablePowerOfAttorneyCompany(
         string $name,
+        string $industryCode,
         string $streetName,
         string $houseNumber,
         string $zipCode,
@@ -887,6 +890,7 @@ final class DS
     ): VehicleRegistrationDurablePowerOfAttorneyCompany {
         return new VehicleRegistrationDurablePowerOfAttorneyCompany(
             name: $name,
+            industryCode: $industryCode,
             streetName: $streetName,
             houseNumber: $houseNumber,
             zipCode: $zipCode,

@@ -289,6 +289,9 @@ return [
     // --- malformed input: behaviour here is INTENDED to change ------------------
     // --- durable powers of attorney (API 2.7.0, webhooks 3.3.0) -----------------
     ['durablePowerOfAttorney/spec-example', 'Dropshipping\DTO\Responses\VehicleRegistrationDurablePowerOfAttorney', $durablePowerOfAttorney],
+    ['durablePowerOfAttorney/with-industry-code', 'Dropshipping\DTO\Responses\VehicleRegistrationDurablePowerOfAttorney', [
+        'company' => ['industryCode' => 'G01'] + $durablePowerOfAttorney['company'],
+    ] + $durablePowerOfAttorney],
     ['durablePowerOfAttorney/customs-no-number', 'Dropshipping\DTO\Responses\VehicleRegistrationDurablePowerOfAttorney', [
         'company' => ['taxData' => ['type' => 'CUSTOMS_MAJOR_CUSTOMER', 'customsMajorCustomerId' => '123A4567']] + array_diff_key($durablePowerOfAttorney['company'], ['number' => 0]),
     ] + $durablePowerOfAttorney],

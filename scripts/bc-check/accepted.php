@@ -31,4 +31,23 @@ return [
     'reservationApproval/no-pin' =>
         'Unreleased — same as above. All three entries can go once the compared-against tag '
         . 'carries the field.',
+
+    'durablePowerOfAttorney/with-industry-code' =>
+        'Unreleased — the API 2.7.0 spec added industryCode to the company of a durable power of '
+        . 'attorney, so the DTO gained the property. The baseline DTO drops the field on the floor, '
+        . 'so a difference here is the point of the entry.',
+
+    'durablePowerOfAttorney/spec-example' =>
+        'Unreleased — same addition, seen from a payload that predates the field: the new property '
+        . 'reads null instead of being absent. Every field the old DTO carried is unchanged.',
+
+    'durablePowerOfAttorney/customs-no-number' =>
+        'Unreleased — same as above.',
+
+    'durablePowerOfAttorney/unknown-status-and-tax-type' =>
+        'Unreleased — same as above.',
+
+    'durablePowersOfAttorney/list' =>
+        'Unreleased — same as above. All five entries can go once the compared-against tag carries '
+        . 'the field.',
 ];

@@ -28,6 +28,7 @@ final class VehicleRegistrationDurablePowersOfAttorneyResponseTest extends TestC
         self::assertSame(VehicleRegistrationDurablePowerOfAttorneyStatus::Incomplete, $record->status);
         self::assertSame('Company X', $record->company->name);
         self::assertSame('HRB 123456', $record->company->number);
+        self::assertSame('G01', $record->company->industryCode);
         self::assertSame('12A', $record->company->houseNumber);
         self::assertSame(VehicleRegistrationDurablePowerOfAttorneyCompanyTaxDataType::SepaDirectDebitMandate, $record->company->taxData->type);
         self::assertSame('DE0123456789000', $record->company->taxData->iban);
@@ -48,6 +49,42 @@ final class VehicleRegistrationDurablePowersOfAttorneyResponseTest extends TestC
         self::assertSame(VehicleRegistrationDurablePowerOfAttorneyCompanyTaxDataType::CustomsMajorCustomer, $record->company->taxData->type);
         self::assertSame('123A4567', $record->company->taxData->customsMajorCustomerId);
         self::assertNull($record->company->taxData->iban);
+    }
+
+    /**
+     * The industry code joined API 2.7.0 after the fact. A record stored without
+     * one must not take the whole listing down.
+     */
+    public function test_listing_reads_records_without_an_industry_code(): void
+    {
+        $missing = self::record();
+        unset($missing['company']['industryCode']);
+
+        $null = self::record();
+        $null['company']['industryCode'] = null;
+
+        $response = VehicleRegistrationDurablePowersOfAttorneyResponse::fromArray([
+            'durablePowersOfAttorney' => [$missing, $null, self::record()],
+        ]);
+
+        self::assertSame(
+            [null, null, 'G01'],
+            array_map(
+                static fn (VehicleRegistrationDurablePowerOfAttorney $p): ?string => $p->company->industryCode,
+                $response->durablePowersOfAttorney,
+            ),
+        );
+    }
+
+    /**
+     * Reading does not run the request validation.
+     */
+    public function test_fromArray_accepts_an_industry_code_outside_the_request_pattern(): void
+    {
+        $data = self::record();
+        $data['company']['industryCode'] = 'g-01';
+
+        self::assertSame('g-01', VehicleRegistrationDurablePowerOfAttorney::fromArray($data)->company->industryCode);
     }
 
     /**
@@ -248,6 +285,7 @@ final class VehicleRegistrationDurablePowersOfAttorneyResponseTest extends TestC
                 'houseNumber' => '12A',
                 'name' => 'Company X',
                 'number' => 'HRB 123456',
+                'industryCode' => 'G01',
                 'streetName' => 'Street X',
                 'zipCode' => '12345',
                 'taxData' => ['type' => 'SEPA_DIRECT_DEBIT_MANDATE', 'iban' => 'DE0123456789000', 'bic' => 'BYLADEM1001'],

@@ -26,6 +26,7 @@ final class VehicleRegistrationDurablePowerOfAttorneyCreationRequestTest extends
         self::assertSame([
             'company' => [
                 'name' => 'Muster GmbH',
+                'industryCode' => 'G01',
                 'streetName' => 'Hauptstr.',
                 'houseNumber' => '1',
                 'zipCode' => '10115',
@@ -51,6 +52,7 @@ final class VehicleRegistrationDurablePowerOfAttorneyCreationRequestTest extends
         $viaDs = DS::durablePowerOfAttorney(
             company: DS::durablePowerOfAttorneyCompany(
                 name: 'Muster GmbH',
+                industryCode: 'G01',
                 streetName: 'Hauptstr.',
                 houseNumber: '1',
                 zipCode: '10115',
@@ -143,6 +145,14 @@ final class VehicleRegistrationDurablePowerOfAttorneyCreationRequestTest extends
         yield 'empty name' => [static fn () => self::company($tax, name: ''), 'company.name'];
         yield 'blank name' => [static fn () => self::company($tax, name: '   '), 'company.name'];
         yield 'name over 100' => [static fn () => self::company($tax, name: str_repeat('a', 101)), 'company.name'];
+        yield 'empty industry code' => [static fn () => self::company($tax, industryCode: ''), 'company.industryCode'];
+        yield 'blank industry code' => [static fn () => self::company($tax, industryCode: '   '), 'company.industryCode'];
+        yield 'industry code too short' => [static fn () => self::company($tax, industryCode: 'G0'), 'company.industryCode'];
+        yield 'industry code too long' => [static fn () => self::company($tax, industryCode: 'G011'), 'company.industryCode'];
+        yield 'lower case industry code' => [static fn () => self::company($tax, industryCode: 'g01'), 'company.industryCode'];
+        yield 'industry code with umlaut' => [static fn () => self::company($tax, industryCode: 'Ü01'), 'company.industryCode'];
+        yield 'industry code with trailing newline' => [static fn () => self::company($tax, industryCode: "G01\n"), 'company.industryCode'];
+        yield 'huge industry code' => [static fn () => self::company($tax, industryCode: str_repeat('G', 100_000)), 'company.industryCode'];
         yield 'house number over 10' => [static fn () => self::company($tax, houseNumber: str_repeat('1', 11)), 'company.houseNumber'];
         yield 'zip over 12' => [static fn () => self::company($tax, zipCode: str_repeat('1', 13)), 'company.zipCode'];
         yield 'empty city' => [static fn () => self::company($tax, cityName: ''), 'company.cityName'];
@@ -150,6 +160,49 @@ final class VehicleRegistrationDurablePowerOfAttorneyCreationRequestTest extends
         yield 'empty number' => [static fn () => self::company($tax, number: ''), 'company.number'];
         yield 'blank number' => [static fn () => self::company($tax, number: ' '), 'company.number'];
         yield 'number over 100' => [static fn () => self::company($tax, number: str_repeat('1', 101)), 'company.number'];
+    }
+
+    #[DataProvider('validIndustryCodes')]
+    public function test_company_sends_the_industry_code(string $industryCode): void
+    {
+        $company = self::company(
+            new VehicleRegistrationDurablePowerOfAttorneyCustomsMajorCustomerTaxData('123A4567'),
+            industryCode: $industryCode,
+        );
+
+        self::assertSame($industryCode, $company->toArray()['industryCode']);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function validIndustryCodes(): iterable
+    {
+        yield 'letter and digits' => ['G01'];
+        yield 'digits only' => ['001'];
+        yield 'letters only' => ['ABC'];
+    }
+
+    /**
+     * A positional call written before the industry code existed has to fail,
+     * rather than send the street as the code or the register number as one.
+     */
+    public function test_a_positional_call_without_industry_code_fails(): void
+    {
+        $arguments = [
+            'Muster GmbH',
+            'Hauptstr.',
+            '1',
+            '10115',
+            'Berlin',
+            new VehicleRegistrationDurablePowerOfAttorneyCustomsMajorCustomerTaxData('123A4567'),
+            'H01',
+        ];
+
+        $this->expectException(\TypeError::class);
+
+        // Through reflection, because static analysis rightly refuses the direct call.
+        (new \ReflectionMethod(DS::class, 'durablePowerOfAttorneyCompany'))->invoke(null, ...$arguments);
     }
 
     public function test_name_length_counts_characters_not_bytes(): void
@@ -244,8 +297,9 @@ final class VehicleRegistrationDurablePowerOfAttorneyCreationRequestTest extends
         string $zipCode = '10115',
         string $cityName = 'Berlin',
         ?string $number = null,
+        string $industryCode = 'G01',
     ): VehicleRegistrationDurablePowerOfAttorneyCompany {
-        return new VehicleRegistrationDurablePowerOfAttorneyCompany($name, $streetName, $houseNumber, $zipCode, $cityName, $taxData, $number);
+        return new VehicleRegistrationDurablePowerOfAttorneyCompany($name, $industryCode, $streetName, $houseNumber, $zipCode, $cityName, $taxData, $number);
     }
 
     private static function signer(): VehicleRegistrationDurablePowerOfAttorneySigner

@@ -32,7 +32,8 @@ The comparison is exact, so pass a code in upper case, as the listing publishes 
 
 It goes into `industryCode` of `DS::registrationLegalPersonVehicleHolder(...)`, the vehicle holder
 of a registration ordered for a company. See
-[vehicle-registration.php](vehicle-registration.php).
+[vehicle-registration.php](vehicle-registration.php). `DS::durablePowerOfAttorneyCompany(...)` takes
+the same code, see [durable-powers-of-attorney.php](durable-powers-of-attorney.php).
 
 The SDK checks the shape of the code (three characters of `A-Z` and `0-9`) when the holder is
 built, but only the API knows which codes exist, and it rejects an unknown one *after* the customer

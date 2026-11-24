@@ -36,6 +36,13 @@ Exactly one of two variants:
 - `DS::durablePowerOfAttorneyCustomsTaxData('123A4567')`: major customer ID of the customs
   administration, replacing the mandate.
 
+## Industry code
+
+`industryCode` is required and has to be a code from `GET /vehicleHolderIndustries`, see
+[vehicle-holder-industries.php](vehicle-holder-industries.php). The SDK checks the shape (three
+characters of `A-Z` and `0-9`), only the API knows which codes exist. When reading,
+`company->industryCode` is `null` for a record that was stored without one.
+
 ## Expiration date
 
 At most one year from today, `YYYY-MM-DD`. Leave it `null` and the API sets exactly that maximum.

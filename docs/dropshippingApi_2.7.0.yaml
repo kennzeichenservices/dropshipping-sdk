@@ -945,6 +945,7 @@ paths:
                         "houseNumber" : "12A",
                         "name" : "Company X",
                         "number" : "HRB 123456",
+                        "industryCode": "G01",
                         "streetName" : "Street X",
                         "zipCode" : "12345",
                         "taxData": {
@@ -984,6 +985,7 @@ paths:
                 "company": {
                   "name": "Company X",
                   "number": "HRB 123456",
+                  "industryCode": "G01",
                   "streetName": "Street X",
                   "houseNumber": "12A",
                   "zipCode": "12345",
@@ -1015,6 +1017,7 @@ paths:
                     "houseNumber": "12A",
                     "name": "Company X",
                     "number": "HRB 123456",
+                    "industryCode": "G01",
                     "streetName": "Street X",
                     "zipCode": "12345",
                     "taxData": {
@@ -1063,6 +1066,7 @@ paths:
                     "houseNumber": "12A",
                     "name": "Company X",
                     "number": "HRB 123456",
+                    "industryCode": "G01",
                     "streetName": "Street X",
                     "zipCode": "12345",
                     "taxData": {
@@ -2322,6 +2326,7 @@ components:
       type: object
       required:
         - name
+        - industryCode
         - streetName
         - houseNumber
         - zipCode
@@ -2338,6 +2343,10 @@ components:
           minLength: 1
           maxLength: 100
           description: Company number
+        industryCode:
+          type: string
+          pattern: '^[A-Z0-9]{3}$'
+          description: Required code of an existing vehicle holder industry (Wirtschaftszweig), see GET /vehicleHolderIndustries.
         streetName:
           type: string
           minLength: 1

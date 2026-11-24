@@ -37,7 +37,8 @@ final class VehicleHolderIndustriesEndpoint
      * Get every industry a legal person can be registered under.
      *
      * The codes are the accepted values for `vehicleHolder.industryCode` of a
-     * vehicle registration ordered for a legal person. The listing is not
+     * vehicle registration ordered for a legal person and for
+     * `company.industryCode` of a durable power of attorney. The listing is not
      * paginated and mirrors a KBA reference table, so it is worth caching on the
      * caller's side rather than fetching it per order.
      *
