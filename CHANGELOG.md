@@ -1,11 +1,21 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [2.7.4] — 2026-11-27
+
+### Features
+
+- Add gender and delivery configurations to vehicle registration durable powers of attorney response
+
 ## [2.7.3] — 2026-11-24
 
 ### Features
 
 - Add industryCode to durable power of attorney and update related documentation
+
+### Miscellaneous
+
+- Release v2.7.3
 
 ## [2.7.2] — 2026-11-17
 
