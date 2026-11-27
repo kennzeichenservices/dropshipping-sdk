@@ -43,6 +43,17 @@ Exactly one of two variants:
 characters of `A-Z` and `0-9`), only the API knows which codes exist. When reading,
 `company->industryCode` is `null` for a record that was stored without one.
 
+## Signer
+
+The signer's `gender` is required. When reading, `signer->gender` is `null` for a record that was
+stored without one.
+
+## Delivery configurations
+
+Where the registration documents go, built with `DS::registrationDeliveryConfigurations(...)`. Left
+out, both are delivered to the vehicle holder. The spec does not say how this relates to the delivery
+configurations of a registration ordered under the power of attorney.
+
 ## Expiration date
 
 At most one year from today, `YYYY-MM-DD`. Leave it `null` and the API sets exactly that maximum.
@@ -53,10 +64,14 @@ server's clock.
 
 Creating twice creates two records. After a timeout, check the listing before trying again.
 
-## Not covered yet
+## Ordering under it
 
-API 2.7.0 does not yet take a durable power of attorney as a reference when ordering a vehicle
-registration. Until it does, creating one has no effect on orders.
+Pass the ID to `DS::registrationLegalPersonVehicleHolderFromDurablePowerOfAttorney(...)` and that
+holder to `DS::vehicleRegistrationWithHolder(...)`, see
+[vehicle-registration.md](vehicle-registration.md). The API takes name, address, industry and tax
+details from the power of attorney, so the registration carries no IBAN. It only accepts one that
+is `COMPLETE`, active and not expired, and it does not allow reusing an earlier identification
+with it.
 
 ## Run
 

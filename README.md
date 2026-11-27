@@ -131,19 +131,21 @@ The client exposes nine endpoint groups as public readonly properties:
 > and omits it from the payload when null, so set it whenever you run on 2.6.0 or the API answers
 > `400`.
 >
-> **2.7.0 adds the legal person vehicle holder, one operation and a required discriminator.** The
+> **2.7.0 adds the legal person vehicle holder, one operation and a new holder shape.** The
 > industry listing (`$client->vehicleHolderIndustries->getAll()`) exists only there. A registration
-> request must carry `vehicleHolder.type`, which no earlier version knows, so the holder you pass
+> request must carry `vehicleHolder.type`, which no earlier version knows, and 2.7.0 moves
+> `identityVerificationDocumentType`, `iban` and `bic` onto the holder. So the holder you pass
 > decides which payload goes out:
 >
-> | Holder | `type` in the payload | API versions |
-> |--------|----------------------|--------------|
-> | `DS::vehicleRegistration(...)`, which wraps `VehicleRegistrationVehicleHolder` | not sent | 2.4.0 to 2.6.0 |
-> | `DS::registrationNaturalPersonVehicleHolder(...)` | `NATURAL_PERSON` | 2.7.0 |
-> | `DS::registrationLegalPersonVehicleHolder(...)` | `LEGAL_PERSON` | 2.7.0 |
+> | Holder | `type` in the payload | Identity document, IBAN, BIC | API versions |
+> |--------|----------------------|------------------------------|--------------|
+> | `DS::vehicleRegistration(...)`, which wraps `VehicleRegistrationVehicleHolder` | not sent | request and customization | 2.4.0 to 2.6.0 |
+> | `DS::registrationNaturalPersonVehicleHolder(...)` | `NATURAL_PERSON` | holder | 2.7.0 |
+> | `DS::registrationLegalPersonVehicleHolder(...)` | `LEGAL_PERSON`, `personData.type: PROVIDED` | `personData`, no identity document | 2.7.0 |
+> | `DS::registrationLegalPersonVehicleHolderFromDurablePowerOfAttorney(...)` | `LEGAL_PERSON`, `personData.type: DURABLE_POWER_OF_ATTORNEY_REFERENCE` | taken from the power of attorney | 2.7.0 |
 >
 > Nothing about an existing integration changes on an SDK update: `DS::vehicleRegistration(...)`
-> sends what it always sent. Switch to `DS::vehicleRegistrationWithHolder(...)` with one of the two
+> sends what it always sent. Switch to `DS::vehicleRegistrationWithHolder(...)` with one of the
 > new holders when you move to 2.7.0 -- see [Submitting a Vehicle Registration](#submitting-a-vehicle-registration).
 
 ## Examples
@@ -566,7 +568,7 @@ customization enforces it:
 | `licensePlateNumberAssignmentStrategy` | must be `RETAINMENT` | free (but not `RETAINMENT` for `NZ`) |
 | `vehicleTitleSecurityCode`, `vehicleTitleNumber` (ZB II) | must be `null` | security code required |
 | `electronicInsuranceConfirmationNumber` | optional | required |
-| `iban` | optional | required, unless the holder pays the tax through customs (see below) |
+| `iban` | optional | required, unless the holder pays the tax through customs or orders under a durable power of attorney (see below) |
 
 ```php
 customization: DS::registrationCustomization(
@@ -593,30 +595,56 @@ country does not. Up to 2.6.0 the spec called it required for every code but `HA
 enforced that; it no longer does, so a German IBAN without a BIC now goes out rather than being
 rejected locally.
 
+**Where the IBAN goes.** Up to 2.6.0 the `iban` and `bic` sit in the customization, as shown
+above. From 2.7.0 on they belong to the vehicle holder, and the customization has to pass `null`
+for both; the request throws otherwise. The same goes for `identityVerificationDocumentType`, which
+moves from the request onto a natural person holder.
+
+**A natural person on 2.7.0.** `DS::vehicleRegistration(...)` keeps sending the 2.6.0 payload,
+which 2.7.0 rejects with `400`. On 2.7.0 build the holder yourself:
+
+```php
+DS::vehicleRegistrationWithHolder(
+    email: 'max@example.com',
+    customization: $customization,  // iban: null, bic: null
+    vehicleHolder: DS::registrationNaturalPersonVehicleHolder(
+        address: $address,
+        placeOfBirth: 'Berlin',
+        birthDate: '1990-01-31',
+        identityVerificationDocumentType: IdentityVerificationDocumentType::GermanId,
+        birthName: 'Musterfrau',             // optional
+        iban: 'DE89370400440532013000',      // required for every code but HA
+        bic: null,                           // only required for an MC, SM or CH iban
+    ),
+);
+```
+
 **A legal person (juristische Person) as the vehicle holder.** Requires API 2.7.0 and is not
-accepted for `HA`. Build the holder separately and pass it to `DS::vehicleRegistrationWithHolder(...)`:
+accepted for `HA`. The holder carries `personData`, either sent along or taken from a durable power
+of attorney. Sent along:
 
 ```php
 $response = $client->vehicleRegistrations->createRegistration(
     DS::vehicleRegistrationWithHolder(
         email: 'einkauf@autohaus-muster.de',
-        customization: $customization,
+        customization: $customization,          // iban: null, bic: null
         vehicleHolder: DS::registrationLegalPersonVehicleHolder(
             address: $address,                      // the address of the company
             name: 'Autohaus Muster GmbH',           // the name of the holder
             industryCode: 'G01',                    // from $client->vehicleHolderIndustries->getAll()
             companyNumber: 'HRB 123456',            // company register number, for the verification
             customsMajorCustomerId: null,           // optional Zoll-GK-Nr., see below
+            iban: 'DE89370400440532013000',         // required without customsMajorCustomerId
+            bic: null,
         ),
-        identityVerificationDocumentType: IdentityVerificationDocumentType::GermanId,
     )
 );
 ```
 
 The address is the address *of the company*. Its `firstName`, `lastName` and `gender` name a
-contact person, and its `companyName` is **not** read as the holder's name -- that is what `name`
+contact person, and its `companyName` is **not** read as the holder's name. That is what `name`
 is for, so a company with a `companyName` on its address still has to repeat it there. The two may
-differ.
+differ. A legal person sends no identity document.
 
 `industryCode` has to be a code the API knows; fetch it from
 [the industry listing](#fetching-the-vehicle-holder-industries). The SDK checks the shape (three
@@ -625,8 +653,8 @@ characters of `A-Z` and `0-9`), the API checks existence.
 **Paying the motor vehicle tax through customs.** A company holding a major customer ID of the
 customs administration (Großkunden-ID der Zollverwaltung, Zoll-GK-Nr.) settles the tax that way
 instead of by SEPA direct debit mandate. Pass it as `customsMajorCustomerId` and leave `iban` and
-`bic` empty on the customization -- the request throws if both are given, since the API rejects
-that combination:
+`bic` null. Exactly one of `iban` and `customsMajorCustomerId` is required, the holder throws
+otherwise:
 
 ```php
 vehicleHolder: DS::registrationLegalPersonVehicleHolder(
@@ -638,23 +666,20 @@ vehicleHolder: DS::registrationLegalPersonVehicleHolder(
 ),
 ```
 
-**A natural person on 2.7.0.** `DS::vehicleRegistration(...)` keeps sending the payload without
-`vehicleHolder.type`, which is what 2.4.0 to 2.6.0 expect and 2.7.0 rejects with `400`. On 2.7.0
-use the explicit holder instead:
+**Ordering under a durable power of attorney.** Instead of sending the company's data, the holder
+can name a [durable power of attorney](#managing-durable-powers-of-attorney). The API takes name,
+address, industry and tax details from there, so the ID is all the request carries:
 
 ```php
 DS::vehicleRegistrationWithHolder(
-    email: 'max@example.com',
-    customization: $customization,
-    vehicleHolder: DS::registrationNaturalPersonVehicleHolder(
-        address: $address,
-        placeOfBirth: 'Berlin',
-        birthDate: '1990-01-31',
-        birthName: 'Musterfrau',  // optional
-    ),
-    identityVerificationDocumentType: IdentityVerificationDocumentType::GermanId,
+    email: 'einkauf@autohaus-muster.de',
+    customization: $customization,  // iban: null, bic: null
+    vehicleHolder: DS::registrationLegalPersonVehicleHolderFromDurablePowerOfAttorney($powerOfAttorney->id),
 );
 ```
+
+The power of attorney has to be `COMPLETE`, active and not expired. The SDK checks that the ID is
+a UUID; the rest is only known to the API, so check `isUsable()` first.
 
 **Reusing an earlier identification.** `recycledVehicleRegistrationOrderId` points at an earlier
 registration order whose identity verification and signed files this one takes over, so the
@@ -670,14 +695,13 @@ DS::vehicleRegistrationWithHolder(
 );
 ```
 
-The referenced order has to match this one: the same `vehicleHolder.type`, and for a legal person
-the same `vehicleHolder.name` (compared case insensitively, ignoring surrounding whitespace). It
-also has to carry the files this registration needs, which are the power of attorney, the SEPA
-direct debit mandate (except for `HA` and for a holder with a `customsMajorCustomerId`) and, for a
-natural person, the GDPR consent declaration (except for `HA`).
+2.7.0 rules it out for every legal person, with or without a durable power of attorney, and the
+request throws for that combination. The referenced order has to carry the files this registration
+needs: the power of attorney, the SEPA direct debit mandate (except for `HA`) and the GDPR consent
+declaration (except for `HA`).
 
-None of that is checkable in the SDK, since it is all about the other order, so the API is what
-rejects a mismatch. The SDK only rejects an order ID of zero or less, which cannot name an order.
+That is not checkable in the SDK, since it is about the other order, so the API is what rejects a
+mismatch. The SDK only rejects an order ID of zero or less, which cannot name an order.
 
 **A deviating delivery address for the registration documents.** By default the registration
 office posts both the Zulassungsbescheinigung Teil I (Fahrzeugschein) and Teil II (Fahrzeugbrief)
@@ -759,6 +783,7 @@ and starts the signing; the outcome arrives as a webhook.
 
 ```php
 use Dropshipping\DS;
+use Dropshipping\Enums\Gender;
 
 $created = $client->vehicleRegistrations->createDurablePowerOfAttorney(DS::durablePowerOfAttorney(
     company: DS::durablePowerOfAttorneyCompany(
@@ -774,8 +799,10 @@ $created = $client->vehicleRegistrations->createDurablePowerOfAttorney(DS::durab
     ),
     signerFirstName: 'Erika',
     signerLastName: 'Musterfrau',
+    signerGender: Gender::Female,
     signerEmail: 'erika.musterfrau@example.com',
     expirationDate: null, // the API sets the maximum, one year from today
+    deliveryConfigurations: null, // both registration documents go to the vehicle holder
 ));
 
 $created->status;   // INCOMPLETE until VEHICLE_REGISTRATION_DURABLE_POWER_OF_ATTORNEY_COMPLETION arrives
@@ -789,7 +816,10 @@ $one = $client->vehicleRegistrations->getDurablePowerOfAttorney($created->id);
 `industryCode` is required and has to be a code from
 [the industry listing](#fetching-the-vehicle-holder-industries). The SDK checks the shape (three
 characters of `A-Z` and `0-9`), the API checks existence. When reading, `company->industryCode` is
-`null` for a record that was stored without one.
+`null` for a record that was stored without one, and so is `signer->gender`.
+
+`deliveryConfigurations` takes the same `DS::registrationDeliveryConfigurations(...)` as a
+registration. The spec does not say which one wins where both are given.
 
 The create call is not idempotent, so check the listing before retrying after a timeout.
 `getDurablePowerOfAttorney()` only accepts a UUID and throws a `DropshippingException` before any
@@ -799,8 +829,8 @@ Responses are read leniently: a `status` or tax data `type` this SDK does not kn
 `UNKNOWN` instead of failing the whole listing. The request DTOs, on the other hand, check every
 length, the IBAN/BIC rule and the date format before anything is sent.
 
-API 2.7.0 does not yet take a durable power of attorney as a reference when ordering a
-registration; that part is announced but not live.
+To order a registration under it, pass its ID as the
+[vehicle holder](#submitting-a-vehicle-registration).
 
 ### Handling Webhooks
 
@@ -994,6 +1024,7 @@ throws, except where the SDK defines a fallback — `status` on both XKFZ events
 | `VehicleRegistrationDeliveryConfigurationRecipientType` | `NATURAL_PERSON`, `LEGAL_PERSON` |
 | `VehicleRegistrationServiceTypeCode` | `NZ`, `WZ`, `UO`, `UI`, `UM`, `WG`, `UG`, `HA` |
 | `VehicleRegistrationVehicleHolderType` | `NATURAL_PERSON`, `LEGAL_PERSON` |
+| `VehicleRegistrationLegalPersonPersonDataType` | `DURABLE_POWER_OF_ATTORNEY_REFERENCE`, `PROVIDED` |
 | `IdentityVerificationDocumentType` | `GERMAN_ID`, `RESIDENCE_PERMIT`, `GERMAN_PASSPORT_WITH_PROOF_OF_ADDRESS`, `FOREIGN_PAPERS_WITH_PROOF_OF_ADDRESS` |
 | `VehicleRegistrationIdentityVerificationFailureReason` | `company_not_found`, `company_not_verified`, `company_not_active`, `company_name_mismatch`, `company_number_mismatch`, `missing_holder_name`, `no_matching_representative`, `ambiguous_representative`, `missing_sole_signing_authority`, `company_representative_verification_failed`. Not hydrated: `failureReason()` on `VehicleRegistrationIdentityVerificationFailedEvent` resolves it from the free-text `message` and returns `null` for anything else |
 | `VehicleRegistrationDurablePowerOfAttorneyStatus` | `INCOMPLETE`, `COMPLETE`, `ERROR`, `UNKNOWN` (local fallback for unmodelled values) |

@@ -258,6 +258,35 @@ final class Hydrator
     }
 
     /**
+     * Resolve a backed enum case, or null where the value is absent or unknown.
+     *
+     * For fields of a response the API may leave out or extend, on enums that are
+     * sent as well and therefore should not carry a local placeholder case.
+     *
+     * @template T of BackedEnum
+     *
+     * @param class-string<T>      $enumClass
+     * @param array<string, mixed> $data
+     *
+     * @return T|null
+     */
+    public static function enumOrNull(string $enumClass, array $data, string $key): ?BackedEnum
+    {
+        $value = $data[$key] ?? null;
+
+        if (!is_string($value) && !is_int($value)) {
+            return null;
+        }
+
+        try {
+            return $enumClass::tryFrom($value);
+        } catch (\TypeError) {
+            // See requireEnum(): a value of the wrong backing type is just unknown.
+            return null;
+        }
+    }
+
+    /**
      * @param array<string, mixed> $data
      *
      * @throws DropshippingException If the key is absent or null.

@@ -17,6 +17,7 @@ use Dropshipping\Enums\VehicleRegistrationDeliveryConfigurationRecipientType;
 use Dropshipping\Enums\VehicleRegistrationDurablePowerOfAttorneyCompanyTaxDataType;
 use Dropshipping\Enums\VehicleRegistrationDurablePowerOfAttorneyStatus;
 use Dropshipping\Enums\VehicleRegistrationIdentityVerificationFailureReason;
+use Dropshipping\Enums\VehicleRegistrationLegalPersonPersonDataType;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateNumberAssignmentStrategyType;
 use Dropshipping\Enums\VehicleRegistrationLicensePlateType;
 use Dropshipping\Enums\VehicleRegistrationServiceTypeCode;
@@ -244,6 +245,13 @@ final class EnumValuesTest extends TestCase
         self::assertSame('NATURAL_PERSON', VehicleRegistrationVehicleHolderType::NaturalPerson->value);
         self::assertSame('LEGAL_PERSON', VehicleRegistrationVehicleHolderType::LegalPerson->value);
         self::assertCount(2, VehicleRegistrationVehicleHolderType::cases());
+    }
+
+    public function test_vehicle_registration_legal_person_person_data_type_values(): void
+    {
+        self::assertSame('DURABLE_POWER_OF_ATTORNEY_REFERENCE', VehicleRegistrationLegalPersonPersonDataType::DurablePowerOfAttorneyReference->value);
+        self::assertSame('PROVIDED', VehicleRegistrationLegalPersonPersonDataType::Provided->value);
+        self::assertCount(2, VehicleRegistrationLegalPersonPersonDataType::cases());
     }
 
     /**

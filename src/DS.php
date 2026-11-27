@@ -27,6 +27,8 @@ use Dropshipping\DTO\Requests\VehicleRegistrationDurablePowerOfAttorneyCreationR
 use Dropshipping\DTO\Requests\VehicleRegistrationDurablePowerOfAttorneyCustomsMajorCustomerTaxData;
 use Dropshipping\DTO\Requests\VehicleRegistrationDurablePowerOfAttorneySepaDirectDebitMandateTaxData;
 use Dropshipping\DTO\Requests\VehicleRegistrationDurablePowerOfAttorneySigner;
+use Dropshipping\DTO\Requests\VehicleRegistrationLegalPersonDurablePowerOfAttorneyReferencePersonData;
+use Dropshipping\DTO\Requests\VehicleRegistrationLegalPersonProvidedPersonData;
 use Dropshipping\DTO\Requests\VehicleRegistrationLegalPersonVehicleHolder;
 use Dropshipping\DTO\Requests\VehicleRegistrationNaturalPersonVehicleHolder;
 use Dropshipping\DTO\Requests\VehicleRegistrationRequest;
@@ -676,9 +678,10 @@ final class DS
     /**
      * Create a vehicle registration customization DTO.
      *
-     * The eVB number, ZB II security code, IBAN and BIC are required for every
-     * service type code but HA. Which fields each code requires or forbids is
-     * listed on {@see VehicleRegistrationCustomization}.
+     * The eVB number and ZB II security code are required for every service type
+     * code but HA. $iban and $bic belong here only up to API 2.6.0; with a 2.7.0
+     * vehicle holder pass null, the holder carries them. Which fields each code
+     * requires or forbids is listed on {@see VehicleRegistrationCustomization}.
      */
     public static function registrationCustomization(
         VehicleRegistrationLicensePlateNumberAssignmentStrategyInterface $licensePlateNumberAssignmentStrategy,
@@ -721,7 +724,7 @@ final class DS
      *
      * $identityVerificationDocumentType is required by API 2.6.0 and unknown to
      * 2.4.0 and 2.5.0, so it stays optional here and is left out of the payload
-     * when null.
+     * when null. The IBAN and BIC go into the customization.
      *
      * $recycledVehicleRegistrationOrderId reuses the identity verification and
      * signed files of an earlier registration order, so the customer goes through
@@ -731,8 +734,8 @@ final class DS
      * For API 2.7.0 use {@see self::vehicleRegistrationWithHolder()} with a
      * holder from {@see self::registrationNaturalPersonVehicleHolder()} or
      * {@see self::registrationLegalPersonVehicleHolder()}: 2.7.0 requires the
-     * `vehicleHolder.type` discriminator, which the holder built here does not
-     * send.
+     * `vehicleHolder.type` discriminator and expects the identity document and
+     * the IBAN on the holder, which the holder built here does not do.
      */
     public static function vehicleRegistration(
         string $email,
@@ -765,38 +768,47 @@ final class DS
     }
 
     /**
-     * Create a natural person vehicle holder for API 2.7.0, which requires the
-     * `type` discriminator.
+     * Create a natural person vehicle holder for API 2.7.0.
      *
-     * The same fields as {@see self::vehicleRegistration()} takes inline, but as
-     * a holder that carries `type: NATURAL_PERSON`.
+     * Besides the `type` discriminator, 2.7.0 moved the identity document and
+     * the IBAN and BIC onto the holder. Leave them out of the request and the
+     * customization then. $iban is required for every service type code but HA,
+     * $bic only for an IBAN from Monaco, San Marino or Switzerland.
      */
     public static function registrationNaturalPersonVehicleHolder(
         Address $address,
         string $placeOfBirth,
         string $birthDate,
+        IdentityVerificationDocumentType $identityVerificationDocumentType,
         ?string $birthName = null,
+        ?string $iban = null,
+        ?string $bic = null,
     ): VehicleRegistrationNaturalPersonVehicleHolder {
         return new VehicleRegistrationNaturalPersonVehicleHolder(
             address: $address,
             placeOfBirth: $placeOfBirth,
             birthDate: $birthDate,
+            identityVerificationDocumentType: $identityVerificationDocumentType,
             birthName: $birthName,
+            iban: $iban,
+            bic: $bic,
         );
     }
 
     /**
-     * Create a legal person (juristische Person) vehicle holder. Requires API
-     * 2.7.0 and is not accepted for the service type code HA.
+     * Create a legal person (juristische Person) vehicle holder with its data
+     * sent along. Requires API 2.7.0 and is not accepted for the service type
+     * code HA.
      *
      * The address is the address of the company; its name fields name a contact
      * person and its companyName is not sent as the holder's name, so $name has
      * to carry it. $industryCode has to be a code from
      * {@see \Dropshipping\Endpoints\VehicleHolderIndustries\VehicleHolderIndustriesEndpoint::getAll()}.
      *
-     * Passing $customsMajorCustomerId settles the motor vehicle tax through the
-     * customs administration, which means the customization must leave the IBAN
-     * and BIC empty.
+     * The vehicle tax is settled either by a SEPA mandate, with $iban and, for
+     * an IBAN from Monaco, San Marino or Switzerland, $bic, or through the
+     * customs administration with $customsMajorCustomerId. Exactly one of $iban
+     * and $customsMajorCustomerId is required.
      */
     public static function registrationLegalPersonVehicleHolder(
         Address $address,
@@ -804,13 +816,37 @@ final class DS
         string $industryCode,
         string $companyNumber,
         ?string $customsMajorCustomerId = null,
+        ?string $iban = null,
+        ?string $bic = null,
     ): VehicleRegistrationLegalPersonVehicleHolder {
         return new VehicleRegistrationLegalPersonVehicleHolder(
-            address: $address,
-            name: $name,
-            industryCode: $industryCode,
-            companyNumber: $companyNumber,
-            customsMajorCustomerId: $customsMajorCustomerId,
+            personData: new VehicleRegistrationLegalPersonProvidedPersonData(
+                address: $address,
+                name: $name,
+                industryCode: $industryCode,
+                companyNumber: $companyNumber,
+                customsMajorCustomerId: $customsMajorCustomerId,
+                iban: $iban,
+                bic: $bic,
+            ),
+        );
+    }
+
+    /**
+     * Create a legal person vehicle holder whose data the API takes from a
+     * durable power of attorney. Requires API 2.7.0 and is not accepted for the
+     * service type code HA.
+     *
+     * The power of attorney has to be COMPLETE, active and not expired, see
+     * {@see \Dropshipping\DTO\Responses\VehicleRegistrationDurablePowerOfAttorney::isUsable()}.
+     */
+    public static function registrationLegalPersonVehicleHolderFromDurablePowerOfAttorney(
+        string $durablePowerOfAttorneyId,
+    ): VehicleRegistrationLegalPersonVehicleHolder {
+        return new VehicleRegistrationLegalPersonVehicleHolder(
+            personData: new VehicleRegistrationLegalPersonDurablePowerOfAttorneyReferencePersonData(
+                durablePowerOfAttorneyId: $durablePowerOfAttorneyId,
+            ),
         );
     }
 
@@ -818,7 +854,7 @@ final class DS
      * Create a vehicle registration request for a holder built beforehand.
      *
      * The way to order a registration for a legal person, and the way to send
-     * the `vehicleHolder.type` API 2.7.0 requires. Which holder implementation
+     * the holder shape API 2.7.0 requires. Which holder implementation
      * fits which API version is listed on
      * {@see VehicleRegistrationVehicleHolderInterface}.
      */
@@ -905,23 +941,28 @@ final class DS
      *
      * The signer gets the signing invitation by email. $expirationDate
      * (YYYY-MM-DD) may be at most one year from today; null lets the API set
-     * exactly that.
+     * exactly that. $deliveryConfigurations says where the registration documents
+     * go; null has both delivered to the vehicle holder.
      */
     public static function durablePowerOfAttorney(
         VehicleRegistrationDurablePowerOfAttorneyCompany $company,
         string $signerFirstName,
         string $signerLastName,
+        Gender $signerGender,
         string $signerEmail,
         ?string $expirationDate = null,
+        ?VehicleRegistrationDeliveryConfigurations $deliveryConfigurations = null,
     ): VehicleRegistrationDurablePowerOfAttorneyCreationRequest {
         return new VehicleRegistrationDurablePowerOfAttorneyCreationRequest(
             company: $company,
             signer: new VehicleRegistrationDurablePowerOfAttorneySigner(
                 firstName: $signerFirstName,
                 lastName: $signerLastName,
+                gender: $signerGender,
                 email: $signerEmail,
             ),
             expirationDate: $expirationDate,
+            deliveryConfigurations: $deliveryConfigurations,
         );
     }
 }

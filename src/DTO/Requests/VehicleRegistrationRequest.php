@@ -16,56 +16,54 @@ use Dropshipping\Support\Validator;
  * Contains the customer email, customization details, vehicle holder
  * information, and optional external order ID and GKS configuration reference.
  *
- * ## Rules spanning the holder and the customization
+ * ## Where the IBAN and the identity document go
  *
- * This is the only place where both are known, so the rules connecting them are
- * checked here rather than in either DTO:
+ * API 2.7.0 moved both onto the vehicle holder. Up to 2.6.0 the IBAN and BIC sit
+ * in the customization and the identity document on the request itself. So
+ * which fields are allowed follows from the holder class:
+ *
+ * - {@see VehicleRegistrationVehicleHolder} (up to 2.6.0): `customization.iban`
+ *   is required for every service type code but `HA`, `bic` and
+ *   {@see $identityVerificationDocumentType} sit where they always did.
+ * - {@see VehicleRegistrationNaturalPersonVehicleHolder} and
+ *   {@see VehicleRegistrationLegalPersonVehicleHolder} (2.7.0):
+ *   `customization.iban`, `customization.bic` and
+ *   {@see $identityVerificationDocumentType} must be null. The natural person
+ *   carries all three itself, and its IBAN is required for every code but `HA`.
+ *   A legal person carries IBAN and BIC in its person data, which checks them
+ *   itself, or takes them from a durable power of attorney.
+ *
+ * ## Further rules spanning the holder and the customization
  *
  * - A legal person cannot order a Halteränderung (`HA`). See
  *   {@see \Dropshipping\Enums\VehicleRegistrationServiceTypeCode::supportsLegalPersonVehicleHolder()}.
- * - A legal person carrying a `customsMajorCustomerId` settles the motor vehicle
- *   tax through the customs administration, which replaces the SEPA direct debit
- *   mandate: `customization.iban` and `customization.bic` must both be empty
- *   then.
- * - Without such an ID, `customization.iban` is required for every service type
- *   code but `HA`. See
- *   {@see \Dropshipping\Enums\VehicleRegistrationServiceTypeCode::requiresInsuranceAndTaxDetails()}.
- *
- * Both of the last two were enforced by
- * {@see VehicleRegistrationCustomization} up to SDK 2.6.0, where the IBAN was
- * simply required for every code but `HA`.
  *
  * ## Reusing an earlier identification
  *
  * {@see $recycledVehicleRegistrationOrderId} points at an earlier registration
  * order whose identity verification and signed files this one takes over, so the
  * customer does not identify themselves and sign a second time. The field has
- * been in the spec since 2.6.0 but was only described in 2.7.0, which lists what
- * the referenced order has to satisfy:
+ * been in the spec since 2.6.0 but was only described in 2.7.0. It is not
+ * supported for a legal person, which is checked here. The referenced order has
+ * to have the files this registration needs: the power of attorney, the SEPA
+ * direct debit mandate (except for `HA`), and the GDPR consent declaration of a
+ * natural person (except for `HA`).
  *
- * - the same `vehicleHolder.type`, and for a legal person the same
- *   `vehicleHolder.name`, compared case insensitively and ignoring surrounding
- *   whitespace;
- * - the files this registration needs: the power of attorney, the SEPA direct
- *   debit mandate (except for `HA` and for a holder with a
- *   `customsMajorCustomerId`), and the GDPR consent declaration of a natural
- *   person (except for `HA`).
- *
- * None of that is checkable here, because it is all about the *other* order. The
- * API rejects a mismatch, so a rejected registration carrying this field is
- * worth checking against the list above first.
+ * That is not checkable here, because it is about the *other* order. The API
+ * rejects a mismatch, so a rejected registration carrying this field is worth
+ * checking against the list first.
  */
 final readonly class VehicleRegistrationRequest
 {
     /**
-     * @param string                                 $email                            Customer email address.
-     * @param VehicleRegistrationCustomization       $customization                    Vehicle registration customization details.
-     * @param VehicleRegistrationVehicleHolderInterface $vehicleHolder                 Vehicle holder information. Which implementation to pass depends on the API version, see {@see VehicleRegistrationVehicleHolderInterface}.
-     * @param string|null                            $externalOrderId                  Optional external order identifier.
-     * @param string|null                            $gksConfigurationId               Optional UUID of the GKS configuration to use.
-     * @param string|null                            $contractPartnerKopaKey           Optional (KBA) Vertragspartner-Kopa (Schlüssel) to include in the registration request.
-     * @param IdentityVerificationDocumentType|null  $identityVerificationDocumentType Document the customer identifies themselves with. Required by API 2.6.0 and rejected with 400 when omitted there; not part of 2.4.0 or 2.5.0, so it stays optional here and is left out of the payload when null. Correct it after the fact with {@see \Dropshipping\Endpoints\VehicleRegistrations\VehicleRegistrationsEndpoint::updateIdentityVerificationDocumentType()}.
-     * @param int|null                               $recycledVehicleRegistrationOrderId Order ID of an earlier vehicle registration whose identity verification and signed files are reused, so the customer goes through neither a second time. Requires API 2.6.0. Serialized as `recycledVehicleRegistration.orderId`, and left out of the payload when null. See the class docblock for what the referenced order has to satisfy.
+     * @param string                                    $email                              Customer email address.
+     * @param VehicleRegistrationCustomization          $customization                      Vehicle registration customization details.
+     * @param VehicleRegistrationVehicleHolderInterface $vehicleHolder                      Vehicle holder information. Which implementation to pass depends on the API version, see {@see VehicleRegistrationVehicleHolderInterface}.
+     * @param string|null                               $externalOrderId                    Optional external order identifier.
+     * @param string|null                               $gksConfigurationId                 Optional UUID of the GKS configuration to use.
+     * @param string|null                               $contractPartnerKopaKey             Optional (KBA) Vertragspartner-Kopa (Schlüssel) to include in the registration request.
+     * @param IdentityVerificationDocumentType|null     $identityVerificationDocumentType   Document the customer identifies themselves with, for API 2.6.0 only: required there, unknown to 2.4.0 and 2.5.0, and moved onto the natural person holder in 2.7.0. So it must be null with a 2.7.0 holder, and is left out of the payload when null. Correct it after the fact with {@see \Dropshipping\Endpoints\VehicleRegistrations\VehicleRegistrationsEndpoint::updateIdentityVerificationDocumentType()}.
+     * @param int|null                                  $recycledVehicleRegistrationOrderId Order ID of an earlier vehicle registration whose identity verification and signed files are reused, so the customer goes through neither a second time. Requires API 2.6.0 and is not supported for a legal person. Serialized as `recycledVehicleRegistration.orderId`, and left out of the payload when null. See the class docblock for what the referenced order has to satisfy.
      *
      * @throws DropshippingException When a value violates the API constraints, or
      *                               when the holder and the customization contradict
@@ -91,28 +89,40 @@ final readonly class VehicleRegistrationRequest
         Validator::requireNullableIntRange($recycledVehicleRegistrationOrderId, 'recycledVehicleRegistrationOrderId', 1, PHP_INT_MAX);
 
         $serviceTypeCode = $customization->vehicleRegistrationServiceTypeCode;
+        $forCode = sprintf('for vehicleRegistrationServiceTypeCode %s', $serviceTypeCode->value);
+        $holderType = $vehicleHolder->holderType();
 
-        if (
-            $vehicleHolder->holderType() === VehicleRegistrationVehicleHolderType::LegalPerson
-            && !$serviceTypeCode->supportsLegalPersonVehicleHolder()
-        ) {
-            throw new DropshippingException(sprintf(
-                'A vehicleHolder of type %s is not supported for vehicleRegistrationServiceTypeCode %s',
-                VehicleRegistrationVehicleHolderType::LegalPerson->value,
-                $serviceTypeCode->value,
-            ));
+        if ($holderType === null) {
+            if ($serviceTypeCode->requiresInsuranceAndTaxDetails()) {
+                Validator::requireNotNull($customization->iban, 'customization.iban', $forCode);
+            }
+
+            return;
         }
 
-        if ($vehicleHolder->customsMajorCustomerId() !== null) {
-            $whenCustoms = 'when vehicleHolder.customsMajorCustomerId is set';
+        $forHolderType = sprintf('for a vehicleHolder of type %s, which carries it itself', $holderType->value);
 
-            Validator::requireNull($customization->iban, 'customization.iban', $whenCustoms);
-            Validator::requireNull($customization->bic, 'customization.bic', $whenCustoms);
-        } elseif ($serviceTypeCode->requiresInsuranceAndTaxDetails()) {
-            Validator::requireNotNull(
-                $customization->iban,
-                'customization.iban',
-                sprintf('for vehicleRegistrationServiceTypeCode %s', $serviceTypeCode->value),
+        Validator::requireNull($customization->iban, 'customization.iban', $forHolderType);
+        Validator::requireNull($customization->bic, 'customization.bic', $forHolderType);
+        Validator::requireNull($identityVerificationDocumentType, 'identityVerificationDocumentType', $forHolderType);
+
+        if ($vehicleHolder instanceof VehicleRegistrationNaturalPersonVehicleHolder && $serviceTypeCode->requiresInsuranceAndTaxDetails()) {
+            Validator::requireNotNull($vehicleHolder->iban, 'vehicleHolder.iban', $forCode);
+        }
+
+        if ($holderType === VehicleRegistrationVehicleHolderType::LegalPerson) {
+            if (!$serviceTypeCode->supportsLegalPersonVehicleHolder()) {
+                throw new DropshippingException(sprintf(
+                    'A vehicleHolder of type %s is not supported for vehicleRegistrationServiceTypeCode %s',
+                    $holderType->value,
+                    $serviceTypeCode->value,
+                ));
+            }
+
+            Validator::requireNull(
+                $recycledVehicleRegistrationOrderId,
+                'recycledVehicleRegistrationOrderId',
+                sprintf('for a vehicleHolder of type %s', $holderType->value),
             );
         }
     }

@@ -791,7 +791,6 @@ paths:
                 "contractPartnerKopaKey" : "K123X",
                 "externalOrderId": "dropshipping-api-vehicle-registration",
                 "email": "dropshipping-api-end-customer@localhost.test",
-                "identityVerificationDocumentType": "GERMAN_ID",
                 "customization": {
                   "vehicleRegistrationServiceTypeCode": "UM",
                   "licensePlateNumberAssignmentStrategy": {
@@ -815,8 +814,6 @@ paths:
                   "vehicleRegistrationCertificateSecurityCode": "VRCS123",
                   "vehicleTitleNumber": "VT123456",
                   "vehicleTitleSecurityCode": "B12345678900",
-                  "iban": "DE0123456789000",
-                  "bic": "BYLADEM1001",
                   "previousLicensePlate": {
                     "licensePlateNumberComponents": {
                       "usageType": "EURO",
@@ -833,6 +830,7 @@ paths:
                 },
                 "vehicleHolder": {
                   "type": "NATURAL_PERSON",
+                  "identityVerificationDocumentType": "GERMAN_ID",
                   "address": {
                     "additionalField": "Iadditional",
                     "firstName": "Ifirst",
@@ -849,7 +847,9 @@ paths:
                   },
                   "birthDate": "2000-01-31",
                   "placeOfBirth": "Bcity",
-                  "birthName": "Bname"
+                  "birthName": "Bname",
+                  "iban": "DE0123456789000",
+                  "bic": "BYLADEM1001"
                 }
               }
 
@@ -954,12 +954,21 @@ paths:
                           "bic" : "BYLADEM1001"
                         }
                       },
+                      "deliveryConfigurations": {
+                        "vehicleRegistrationCertificate": {
+                          "deliveryOption": "DELIVERY_TO_OWNER"
+                        },
+                        "vehicleTitle": {
+                          "deliveryOption": "DELIVERY_TO_OWNER"
+                        }
+                      },
                       "expirationDate" : "2000-10-31",
                       "id" : "11111111-1111-1111-1111-111111111111",
                       "signer" : {
                         "email" : "signer@localhost.test",
                         "firstName" : "Company Name",
-                        "lastName" : "Company Number"
+                        "lastName" : "Company Number",
+                        "gender": "MALE"
                       },
                       "status" : "INCOMPLETE"
                     }
@@ -999,6 +1008,7 @@ paths:
                 "signer": {
                   "firstName": "Company Name",
                   "lastName": "Company Number",
+                  "gender": "MALE",
                   "email": "signer@localhost.test"
                 }
               }
@@ -1026,12 +1036,21 @@ paths:
                       "bic": "BYLADEM1001"
                     }
                   },
+                  "deliveryConfigurations": {
+                    "vehicleRegistrationCertificate": {
+                      "deliveryOption": "DELIVERY_TO_OWNER"
+                    },
+                    "vehicleTitle": {
+                      "deliveryOption": "DELIVERY_TO_OWNER"
+                    }
+                  },
                   "expirationDate": "2000-10-31",
                   "id": "11111111-1111-1111-1111-111111111111",
                   "signer": {
                     "email": "signer@localhost.test",
                     "firstName": "Company Name",
-                    "lastName": "Company Number"
+                    "lastName": "Company Number",
+                    "gender": "MALE"
                   },
                   "status": "INCOMPLETE"
                 }
@@ -1076,11 +1095,20 @@ paths:
                     }
                   },
                   "expirationDate": "2000-10-31",
+                  "deliveryConfigurations": {
+                    "vehicleRegistrationCertificate": {
+                      "deliveryOption": "DELIVERY_TO_OWNER"
+                    },
+                    "vehicleTitle": {
+                      "deliveryOption": "DELIVERY_TO_OWNER"
+                    }
+                  },
                   "id": "11111111-1111-1111-1111-111111111111",
                   "signer": {
                     "email": "signer@localhost.test",
                     "firstName": "Company Name",
-                    "lastName": "Company Number"
+                    "lastName": "Company Number",
+                    "gender": "MALE"
                   },
                   "status": "INCOMPLETE"
                 }
@@ -2089,23 +2117,6 @@ components:
           minLength: 12
           maxLength: 12
           description: Security code from Fahrzeugbrief / Zulassungsbescheinigung Teil II. Required for all vehicleRegistrationServiceTypeCodes except HA, where it must be omitted or null.
-        iban:
-          type: string
-          nullable: true
-          minLength: 15
-          maxLength: 34
-          description: >-
-            Required for all vehicleRegistrationServiceTypeCodes except HA.
-            Must be omitted or null if vehicleHolder.customsMajorCustomerId is set.
-        bic:
-          type: string
-          nullable: true
-          minLength: 8
-          maxLength: 11
-          description: >-
-            Required for all vehicleRegistrationServiceTypeCodes except HA if iban starts with MC, SM or CH
-            (Monaco, San Marino, Switzerland), optional otherwise.
-            Must be omitted or null if vehicleHolder.customsMajorCustomerId is set.
         previousLicensePlate:
           $ref: '#/components/schemas/VehicleRegistrationPreviousLicensePlate'
         deliveryConfigurations:
@@ -2122,6 +2133,7 @@ components:
           $ref: '#/components/schemas/VehicleRegistrationDeliveryConfiguration'
         vehicleTitle:
           $ref: '#/components/schemas/VehicleRegistrationDeliveryConfiguration'
+      description: If omitted or null, DELIVERY_TO_OWNER deliveryOption is assumed for vehicleRegistrationCertificate and vehicleTitle.
 
     VehicleRegistrationDeliveryConfigurationDeliveryOption:
       type: string
@@ -2371,6 +2383,7 @@ components:
       required:
         - firstName
         - lastName
+        - gender
         - email
       properties:
         firstName:
@@ -2381,6 +2394,8 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+        gender:
+          $ref: '#/components/schemas/Gender'
         email:
           type: string
           minLength: 3
@@ -2440,6 +2455,8 @@ components:
           $ref: '#/components/schemas/VehicleRegistrationDurablePowerOfAttorneyCompany'
         signer:
           $ref: '#/components/schemas/VehicleRegistrationDurablePowerOfAttorneySigner'
+        deliveryConfigurations:
+          $ref: '#/components/schemas/VehicleRegistrationDeliveryConfigurations'
 
     VehicleRegistrationDurablePowerOfAttorneyStatus:
       type: string
@@ -2468,7 +2485,6 @@ components:
         - customization
         - email
         - vehicleHolder
-        - identityVerificationDocumentType
       properties:
         customization:
           $ref: '#/components/schemas/VehicleRegistrationCustomization'
@@ -2494,8 +2510,6 @@ components:
           nullable: true
         vehicleHolder:
           $ref: '#/components/schemas/VehicleRegistrationRequestVehicleHolder'
-        identityVerificationDocumentType:
-          $ref: '#/components/schemas/IdentityVerificationDocumentType'
         recycledVehicleRegistration:
           type: object
           nullable: true
@@ -2507,8 +2521,8 @@ components:
               format: int64
               description: >-
                 Order of a vehicle registration whose identity verification and signed files are reused.
-                It must have the same vehicleHolder.type and, for LEGAL_PERSON, the same vehicleHolder.name
-                (ignoring case and surrounding whitespace). It must have the files this vehicle registration requires:
+                Not supported for LEGAL_PERSON.
+                It must have the files this vehicle registration requires:
                 the power of attorney, the SEPA direct debit mandate except for vehicleRegistrationServiceTypeCode HA
                 and vehicleHolder.customsMajorCustomerId, and the GDPR consent declaration of a NATURAL_PERSON
                 except for vehicleRegistrationServiceTypeCode HA.
@@ -2531,12 +2545,9 @@ components:
           LEGAL_PERSON: '#/components/schemas/VehicleRegistrationRequestLegalPersonVehicleHolder'
       required:
         - type
-        - address
       properties:
         type:
           $ref: '#/components/schemas/VehicleRegistrationRequestVehicleHolderType'
-        address:
-          $ref: "#/components/schemas/Address"
 
     VehicleRegistrationRequestNaturalPersonVehicleHolder:
       type: object
@@ -2545,7 +2556,11 @@ components:
       required:
         - placeOfBirth
         - birthDate
+        - address
+        - identityVerificationDocumentType
       properties:
+        identityVerificationDocumentType:
+          $ref: '#/components/schemas/IdentityVerificationDocumentType'
         placeOfBirth:
           type: string
           minLength: 1
@@ -2557,19 +2572,65 @@ components:
           nullable: true
           minLength: 1
           maxLength: 100
+        address:
+          $ref: "#/components/schemas/Address"
+        iban:
+          type: string
+          nullable: true
+          minLength: 15
+          maxLength: 34
+          description: >-
+            Required for all vehicleRegistrationServiceTypeCodes except HA.
+        bic:
+          type: string
+          nullable: true
+          minLength: 8
+          maxLength: 11
+          description: >-
+            Required for all vehicleRegistrationServiceTypeCodes except HA if iban starts with MC, SM or CH
+            (Monaco, San Marino, Switzerland), optional otherwise.
 
-    VehicleRegistrationRequestLegalPersonVehicleHolder:
+    VehicleRegistrationRequestLegalPersonVehicleHolderPersonDataType:
+      type: string
+      enum:
+        - DURABLE_POWER_OF_ATTORNEY_REFERENCE
+        - PROVIDED
+
+    VehicleRegistrationRequestLegalPersonVehicleHolderPersonData:
       type: object
-      description: >-
-        Legal person (juristische Person) as vehicle holder. Not supported for vehicleRegistrationServiceTypeCode HA.
-        The address is the address of the legal person, its firstName, lastName and gender name a contact person.
-        The companyName of the address is not transmitted as the name of the vehicle holder.
+      anyOf:
+        - $ref: '#/components/schemas/VehicleRegistrationRequestLegalPersonVehicleHolderDurablePowerOfAttorneyReferencePersonData'
+        - $ref: '#/components/schemas/VehicleRegistrationRequestLegalPersonVehicleHolderProvidedPersonData'
+      discriminator:
+        propertyName: type
+        mapping:
+          DURABLE_POWER_OF_ATTORNEY_REFERENCE: '#/components/schemas/VehicleRegistrationRequestLegalPersonVehicleHolderDurablePowerOfAttorneyReferencePersonData'
+          PROVIDED: '#/components/schemas/VehicleRegistrationRequestLegalPersonVehicleHolderProvidedPersonData'
+      required:
+        - type
+      properties:
+        type:
+          $ref: '#/components/schemas/VehicleRegistrationRequestLegalPersonVehicleHolderPersonDataType'
+
+    VehicleRegistrationRequestLegalPersonVehicleHolderDurablePowerOfAttorneyReferencePersonData:
+      type: object
       allOf:
-        - $ref: '#/components/schemas/VehicleRegistrationRequestVehicleHolder'
+        - $ref: '#/components/schemas/VehicleRegistrationRequestLegalPersonVehicleHolderPersonData'
+      required:
+        - durablePowerOfAttorneyId
+      properties:
+        durablePowerOfAttorneyId:
+          $ref: "#/components/schemas/VehicleRegistrationDurablePowerOfAttorneyId"
+
+    VehicleRegistrationRequestLegalPersonVehicleHolderProvidedPersonData:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/VehicleRegistrationRequestLegalPersonVehicleHolderPersonData'
       required:
         - name
         - industryCode
         - companyNumber
+        - address
       properties:
         name:
           description: Name of the legal person.
@@ -2595,6 +2656,40 @@ components:
           type: string
           nullable: true
           pattern: '^[0-9]{3}[A-Z][0-9]{4}$'
+        iban:
+          type: string
+          nullable: true
+          minLength: 15
+          maxLength: 34
+          description: >-
+            Required for all vehicleRegistrationServiceTypeCodes except HA.
+            Must be omitted or null if customsMajorCustomerId is set.
+        bic:
+          type: string
+          nullable: true
+          minLength: 8
+          maxLength: 11
+          description: >-
+            Required for all vehicleRegistrationServiceTypeCodes except HA if iban starts with MC, SM or CH
+            (Monaco, San Marino, Switzerland), optional otherwise.
+            Must be omitted or null if customsMajorCustomerId is set.
+        address:
+          $ref: "#/components/schemas/Address"
+
+    VehicleRegistrationRequestLegalPersonVehicleHolder:
+      type: object
+      description: >-
+        Legal person (juristische Person) as vehicle holder. Not supported for vehicleRegistrationServiceTypeCode HA.
+        The address is the address of the legal person, its firstName, lastName and gender name a contact person.
+        The companyName of the address is not transmitted as the name of the vehicle holder.
+      allOf:
+        - $ref: '#/components/schemas/VehicleRegistrationRequestVehicleHolder'
+      required:
+        - personData
+      properties:
+        personData:
+          $ref: "#/components/schemas/VehicleRegistrationRequestLegalPersonVehicleHolderPersonData"
+
     VehicleRegistrationResponse:
       type: object
       required:

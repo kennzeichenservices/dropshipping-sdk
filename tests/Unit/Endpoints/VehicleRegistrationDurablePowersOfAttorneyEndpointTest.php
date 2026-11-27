@@ -8,6 +8,8 @@ use Dropshipping\Client\Authentication\ApiKeyAuthenticator;
 use Dropshipping\Client\Psr18HttpClient;
 use Dropshipping\DS;
 use Dropshipping\Endpoints\VehicleRegistrations\VehicleRegistrationsEndpoint;
+use Dropshipping\Enums\Gender;
+use Dropshipping\Enums\VehicleRegistrationDeliveryConfigurationDeliveryOption;
 use Dropshipping\Enums\VehicleRegistrationDurablePowerOfAttorneyCompanyTaxDataType;
 use Dropshipping\Enums\VehicleRegistrationDurablePowerOfAttorneyStatus;
 use Dropshipping\Exceptions\ApiException;
@@ -59,6 +61,7 @@ final class VehicleRegistrationDurablePowersOfAttorneyEndpointTest extends TestC
             ),
             signerFirstName: 'Erika',
             signerLastName: 'Musterfrau',
+            signerGender: Gender::Female,
             signerEmail: 'signer@localhost.test',
             expirationDate: '2027-10-31',
         ));
@@ -74,12 +77,17 @@ final class VehicleRegistrationDurablePowersOfAttorneyEndpointTest extends TestC
                 'taxData' => ['type' => 'SEPA_DIRECT_DEBIT_MANDATE', 'iban' => 'DE0123456789000', 'bic' => 'BYLADEM1001'],
                 'number' => 'HRB 123456',
             ],
-            'signer' => ['firstName' => 'Erika', 'lastName' => 'Musterfrau', 'email' => 'signer@localhost.test'],
+            'signer' => ['firstName' => 'Erika', 'lastName' => 'Musterfrau', 'gender' => 'FEMALE', 'email' => 'signer@localhost.test'],
             'expirationDate' => '2027-10-31',
         ], $sentBody);
 
         self::assertSame(self::ID, $created->id);
         self::assertSame('G01', $created->company->industryCode);
+        self::assertSame(Gender::Female, $created->signer->gender);
+        self::assertSame(
+            VehicleRegistrationDeliveryConfigurationDeliveryOption::DeliveryToOwner,
+            $created->deliveryConfigurations?->vehicleTitle?->deliveryOption,
+        );
         self::assertSame(VehicleRegistrationDurablePowerOfAttorneyStatus::Incomplete, $created->status);
         self::assertSame(VehicleRegistrationDurablePowerOfAttorneyCompanyTaxDataType::SepaDirectDebitMandate, $created->company->taxData->type);
     }
@@ -99,6 +107,7 @@ final class VehicleRegistrationDurablePowersOfAttorneyEndpointTest extends TestC
                 company: DS::durablePowerOfAttorneyCompany('Company X', 'G01', 'Street X', '1', '12345', 'City X', DS::durablePowerOfAttorneyCustomsTaxData('123A4567')),
                 signerFirstName: 'Erika',
                 signerLastName: 'Musterfrau',
+                signerGender: Gender::Female,
                 signerEmail: 'signer@localhost.test',
             ));
             self::fail('Expected ApiException');
@@ -238,7 +247,11 @@ final class VehicleRegistrationDurablePowersOfAttorneyEndpointTest extends TestC
             ],
             'expirationDate' => '2000-10-31',
             'id' => self::ID,
-            'signer' => ['email' => 'signer@localhost.test', 'firstName' => 'Erika', 'lastName' => 'Musterfrau'],
+            'deliveryConfigurations' => [
+                'vehicleRegistrationCertificate' => ['deliveryOption' => 'DELIVERY_TO_OWNER'],
+                'vehicleTitle' => ['deliveryOption' => 'DELIVERY_TO_OWNER'],
+            ],
+            'signer' => ['email' => 'signer@localhost.test', 'firstName' => 'Erika', 'lastName' => 'Musterfrau', 'gender' => 'FEMALE'],
             'status' => 'INCOMPLETE',
         ];
     }

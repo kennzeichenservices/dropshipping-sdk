@@ -20,8 +20,8 @@ enum VehicleRegistrationVehicleHolderType: string
 
     /**
      * A company or other legal entity (juristische Person), identified by its
-     * name, company register number and industry. Not supported for the service
-     * type code `HA`.
+     * name, company register number and industry, sent along or taken from a
+     * durable power of attorney. Not supported for the service type code `HA`.
      */
     case LegalPerson = 'LEGAL_PERSON';
 }

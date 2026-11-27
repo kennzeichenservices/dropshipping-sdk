@@ -22,10 +22,10 @@ use Dropshipping\Enums\{
 // the payload while it is null, so one script can serve all three versions as long as the value
 // is set whenever DROPSHIPPING_API_VERSION is 2.6.0 or later.
 //
-// 2.7.0 goes one step further: vehicleHolder.type becomes required, and no earlier version knows
-// it. DS::vehicleRegistration() below keeps sending the holder without it, which is what 2.4.0 to
-// 2.6.0 expect and 2.7.0 rejects with 400. On 2.7.0 use DS::vehicleRegistrationWithHolder() with
-// an explicit holder instead, as shown at the end of this script.
+// 2.7.0 goes one step further: vehicleHolder.type becomes required, and identityVerificationDocumentType,
+// iban and bic move onto the holder. DS::vehicleRegistration() below keeps sending the 2.6.0 shape,
+// which 2.7.0 rejects with 400. On 2.7.0 use DS::vehicleRegistrationWithHolder() with an explicit
+// holder instead, as shown at the end of this script.
 
 $address = DS::address(
     firstName: 'Max',
@@ -164,21 +164,22 @@ echo "Registration order created: {$response->orderId}\n";
 //       recycledVehicleRegistrationOrderId: 12345,
 //   );
 //
-// The referenced order has to match this one: the same vehicleHolder.type, and for a legal person
-// the same vehicleHolder.name (case insensitive, surrounding whitespace ignored). It also has to
-// carry the files this registration needs, which are the power of attorney, the SEPA direct debit
-// mandate (except for HA and for a holder with a customsMajorCustomerId) and, for a natural
-// person, the GDPR consent declaration (except for HA). None of that is checkable in the SDK,
-// since it is all about the other order, so the API is what rejects a mismatch. The SDK only
-// rejects an order ID of zero or less, which cannot name an order.
+// Not supported for a legal person on 2.7.0, the request throws for that combination. The
+// referenced order has to carry the files this registration needs, which are the power of
+// attorney, the SEPA direct debit mandate (except for HA) and, for a natural person, the GDPR
+// consent declaration (except for HA). None of that is checkable in the SDK, since it is about the
+// other order, so the API is what rejects a mismatch. The SDK only rejects an order ID of zero or
+// less, which cannot name an order.
 
 // ---------------------------------------------------------------------------
 // API 2.7.0: the vehicle holder carries a type, and can be a legal person
 // ---------------------------------------------------------------------------
 //
 // Up to 2.6.0 the holder was always a natural person and sent no type. 2.7.0 requires the
-// discriminator, so the SDK ships one holder per payload shape and lets the class decide what
-// goes out. Nothing above changes on an SDK update.
+// discriminator and moves the identity document, iban and bic onto the holder, so the SDK ships
+// one holder per payload shape and lets the class decide what goes out. Nothing above changes on
+// an SDK update. With a 2.7.0 holder the customization takes iban: null and bic: null, and the
+// request takes no identityVerificationDocumentType; the request throws otherwise.
 //
 // A natural person on 2.7.0:
 //
@@ -189,13 +190,15 @@ echo "Registration order created: {$response->orderId}\n";
 //           address: $address,
 //           placeOfBirth: 'Berlin',
 //           birthDate: '1990-01-31',
-//           birthName: 'Musterfrau',  // optional
+//           identityVerificationDocumentType: IdentityVerificationDocumentType::GermanId,
+//           birthName: 'Musterfrau',             // optional
+//           iban: 'DE89370400440532013000',      // required for every code but HA
+//           bic: 'COBADEFFXXX',                  // only required for an MC, SM or CH iban
 //       ),
-//       identityVerificationDocumentType: IdentityVerificationDocumentType::GermanId,
 //   );
 //
 // A company as the holder, which 2.7.0 introduced and which the service type code HA does not
-// accept:
+// accept. Its data goes into personData:
 //
 //   $industries = $client->vehicleHolderIndustries->getAll();   // cache this, see
 //                                                               // vehicle-holder-industries.php
@@ -210,11 +213,22 @@ echo "Registration order created: {$response->orderId}\n";
 //           name: 'Autohaus Muster GmbH',
 //           industryCode: 'G01',          // a code from $industries, three chars of A-Z and 0-9
 //           companyNumber: 'HRB 123456',  // company register number, for the verification
-//           // Optional major customer ID of the customs administration (Zoll-GK-Nr.). Where it
-//           // is set, the company settles the motor vehicle tax through customs instead of a
-//           // SEPA direct debit mandate, so the customization must leave iban and bic null.
-//           // The request throws if both are given, since the API rejects that combination.
+//           // Either the major customer ID of the customs administration (Zoll-GK-Nr.), which
+//           // settles the motor vehicle tax through customs, or an iban for the SEPA direct
+//           // debit mandate. Exactly one of the two, the holder throws otherwise.
 //           customsMajorCustomerId: '123A4567',
+//           iban: null,
 //       ),
-//       identityVerificationDocumentType: IdentityVerificationDocumentType::GermanId,
+//   );
+//
+// Or a durable power of attorney instead of the company's data. The API takes name, address,
+// industry and tax details from there, see durable-powers-of-attorney.php. It has to be COMPLETE,
+// active and not expired:
+//
+//   DS::vehicleRegistrationWithHolder(
+//       email: 'einkauf@autohaus-muster.de',
+//       customization: $customization,
+//       vehicleHolder: DS::registrationLegalPersonVehicleHolderFromDurablePowerOfAttorney(
+//           '11111111-1111-1111-1111-111111111111',
+//       ),
 //   );

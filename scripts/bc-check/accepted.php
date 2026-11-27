@@ -32,22 +32,25 @@ return [
         'Unreleased — same as above. All three entries can go once the compared-against tag '
         . 'carries the field.',
 
-    'durablePowerOfAttorney/with-industry-code' =>
-        'Unreleased — the API 2.7.0 spec added industryCode to the company of a durable power of '
-        . 'attorney, so the DTO gained the property. The baseline DTO drops the field on the floor, '
-        . 'so a difference here is the point of the entry.',
+    'durablePowerOfAttorney/with-gender-and-delivery' =>
+        'Unreleased: the API 2.7.0 spec added gender to the signer and deliveryConfigurations to a '
+        . 'durable power of attorney, so the DTOs gained the properties. The baseline DTOs drop the '
+        . 'fields on the floor, so a difference here is the point of the entry.',
 
     'durablePowerOfAttorney/spec-example' =>
-        'Unreleased — same addition, seen from a payload that predates the field: the new property '
-        . 'reads null instead of being absent. Every field the old DTO carried is unchanged.',
+        'Unreleased: same addition, seen from a payload that predates the fields: the new '
+        . 'properties read null instead of being absent. Every field the old DTOs carried is unchanged.',
+
+    'durablePowerOfAttorney/with-industry-code' =>
+        'Unreleased: same as above.',
 
     'durablePowerOfAttorney/customs-no-number' =>
-        'Unreleased — same as above.',
+        'Unreleased: same as above.',
 
     'durablePowerOfAttorney/unknown-status-and-tax-type' =>
-        'Unreleased — same as above.',
+        'Unreleased: same as above.',
 
     'durablePowersOfAttorney/list' =>
-        'Unreleased — same as above. All five entries can go once the compared-against tag carries '
-        . 'the field.',
+        'Unreleased: same as above. All six entries can go once the compared-against tag carries '
+        . 'the fields.',
 ];

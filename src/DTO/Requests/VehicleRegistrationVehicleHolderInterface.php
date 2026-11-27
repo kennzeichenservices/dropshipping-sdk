@@ -18,10 +18,12 @@ use Dropshipping\Enums\VehicleRegistrationVehicleHolderType;
  * - {@see VehicleRegistrationVehicleHolder}: a natural person *without* `type`,
  *   the payload every version up to 2.6.0 expects. Unchanged, so integrations
  *   written against an earlier SDK keep sending exactly what they sent before.
- * - {@see VehicleRegistrationNaturalPersonVehicleHolder}: the same holder *with*
- *   `type: NATURAL_PERSON`, required from 2.7.0 on.
+ * - {@see VehicleRegistrationNaturalPersonVehicleHolder}: a natural person
+ *   *with* `type: NATURAL_PERSON`, plus the identity document and the IBAN that
+ *   2.7.0 moved onto the holder.
  * - {@see VehicleRegistrationLegalPersonVehicleHolder}: a legal person, 2.7.0
- *   and up.
+ *   and up, with its data either sent along or taken from a durable power of
+ *   attorney.
  *
  * {@see holderType()} returning null is what tells the request DTO that the
  * holder predates the discriminator, and it is the one implementation whose
@@ -36,17 +38,16 @@ interface VehicleRegistrationVehicleHolderInterface
     public function holderType(): ?VehicleRegistrationVehicleHolderType;
 
     /**
-     * The address of the holder.
+     * The address of the holder, or null for a legal person whose data the API
+     * takes from a durable power of attorney.
      */
-    public function address(): Address;
+    public function address(): ?Address;
 
     /**
      * The major customer ID of the customs administration, if the holder has one.
      *
      * Only a legal person can carry one. Where it is set it replaces the SEPA
-     * direct debit mandate for the motor vehicle tax, which is why
-     * {@see VehicleRegistrationRequest} reads it to decide whether the
-     * customization may carry an IBAN.
+     * direct debit mandate for the motor vehicle tax.
      */
     public function customsMajorCustomerId(): ?string;
 

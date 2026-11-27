@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/_bootstrap.php';
 
 use Dropshipping\DS;
+use Dropshipping\Enums\Gender;
 use Dropshipping\Exceptions\ApiException;
 
 // NOTE: Durable powers of attorney need dropshipping API 2.7.0. Set DROPSHIPPING_API_VERSION=2.7.0 or
@@ -32,9 +33,13 @@ $request = DS::durablePowerOfAttorney(
     ),
     signerFirstName: 'Erika',
     signerLastName: 'Musterfrau',
+    signerGender: Gender::Female,
     signerEmail: 'erika.musterfrau@example.com',
     // Omitted, the API sets the maximum: one year from today.
     expirationDate: null,
+    // Omitted, both registration documents go to the vehicle holder. Takes the same
+    // DS::registrationDeliveryConfigurations(...) as a registration, see vehicle-registration.php.
+    deliveryConfigurations: null,
 );
 
 $created = $client->vehicleRegistrations->createDurablePowerOfAttorney($request);

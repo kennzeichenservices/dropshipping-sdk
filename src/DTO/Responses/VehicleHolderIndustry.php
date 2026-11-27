@@ -12,7 +12,7 @@ use Dropshipping\Support\Hydrator;
  *
  * One entry of the listing published by API 2.7.0, taken from the Berufsschlüssel
  * of the ErfassRL Kfz, a KBA reference table. The {@see $code} goes into
- * `vehicleHolder.industryCode` of a vehicle registration ordered for a legal
+ * `vehicleHolder.personData.industryCode` of a vehicle registration ordered for a legal
  * person, and into `company.industryCode` of a durable power of attorney.
  *
  * Note that a code is not unique in the listing: the same code can appear under

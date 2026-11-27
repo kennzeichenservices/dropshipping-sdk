@@ -9,8 +9,8 @@ Submits a vehicle registration (Kfz-Zulassung) via `POST /vehicleRegistrations/r
 > On 2.6.0, `identityVerificationDocumentType` is mandatory and the API answers `400` without it.
 > See [Identity verification document type](#identity-verification-document-type).
 >
-> On 2.7.0, `vehicleHolder.type` is mandatory and a legal person becomes possible as the holder.
-> See [Vehicle holder](#vehicle-holder).
+> On 2.7.0, `vehicleHolder.type` is mandatory, a legal person becomes possible as the holder, and
+> the identity document, IBAN and BIC move onto the holder. See [Vehicle holder](#vehicle-holder).
 
 ## What it does
 
@@ -52,8 +52,10 @@ licensePlateNumberAssignmentStrategy: DS::reservedLicensePlateNumber(
 | `VehicleRegistrationPreviousLicensePlate` | The plate the vehicle carried before, if any |
 | `VehicleRegistrationVehicleHolderInterface` | Implemented by the three holder variants, which decide whether and how `type` is sent |
 | `VehicleRegistrationVehicleHolder` | Natural person without `type`, the payload for API 2.4.0 to 2.6.0 |
-| `VehicleRegistrationNaturalPersonVehicleHolder` | Natural person with `type: NATURAL_PERSON`, API 2.7.0 |
-| `VehicleRegistrationLegalPersonVehicleHolder` | Legal person with `type: LEGAL_PERSON`, API 2.7.0 |
+| `VehicleRegistrationNaturalPersonVehicleHolder` | Natural person with `type: NATURAL_PERSON`, identity document and bank details, API 2.7.0 |
+| `VehicleRegistrationLegalPersonVehicleHolder` | Legal person with `type: LEGAL_PERSON` and `personData`, API 2.7.0 |
+| `VehicleRegistrationLegalPersonProvidedPersonData` | `personData` sent along: name, company number, industry, address, IBAN or customs ID |
+| `VehicleRegistrationLegalPersonDurablePowerOfAttorneyReferencePersonData` | `personData` taken from a durable power of attorney, named by its ID |
 | `VehicleHolderIndustriesResponse` | The industry codes a legal person holder can use (API 2.7.0) |
 | `VehicleRegistrationResponse` | `orderId` |
 | `VehicleRegistrationLicensePlateNumberAssignmentStrategyType` | Enum: `RANDOM`, `RESERVATION`, `RETAINMENT` |
@@ -74,18 +76,41 @@ For a natural person the registration API requires more than the address: both `
 
 ### Which holder class to pass
 
-API 2.7.0 added the discriminator `vehicleHolder.type` and made it required. No earlier version
-knows the field, so the SDK ships one holder per payload shape and the class decides what goes out:
+API 2.7.0 added the discriminator `vehicleHolder.type` and made it required, and it moved
+`identityVerificationDocumentType`, `iban` and `bic` onto the holder. No earlier version knows
+that shape, so the SDK ships one holder per payload shape and the class decides what goes out:
 
 | Factory | `type` in the payload | API versions |
 |---------|----------------------|--------------|
 | `DS::vehicleRegistration(...)`, which wraps `VehicleRegistrationVehicleHolder` | not sent | 2.4.0 to 2.6.0 |
 | `DS::registrationNaturalPersonVehicleHolder(...)` | `NATURAL_PERSON` | 2.7.0 |
-| `DS::registrationLegalPersonVehicleHolder(...)` | `LEGAL_PERSON` | 2.7.0 |
+| `DS::registrationLegalPersonVehicleHolder(...)` | `LEGAL_PERSON`, `personData.type: PROVIDED` | 2.7.0 |
+| `DS::registrationLegalPersonVehicleHolderFromDurablePowerOfAttorney(...)` | `LEGAL_PERSON`, `personData.type: DURABLE_POWER_OF_ATTORNEY_REFERENCE` | 2.7.0 |
 
-The two new holders are passed to `DS::vehicleRegistrationWithHolder(...)` rather than
+With any 2.7.0 holder the customization takes `iban: null, bic: null` and the request takes no
+`identityVerificationDocumentType`; the request throws otherwise. A natural person carries all
+three itself, its `iban` required for every code but `HA`. A legal person sends no identity
+document.
+
+The new holders are passed to `DS::vehicleRegistrationWithHolder(...)` rather than
 `DS::vehicleRegistration(...)`, which builds its holder itself. An existing call site therefore
 keeps sending exactly what it sent before the SDK learned about the discriminator.
+
+### A natural person on 2.7.0
+
+```php
+DS::vehicleRegistrationWithHolder(
+    email: 'max@example.com',
+    customization: $customization,  // iban: null, bic: null
+    vehicleHolder: DS::registrationNaturalPersonVehicleHolder(
+        address: $address,
+        placeOfBirth: 'Berlin',
+        birthDate: '1990-01-31',
+        identityVerificationDocumentType: IdentityVerificationDocumentType::GermanId,
+        iban: 'DE89370400440532013000',
+    ),
+);
+```
 
 ### A legal person as the holder
 
@@ -96,14 +121,14 @@ combination.
 $response = $client->vehicleRegistrations->createRegistration(
     DS::vehicleRegistrationWithHolder(
         email: 'einkauf@autohaus-muster.de',
-        customization: $customization,
+        customization: $customization,  // iban: null, bic: null
         vehicleHolder: DS::registrationLegalPersonVehicleHolder(
             address: $address,
             name: 'Autohaus Muster GmbH',
             industryCode: 'G01',
             companyNumber: 'HRB 123456',
+            iban: 'DE89370400440532013000',
         ),
-        identityVerificationDocumentType: IdentityVerificationDocumentType::GermanId,
     )
 );
 ```
@@ -117,12 +142,26 @@ for, so a company carrying one on its address has to repeat it there. The two ma
 characters of `A-Z` and `0-9`), the API checks existence, and it does so only after the customer
 has identified themselves and signed.
 
+### A durable power of attorney as the source of the holder data
+
+```php
+DS::vehicleRegistrationWithHolder(
+    email: 'einkauf@autohaus-muster.de',
+    customization: $customization,  // iban: null, bic: null
+    vehicleHolder: DS::registrationLegalPersonVehicleHolderFromDurablePowerOfAttorney($powerOfAttorney->id),
+);
+```
+
+The API takes name, address, industry and tax details from the power of attorney, see
+[durable-powers-of-attorney.md](durable-powers-of-attorney.md). It has to be `COMPLETE`, active and
+not expired; the SDK only checks that the ID is a UUID. `HA` is rejected as for any legal person.
+
 ### Paying the motor vehicle tax through customs
 
 A company holding a major customer ID of the customs administration (Zoll-GK-Nr.) settles the tax
-that way instead of by SEPA direct debit mandate. Pass it as `customsMajorCustomerId`, and leave
-`iban` and `bic` null on the customization; the request throws if both are given, since the API
-rejects that combination.
+that way instead of by SEPA direct debit mandate. Pass it as `customsMajorCustomerId` and leave
+`iban` and `bic` null. Exactly one of `iban` and `customsMajorCustomerId` is required, the holder
+throws otherwise.
 
 The ID is three digits, an upper case letter and four digits, for instance `123A4567`.
 
@@ -142,8 +181,11 @@ The last two need a second document showing the address, because neither paper c
 one.
 
 The field is **required on API 2.6.0** and unknown to 2.4.0 and 2.5.0. The SDK keeps it optional
-and leaves it out of the payload while it is `null`, so one call site serves all three versions.
-Set it whenever you run on 2.6.0 or the API answers `400`.
+on the request and leaves it out of the payload while it is `null`, so one call site serves all
+three versions. Set it whenever you run on 2.6.0 or the API answers `400`.
+
+2.7.0 moves it onto the natural person holder, where it is a required constructor argument. On the
+request it must stay `null` then. A legal person sends none.
 
 The choice can be corrected afterwards, for instance when the customer turns out not to hold a
 German ID card:
@@ -224,7 +266,7 @@ Zulassungsbescheinigung Teil II is not involved. Spec 2.5.0 publishes what follo
 | `licensePlateNumberAssignmentStrategy` | must be `RETAINMENT` | free (but not `RETAINMENT` for `NZ`) |
 | `vehicleTitleSecurityCode`, `vehicleTitleNumber` (ZB II) | must be `null` | security code required |
 | `electronicInsuranceConfirmationNumber` | optional | required |
-| `iban` | optional | required, unless the holder pays the tax through customs |
+| `iban` | optional | required, unless the holder pays the tax through customs or orders under a durable power of attorney |
 | vehicle holder | natural person only | natural or legal person (2.7.0) |
 
 The ZB I security code and `previousLicensePlate` stay required, as for every code but `NZ`. As
@@ -239,16 +281,15 @@ verification and signed files this one takes over, so the customer identifies th
 only once. It is serialized as `recycledVehicleRegistration.orderId` and needs API 2.6.0; the field
 has been in the spec since then, but 2.7.0 is the first version to describe it.
 
-The referenced order has to match this one:
+2.7.0 rules it out for every legal person, and the request throws for that combination: a
+durable power of attorney has already been through identification and signature, and any other
+legal person would usually have to sign again.
 
-- the same `vehicleHolder.type`, and for a legal person the same `vehicleHolder.name`, compared case
-  insensitively and ignoring surrounding whitespace;
-- the files this registration needs: the power of attorney, the SEPA direct debit mandate (except
-  for `HA` and for a holder with a `customsMajorCustomerId`) and, for a natural person, the GDPR
-  consent declaration (except for `HA`).
-
-None of that is checkable in the SDK, since it is all about the other order, so the API is what
-rejects a mismatch. The SDK only rejects an order ID of zero or less, which cannot name an order.
+The referenced order has to carry the files this registration needs: the power of attorney, the
+SEPA direct debit mandate (except for `HA`) and, for a natural person, the GDPR consent declaration
+(except for `HA`). That is not checkable in the SDK, since it is about the other order, so the API
+is what rejects a mismatch. The SDK only rejects an order ID of zero or less, which cannot name an
+order.
 
 ## The BIC and its three countries
 

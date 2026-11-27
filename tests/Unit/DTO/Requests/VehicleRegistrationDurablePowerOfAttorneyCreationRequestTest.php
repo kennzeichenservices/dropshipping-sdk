@@ -10,6 +10,8 @@ use Dropshipping\DTO\Requests\VehicleRegistrationDurablePowerOfAttorneyCreationR
 use Dropshipping\DTO\Requests\VehicleRegistrationDurablePowerOfAttorneyCustomsMajorCustomerTaxData;
 use Dropshipping\DTO\Requests\VehicleRegistrationDurablePowerOfAttorneySepaDirectDebitMandateTaxData;
 use Dropshipping\DTO\Requests\VehicleRegistrationDurablePowerOfAttorneySigner;
+use Dropshipping\DTO\VehicleRegistrationDeliveryConfigurations;
+use Dropshipping\Enums\Gender;
 use Dropshipping\Exceptions\DropshippingException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -33,7 +35,7 @@ final class VehicleRegistrationDurablePowerOfAttorneyCreationRequestTest extends
                 'cityName' => 'Berlin',
                 'taxData' => ['type' => 'SEPA_DIRECT_DEBIT_MANDATE', 'iban' => 'DE89370400440532013000'],
             ],
-            'signer' => ['firstName' => 'Erika', 'lastName' => 'Musterfrau', 'email' => 'erika@example.com'],
+            'signer' => ['firstName' => 'Erika', 'lastName' => 'Musterfrau', 'gender' => 'FEMALE', 'email' => 'erika@example.com'],
         ], $request->toArray());
     }
 
@@ -62,6 +64,7 @@ final class VehicleRegistrationDurablePowerOfAttorneyCreationRequestTest extends
             ),
             signerFirstName: 'Erika',
             signerLastName: 'Musterfrau',
+            signerGender: Gender::Female,
             signerEmail: 'erika@example.com',
             expirationDate: '2027-01-31',
         );
@@ -215,13 +218,76 @@ final class VehicleRegistrationDurablePowerOfAttorneyCreationRequestTest extends
         self::assertSame(100, mb_strlen($company->name));
     }
 
+    #[DataProvider('genders')]
+    public function test_signer_sends_the_gender(Gender $gender, string $expected): void
+    {
+        $signer = new VehicleRegistrationDurablePowerOfAttorneySigner('Erika', 'Musterfrau', $gender, 'erika@example.com');
+
+        self::assertSame($expected, $signer->toArray()['gender']);
+    }
+
+    /**
+     * @return iterable<string, array{Gender, string}>
+     */
+    public static function genders(): iterable
+    {
+        yield 'female' => [Gender::Female, 'FEMALE'];
+        yield 'male' => [Gender::Male, 'MALE'];
+        yield 'unspecified' => [Gender::Unspecified, 'UNSPECIFIED'];
+    }
+
+    /**
+     * A positional call written before the gender existed has to fail, rather
+     * than send the email address as something else.
+     */
+    public function test_a_positional_call_without_gender_fails(): void
+    {
+        $arguments = [
+            self::company(new VehicleRegistrationDurablePowerOfAttorneyCustomsMajorCustomerTaxData('123A4567')),
+            'Erika',
+            'Musterfrau',
+            'erika@example.com',
+            '2027-01-31',
+        ];
+
+        $this->expectException(\TypeError::class);
+
+        // Through reflection, because static analysis rightly refuses the direct call.
+        (new \ReflectionMethod(DS::class, 'durablePowerOfAttorney'))->invoke(null, ...$arguments);
+    }
+
+    public function test_delivery_configurations_are_sent_when_given(): void
+    {
+        $dealer = DS::registrationDocumentCompany(
+            address: DS::registrationDeliveryAddress('Autohausstraße', '7a', '80331', 'München'),
+            name: 'Autohaus Muster GmbH',
+        );
+
+        $request = DS::durablePowerOfAttorney(
+            company: self::company(new VehicleRegistrationDurablePowerOfAttorneyCustomsMajorCustomerTaxData('123A4567')),
+            signerFirstName: 'Erika',
+            signerLastName: 'Musterfrau',
+            signerGender: Gender::Female,
+            signerEmail: 'erika@example.com',
+            deliveryConfigurations: new VehicleRegistrationDeliveryConfigurations(
+                vehicleRegistrationCertificate: DS::deliverToVehicleHolder(),
+                vehicleTitle: DS::deliverToThirdParty($dealer),
+            ),
+        );
+
+        self::assertSame([
+            'vehicleRegistrationCertificate' => ['deliveryOption' => 'DELIVERY_TO_OWNER'],
+            'vehicleTitle' => ['deliveryOption' => 'DELIVERY_TO_THIRD_PARTY', 'recipient' => $dealer->toArray()],
+        ], $request->toArray()['deliveryConfigurations']);
+    }
+
     #[DataProvider('invalidSigners')]
     public function test_signer_rejects_values_outside_the_spec(string $firstName, string $lastName, string $email, string $field): void
     {
         $this->expectException(DropshippingException::class);
         $this->expectExceptionMessage(sprintf('"%s"', $field));
 
-        new VehicleRegistrationDurablePowerOfAttorneySigner($firstName, $lastName, $email);
+        new VehicleRegistrationDurablePowerOfAttorneySigner($firstName, $lastName, Gender::Female, $email);
     }
 
     /**
@@ -304,6 +370,6 @@ final class VehicleRegistrationDurablePowerOfAttorneyCreationRequestTest extends
 
     private static function signer(): VehicleRegistrationDurablePowerOfAttorneySigner
     {
-        return new VehicleRegistrationDurablePowerOfAttorneySigner('Erika', 'Musterfrau', 'erika@example.com');
+        return new VehicleRegistrationDurablePowerOfAttorneySigner('Erika', 'Musterfrau', Gender::Female, 'erika@example.com');
     }
 }

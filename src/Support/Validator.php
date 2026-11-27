@@ -11,6 +11,9 @@ use Dropshipping\Exceptions\DropshippingException;
  */
 final class Validator
 {
+    /** A UUID in its canonical 8-4-4-4-12 form, either letter case. */
+    private const UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iD';
+
     /**
      * Ensure that a string value is not empty.
      *
@@ -244,6 +247,19 @@ final class Validator
                 sprintf('Field "%s" must %s, got "%s"', $field, $description, $value),
             );
         }
+    }
+
+    /**
+     * Validate a UUID in its canonical 8-4-4-4-12 form, either letter case.
+     *
+     * @param string $value The value to validate.
+     * @param string $field The field name used in the exception message.
+     *
+     * @throws DropshippingException If the value is not a UUID.
+     */
+    public static function requireUuid(string $value, string $field): void
+    {
+        self::requirePattern($value, $field, self::UUID_PATTERN, 'be a UUID');
     }
 
     /**

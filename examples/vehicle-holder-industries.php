@@ -39,7 +39,7 @@ echo "\n";
 $industryCode = 'G01';
 
 if ($industries->hasCode($industryCode)) {
-    echo "{$industryCode} is accepted as vehicleHolder.industryCode\n";
+    echo "{$industryCode} is accepted as vehicleHolder.personData.industryCode\n";
 } else {
     echo "{$industryCode} is not in the listing, pick another one\n";
 }

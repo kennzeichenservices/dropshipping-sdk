@@ -24,9 +24,6 @@ use Dropshipping\Support\Validator;
  */
 final class VehicleRegistrationsEndpoint
 {
-    /** A UUID in its canonical 8-4-4-4-12 form, either letter case. */
-    private const UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iD';
-
     /**
      * @param Psr18HttpClient $httpClient      HTTP client for sending requests.
      * @param RequestFactory  $requestFactory  Factory for creating HTTP request objects.
@@ -233,7 +230,7 @@ final class VehicleRegistrationsEndpoint
     {
         // Checked here so a mix-up (an order ID, an empty string) does not travel
         // into the URL path and hit the listing or an unrelated route.
-        Validator::requirePattern($id, 'id', self::UUID_PATTERN, 'be a UUID');
+        Validator::requireUuid($id, 'id');
 
         $httpRequest = $this->requestFactory->createJsonRequest(
             'GET',

@@ -21,12 +21,13 @@ final readonly class VehicleRegistrationDurablePowerOfAttorney
     private const CONTEXT = 'VehicleRegistrationDurablePowerOfAttorney';
 
     /**
-     * @param string                                                 $id             UUID of the power of attorney. Webhook events reference it by this ID.
-     * @param string                                                 $expirationDate Date the power of attorney expires, YYYY-MM-DD.
-     * @param bool                                                   $active         False once revoked, true otherwise.
-     * @param VehicleRegistrationDurablePowerOfAttorneyStatus        $status         Processing status. Unmodelled values come back as Unknown.
-     * @param VehicleRegistrationDurablePowerOfAttorneyCompanyDetails $company       The company it was issued for.
-     * @param VehicleRegistrationDurablePowerOfAttorneySignerDetails $signer         The person who signs for the company.
+     * @param string                                                  $id                     UUID of the power of attorney. Webhook events reference it by this ID.
+     * @param string                                                  $expirationDate         Date the power of attorney expires, YYYY-MM-DD.
+     * @param bool                                                    $active                 False once revoked, true otherwise.
+     * @param VehicleRegistrationDurablePowerOfAttorneyStatus         $status                 Processing status. Unmodelled values come back as Unknown.
+     * @param VehicleRegistrationDurablePowerOfAttorneyCompanyDetails $company                The company it was issued for.
+     * @param VehicleRegistrationDurablePowerOfAttorneySignerDetails  $signer                 The person who signs for the company.
+     * @param VehicleRegistrationDeliveryConfigurationsDetails|null   $deliveryConfigurations Where the registration documents go. Null where the API returns none, which means both go to the vehicle holder.
      */
     public function __construct(
         public string $id,
@@ -35,6 +36,7 @@ final readonly class VehicleRegistrationDurablePowerOfAttorney
         public VehicleRegistrationDurablePowerOfAttorneyStatus $status,
         public VehicleRegistrationDurablePowerOfAttorneyCompanyDetails $company,
         public VehicleRegistrationDurablePowerOfAttorneySignerDetails $signer,
+        public ?VehicleRegistrationDeliveryConfigurationsDetails $deliveryConfigurations = null,
     ) {
     }
 
@@ -45,6 +47,8 @@ final readonly class VehicleRegistrationDurablePowerOfAttorney
      */
     public static function fromArray(array $data): self
     {
+        $deliveryConfigurations = Hydrator::optionalArray($data, 'deliveryConfigurations', self::CONTEXT);
+
         return new self(
             id: Hydrator::requireString($data, 'id', self::CONTEXT),
             expirationDate: Hydrator::requireString($data, 'expirationDate', self::CONTEXT),
@@ -62,6 +66,9 @@ final readonly class VehicleRegistrationDurablePowerOfAttorney
             signer: VehicleRegistrationDurablePowerOfAttorneySignerDetails::fromArray(
                 Hydrator::requireArray($data, 'signer', self::CONTEXT),
             ),
+            deliveryConfigurations: $deliveryConfigurations === null
+                ? null
+                : VehicleRegistrationDeliveryConfigurationsDetails::fromArray($deliveryConfigurations),
         );
     }
 

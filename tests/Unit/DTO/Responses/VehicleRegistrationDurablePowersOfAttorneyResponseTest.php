@@ -6,6 +6,9 @@ namespace Dropshipping\Tests\Unit\DTO\Responses;
 
 use Dropshipping\DTO\Responses\VehicleRegistrationDurablePowerOfAttorney;
 use Dropshipping\DTO\Responses\VehicleRegistrationDurablePowersOfAttorneyResponse;
+use Dropshipping\Enums\Gender;
+use Dropshipping\Enums\VehicleRegistrationDeliveryConfigurationDeliveryOption;
+use Dropshipping\Enums\VehicleRegistrationDeliveryConfigurationRecipientType;
 use Dropshipping\Enums\VehicleRegistrationDurablePowerOfAttorneyCompanyTaxDataType;
 use Dropshipping\Enums\VehicleRegistrationDurablePowerOfAttorneyStatus;
 use Dropshipping\Exceptions\DropshippingException;
@@ -35,6 +38,16 @@ final class VehicleRegistrationDurablePowersOfAttorneyResponseTest extends TestC
         self::assertSame('BYLADEM1001', $record->company->taxData->bic);
         self::assertNull($record->company->taxData->customsMajorCustomerId);
         self::assertSame('signer@localhost.test', $record->signer->email);
+        self::assertSame(Gender::Male, $record->signer->gender);
+        self::assertSame(
+            VehicleRegistrationDeliveryConfigurationDeliveryOption::DeliveryToOwner,
+            $record->deliveryConfigurations?->vehicleRegistrationCertificate?->deliveryOption,
+        );
+        self::assertSame(
+            VehicleRegistrationDeliveryConfigurationDeliveryOption::DeliveryToOwner,
+            $record->deliveryConfigurations->vehicleTitle?->deliveryOption,
+        );
+        self::assertNull($record->deliveryConfigurations->vehicleTitle->recipient);
     }
 
     public function test_fromArray_reads_customs_tax_data_and_a_missing_company_number(): void
@@ -74,6 +87,118 @@ final class VehicleRegistrationDurablePowersOfAttorneyResponseTest extends TestC
                 $response->durablePowersOfAttorney,
             ),
         );
+    }
+
+    /**
+     * Gender and delivery configurations joined API 2.7.0 after the fact as well.
+     */
+    public function test_listing_reads_records_without_gender_and_delivery_configurations(): void
+    {
+        $missing = self::record();
+        unset($missing['signer']['gender'], $missing['deliveryConfigurations']);
+
+        $null = self::record();
+        $null['signer']['gender'] = null;
+        $null['deliveryConfigurations'] = null;
+
+        $response = VehicleRegistrationDurablePowersOfAttorneyResponse::fromArray([
+            'durablePowersOfAttorney' => [$missing, $null, self::record()],
+        ]);
+
+        foreach ([0, 1] as $index) {
+            self::assertNull($response->durablePowersOfAttorney[$index]->signer->gender);
+            self::assertNull($response->durablePowersOfAttorney[$index]->deliveryConfigurations);
+        }
+
+        self::assertSame(Gender::Male, $response->durablePowersOfAttorney[2]->signer->gender);
+    }
+
+    #[DataProvider('unreadableEnumValues')]
+    public function test_unknown_gender_option_and_recipient_type_read_null(mixed $value): void
+    {
+        $data = self::record();
+        $data['signer']['gender'] = $value;
+        $data['deliveryConfigurations']['vehicleTitle'] = [
+            'deliveryOption' => $value,
+            'recipient' => ['type' => $value, 'gender' => $value, 'name' => 'Autohaus'],
+        ];
+
+        $record = VehicleRegistrationDurablePowerOfAttorney::fromArray($data);
+        $title = $record->deliveryConfigurations?->vehicleTitle;
+
+        self::assertNull($record->signer->gender);
+        self::assertNotNull($title);
+        self::assertNull($title->deliveryOption);
+        self::assertNull($title->recipient?->type);
+        self::assertNull($title->recipient?->gender);
+        self::assertSame('Autohaus', $title->recipient?->name);
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public static function unreadableEnumValues(): iterable
+    {
+        yield 'added later' => ['SOMETHING_NEW'];
+        yield 'lower case' => ['male'];
+        yield 'empty' => [''];
+        yield 'int' => [1];
+        yield 'bool' => [true];
+        yield 'array' => [['MALE']];
+    }
+
+    public function test_fromArray_reads_both_recipient_types(): void
+    {
+        $address = ['streetName' => 'Street X', 'houseNumber' => '12A', 'zipCode' => '12345', 'cityName' => 'City X'];
+        $data = self::record();
+        $data['deliveryConfigurations'] = [
+            'vehicleRegistrationCertificate' => [
+                'deliveryOption' => 'DELIVERY_TO_THIRD_PARTY',
+                'recipient' => [
+                    'type' => 'NATURAL_PERSON',
+                    'address' => $address,
+                    'firstName' => 'Erika',
+                    'lastName' => 'Musterfrau',
+                    'gender' => 'FEMALE',
+                    'birthDate' => '1990-01-31',
+                ],
+            ],
+            'vehicleTitle' => [
+                'deliveryOption' => 'PICKUP_BY_THIRD_PARTY',
+                'recipient' => ['type' => 'LEGAL_PERSON', 'address' => $address, 'name' => 'Autohaus'],
+            ],
+        ];
+
+        // A pair the request class would refuse: reading does not judge it.
+        $read = VehicleRegistrationDurablePowerOfAttorney::fromArray($data)->deliveryConfigurations;
+        $person = $read?->vehicleRegistrationCertificate?->recipient;
+        $company = $read?->vehicleTitle?->recipient;
+
+        self::assertSame(VehicleRegistrationDeliveryConfigurationDeliveryOption::PickupByThirdParty, $read?->vehicleTitle?->deliveryOption);
+        self::assertSame(VehicleRegistrationDeliveryConfigurationRecipientType::NaturalPerson, $person?->type);
+        self::assertSame('Erika', $person->firstName);
+        self::assertSame('Musterfrau', $person->lastName);
+        self::assertSame(Gender::Female, $person->gender);
+        self::assertSame('1990-01-31', $person->birthDate);
+        self::assertSame('Street X', $person->address?->streetName);
+        self::assertSame('12A', $person->address->houseNumber);
+        self::assertSame('12345', $person->address->zipCode);
+        self::assertSame('City X', $person->address->cityName);
+        self::assertNull($person->name);
+        self::assertSame(VehicleRegistrationDeliveryConfigurationRecipientType::LegalPerson, $company?->type);
+        self::assertSame('Autohaus', $company->name);
+        self::assertNull($company->firstName);
+    }
+
+    public function test_incomplete_delivery_configurations_load(): void
+    {
+        foreach ([[], ['vehicleTitle' => null], ['vehicleTitle' => []], ['vehicleTitle' => ['recipient' => []]]] as $configurations) {
+            $read = VehicleRegistrationDurablePowerOfAttorney::fromArray(['deliveryConfigurations' => $configurations] + self::record());
+
+            self::assertNotNull($read->deliveryConfigurations);
+            self::assertNull($read->deliveryConfigurations->vehicleRegistrationCertificate);
+            self::assertNull($read->deliveryConfigurations->vehicleTitle?->deliveryOption);
+        }
     }
 
     /**
@@ -186,6 +311,7 @@ final class VehicleRegistrationDurablePowersOfAttorneyResponseTest extends TestC
         yield 'missing signer email' => [$without('signer', 'email'), 'email'];
         yield 'active as string' => [['active' => 'true'] + self::record(), 'active'];
         yield 'id as int' => [['id' => 1] + self::record(), 'id'];
+        yield 'delivery configurations as string' => [['deliveryConfigurations' => 'x'] + self::record(), 'deliveryConfigurations'];
         yield 'company as string' => [['company' => 'Company X'] + self::record(), 'company'];
     }
 
@@ -292,7 +418,11 @@ final class VehicleRegistrationDurablePowersOfAttorneyResponseTest extends TestC
             ],
             'expirationDate' => '2000-10-31',
             'id' => '11111111-1111-1111-1111-111111111111',
-            'signer' => ['email' => 'signer@localhost.test', 'firstName' => 'Company Name', 'lastName' => 'Company Number'],
+            'signer' => ['email' => 'signer@localhost.test', 'firstName' => 'Company Name', 'lastName' => 'Company Number', 'gender' => 'MALE'],
+            'deliveryConfigurations' => [
+                'vehicleRegistrationCertificate' => ['deliveryOption' => 'DELIVERY_TO_OWNER'],
+                'vehicleTitle' => ['deliveryOption' => 'DELIVERY_TO_OWNER'],
+            ],
             'status' => 'INCOMPLETE',
         ];
     }

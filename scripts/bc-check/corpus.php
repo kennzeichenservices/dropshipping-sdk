@@ -292,6 +292,16 @@ return [
     ['durablePowerOfAttorney/with-industry-code', 'Dropshipping\DTO\Responses\VehicleRegistrationDurablePowerOfAttorney', [
         'company' => ['industryCode' => 'G01'] + $durablePowerOfAttorney['company'],
     ] + $durablePowerOfAttorney],
+    ['durablePowerOfAttorney/with-gender-and-delivery', 'Dropshipping\DTO\Responses\VehicleRegistrationDurablePowerOfAttorney', [
+        'signer' => ['gender' => 'FEMALE'] + $durablePowerOfAttorney['signer'],
+        'deliveryConfigurations' => [
+            'vehicleRegistrationCertificate' => ['deliveryOption' => 'DELIVERY_TO_OWNER'],
+            'vehicleTitle' => ['deliveryOption' => 'DELIVERY_TO_THIRD_PARTY', 'recipient' => [
+                'type' => 'LEGAL_PERSON', 'name' => 'Autohaus',
+                'address' => ['streetName' => 'Street X', 'houseNumber' => '12A', 'zipCode' => '12345', 'cityName' => 'City X'],
+            ]],
+        ],
+    ] + $durablePowerOfAttorney],
     ['durablePowerOfAttorney/customs-no-number', 'Dropshipping\DTO\Responses\VehicleRegistrationDurablePowerOfAttorney', [
         'company' => ['taxData' => ['type' => 'CUSTOMS_MAJOR_CUSTOMER', 'customsMajorCustomerId' => '123A4567']] + array_diff_key($durablePowerOfAttorney['company'], ['number' => 0]),
     ] + $durablePowerOfAttorney],
